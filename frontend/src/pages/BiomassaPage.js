@@ -28,13 +28,15 @@ const BiomassaPage = () => {
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    periode: "", shipment_code: "", lot: "", suppliers: "", shipper: "",
-    biomass_type: "", berthed_time: "", commenced: "", completed: "",
-    durasi_pembongkaran: "", jembatan_timbang_mt: "", surveyor: "",
-    no_cow: "", tgl_terbit_cow: "", gcv_arb: "", gcv_adb: "",
-    tm_arb: "", im_arb: "", no_coa: "", tgl_terbit_coa: ""
-  });
+  const initialFormData = {
+    periode: "", shipment_code: "", voyage_code: "", lot: "", suppliers: "", shipper: "",
+    lot_detail: "", tb: "", bg: "", biomass_type: "", ta: "", berthed_time: "",
+    commenced_unloading: "", completed_unloading: "", durasi_pembongkaran_hari: "", waktu_tunggu_jam: "",
+    bl_mt: "", jembatan_timbang_mt: "", surveyor: "", no_cow: "", tgl_terbit_cow: "", lama_terbit_row: "",
+    gcv_arb: "", gcv_adb: "", tm_arb: "", im_adb: "", no_coa: "", tgl_terbit_coa: "", durasi_terbit_coa: ""
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => { fetchBiomassa(); }, [search]);
 
@@ -50,32 +52,17 @@ const BiomassaPage = () => {
     }
   };
 
-  const handleDeleteAll = async () => {
-    setDeleting(true);
-    try {
-      const response = await axios.delete(`${API_URL}/api/biomassa`, { headers: getAuthHeader() });
-      toast.success(response.data.message);
-      fetchBiomassa();
-    } catch (error) {
-      toast.error("Gagal menghapus semua data");
-    } finally {
-      setDeleting(false);
-    }
-  };
+  const parseFloat2 = (val) => val ? parseFloat(val) : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const dataToSend = {
-        ...formData,
-        durasi_pembongkaran: formData.durasi_pembongkaran ? parseFloat(formData.durasi_pembongkaran) : null,
-        jembatan_timbang_mt: formData.jembatan_timbang_mt ? parseFloat(formData.jembatan_timbang_mt) : null,
-        gcv_arb: formData.gcv_arb ? parseFloat(formData.gcv_arb) : null,
-        gcv_adb: formData.gcv_adb ? parseFloat(formData.gcv_adb) : null,
-        tm_arb: formData.tm_arb ? parseFloat(formData.tm_arb) : null,
-        im_arb: formData.im_arb ? parseFloat(formData.im_arb) : null
-      };
+      const dataToSend = { ...formData };
+      const numericFields = ['durasi_pembongkaran_hari', 'waktu_tunggu_jam', 'bl_mt', 'jembatan_timbang_mt',
+        'gcv_arb', 'gcv_adb', 'tm_arb', 'im_adb'];
+      numericFields.forEach(f => { dataToSend[f] = parseFloat2(formData[f]); });
+
       if (editingBiomassa) {
         await axios.put(`${API_URL}/api/biomassa/${editingBiomassa.id}`, dataToSend, { headers: getAuthHeader() });
         toast.success("Data biomassa berhasil diperbarui");
@@ -95,19 +82,12 @@ const BiomassaPage = () => {
 
   const handleEdit = (item) => {
     setEditingBiomassa(item);
-    setFormData({
-      periode: item.periode || "", shipment_code: item.shipment_code || "",
-      lot: item.lot || "", suppliers: item.suppliers || "",
-      shipper: item.shipper || "", biomass_type: item.biomass_type || "",
-      berthed_time: item.berthed_time || "", commenced: item.commenced || "",
-      completed: item.completed || "", durasi_pembongkaran: item.durasi_pembongkaran?.toString() || "",
-      jembatan_timbang_mt: item.jembatan_timbang_mt?.toString() || "",
-      surveyor: item.surveyor || "", no_cow: item.no_cow || "",
-      tgl_terbit_cow: item.tgl_terbit_cow || "", gcv_arb: item.gcv_arb?.toString() || "",
-      gcv_adb: item.gcv_adb?.toString() || "", tm_arb: item.tm_arb?.toString() || "",
-      im_arb: item.im_arb?.toString() || "", no_coa: item.no_coa || "",
-      tgl_terbit_coa: item.tgl_terbit_coa || ""
+    const newFormData = {};
+    Object.keys(initialFormData).forEach(key => {
+      const val = item[key];
+      newFormData[key] = val !== null && val !== undefined ? String(val) : "";
     });
+    setFormData(newFormData);
     setDialogOpen(true);
   };
 
@@ -122,14 +102,27 @@ const BiomassaPage = () => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    try {
+      const response = await axios.delete(`${API_URL}/api/biomassa`, { headers: getAuthHeader() });
+      toast.success(response.data.message);
+      fetchBiomassa();
+    } catch (error) {
+      toast.error("Gagal menghapus semua data");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
+    const fd = new FormData();
+    fd.append("file", file);
     setSubmitting(true);
     try {
-      const response = await axios.post(`${API_URL}/api/upload/biomassa`, formData, {
+      const response = await axios.post(`${API_URL}/api/upload/biomassa`, fd, {
         headers: { ...getAuthHeader(), "Content-Type": "multipart/form-data" }
       });
       toast.success(response.data.message);
@@ -143,19 +136,18 @@ const BiomassaPage = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      periode: "", shipment_code: "", lot: "", suppliers: "", shipper: "",
-      biomass_type: "", berthed_time: "", commenced: "", completed: "",
-      durasi_pembongkaran: "", jembatan_timbang_mt: "", surveyor: "",
-      no_cow: "", tgl_terbit_cow: "", gcv_arb: "", gcv_adb: "",
-      tm_arb: "", im_arb: "", no_coa: "", tgl_terbit_coa: ""
-    });
-    setEditingBiomassa(null);
-  };
-
+  const resetForm = () => { setFormData(initialFormData); setEditingBiomassa(null); };
   const canEdit = user?.role === "admin" || user?.role === "operator";
   const isAdmin = user?.role === "admin";
+
+  const FormField = ({ label, name, type = "text" }) => (
+    <div className="space-y-2">
+      <Label className="text-slate-300 text-xs">{label}</Label>
+      <Input type={type} step={type === "number" ? "0.001" : undefined} value={formData[name]}
+        onChange={(e) => setFormData({...formData, [name]: e.target.value})}
+        className="bg-slate-950/50 border-slate-800 text-white h-9 text-sm" />
+    </div>
+  );
 
   const getBiomassTypeBadge = (type) => {
     const colors = {
@@ -188,8 +180,7 @@ const BiomassaPage = () => {
                 <AlertDialogContent className="bg-[#0B1221] border-white/10">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-white flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-400" />
-                      Hapus Semua Data Biomassa?
+                      <AlertTriangle className="w-5 h-5 text-red-400" />Hapus Semua Data Biomassa?
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-slate-400">
                       Tindakan ini akan menghapus <span className="text-red-400 font-bold">{biomassa.length}</span> data biomassa secara permanen.
@@ -211,11 +202,12 @@ const BiomassaPage = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-[#0B1221] border-white/10 max-w-md">
-                <DialogHeader><DialogTitle className="text-white font-heading">Upload Data Excel</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="text-white font-heading">Upload Data Excel Biomassa</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-emerald-500/50 transition-colors">
                     <FileSpreadsheet className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-                    <p className="text-slate-400 mb-4">Pilih file Excel (.xlsx, .xls)</p>
+                    <p className="text-slate-400 mb-2">Format kolom Excel harus sesuai template</p>
+                    <p className="text-slate-500 text-xs mb-4">Kolom: Periode, LOT, Suppliers, Shipper, Biomass, dll</p>
                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
                     <Button onClick={() => fileInputRef.current?.click()} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-500">
                       {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Pilih File
@@ -232,22 +224,25 @@ const BiomassaPage = () => {
               </DialogTrigger>
               <DialogContent className="bg-[#0B1221] border-white/10 max-w-4xl max-h-[90vh]">
                 <DialogHeader><DialogTitle className="text-white font-heading">{editingBiomassa ? "Edit Data Biomassa" : "Tambah Data Biomassa"}</DialogTitle></DialogHeader>
-                <ScrollArea className="max-h-[70vh] pr-4">
+                <ScrollArea className="max-h-[75vh] pr-4">
                   <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+                    {/* Informasi Shipment */}
                     <div className="space-y-4">
                       <h3 className="text-sm font-mono uppercase tracking-wider text-emerald-400">Informasi Shipment</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">Periode</Label><Input value={formData.periode} onChange={(e) => setFormData({...formData, periode: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" placeholder="Jan-25" required data-testid="biomassa-periode" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Shipment Code</Label><Input value={formData.shipment_code} onChange={(e) => setFormData({...formData, shipment_code: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="biomassa-shipment-code" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Lot</Label><Input value={formData.lot} onChange={(e) => setFormData({...formData, lot: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="biomassa-lot" /></div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <FormField label="Periode" name="periode" />
+                        <FormField label="Shipment Code" name="shipment_code" />
+                        <FormField label="Voyage Code" name="voyage_code" />
+                        <FormField label="LOT" name="lot" />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">Supplier</Label><Input value={formData.suppliers} onChange={(e) => setFormData({...formData, suppliers: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="biomassa-suppliers" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Shipper</Label><Input value={formData.shipper} onChange={(e) => setFormData({...formData, shipper: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="biomassa-shipper" /></div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <FormField label="Suppliers" name="suppliers" />
+                        <FormField label="Shipper" name="shipper" />
+                        <FormField label="LOT Detail" name="lot_detail" />
                         <div className="space-y-2">
-                          <Label className="text-slate-300">Jenis Biomassa</Label>
+                          <Label className="text-slate-300 text-xs">Jenis Biomassa</Label>
                           <Select value={formData.biomass_type} onValueChange={(value) => setFormData({...formData, biomass_type: value})}>
-                            <SelectTrigger className="bg-slate-950/50 border-slate-800 text-white" data-testid="biomassa-type-select">
+                            <SelectTrigger className="bg-slate-950/50 border-slate-800 text-white h-9">
                               <SelectValue placeholder="Pilih jenis" />
                             </SelectTrigger>
                             <SelectContent className="bg-[#0B1221] border-white/10">
@@ -258,27 +253,73 @@ const BiomassaPage = () => {
                           </Select>
                         </div>
                       </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-mono uppercase tracking-wider text-emerald-400">Data Muatan</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">Jembatan Timbang (MT)</Label><Input type="number" step="0.001" value={formData.jembatan_timbang_mt} onChange={(e) => setFormData({...formData, jembatan_timbang_mt: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" data-testid="biomassa-weight" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Surveyor</Label><Input value={formData.surveyor} onChange={(e) => setFormData({...formData, surveyor: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" /></div>
+                        <FormField label="TB (Tug Boat)" name="tb" />
+                        <FormField label="BG (Barge)" name="bg" />
                       </div>
                     </div>
+
+                    {/* Waktu Operasional */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-mono uppercase tracking-wider text-emerald-400">Waktu Operasional</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <FormField label="TA (Time Arrival)" name="ta" />
+                        <FormField label="Berthed Time" name="berthed_time" />
+                        <FormField label="Commenced Unloading" name="commenced_unloading" />
+                        <FormField label="Completed Unloading" name="completed_unloading" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField label="Durasi Pembongkaran (Hari)" name="durasi_pembongkaran_hari" type="number" />
+                        <FormField label="Waktu Tunggu (Jam)" name="waktu_tunggu_jam" type="number" />
+                      </div>
+                    </div>
+
+                    {/* Muatan */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-mono uppercase tracking-wider text-emerald-400">Data Muatan</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField label="B/L (MT)" name="bl_mt" type="number" />
+                        <FormField label="Jembatan Timbang (MT)" name="jembatan_timbang_mt" type="number" />
+                        <FormField label="Surveyor" name="surveyor" />
+                      </div>
+                    </div>
+
+                    {/* COW/ROW */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-mono uppercase tracking-wider text-emerald-400">COW / ROW</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField label="NO. ROW" name="no_cow" />
+                        <FormField label="Tgl Terbit ROW" name="tgl_terbit_cow" />
+                        <FormField label="Lama Terbit ROW (Hari)" name="lama_terbit_row" />
+                      </div>
+                    </div>
+
+                    {/* Kualitas */}
                     <div className="space-y-4">
                       <h3 className="text-sm font-mono uppercase tracking-wider text-emerald-400">Data Kualitas</h3>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">GCV ARB (Kcal/Kg)</Label><Input type="number" value={formData.gcv_arb} onChange={(e) => setFormData({...formData, gcv_arb: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">GCV ADB (Kcal/Kg)</Label><Input type="number" value={formData.gcv_adb} onChange={(e) => setFormData({...formData, gcv_adb: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">TM ARB (%)</Label><Input type="number" step="0.01" value={formData.tm_arb} onChange={(e) => setFormData({...formData, tm_arb: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">IM ARB (%)</Label><Input type="number" step="0.01" value={formData.im_arb} onChange={(e) => setFormData({...formData, im_arb: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" /></div>
+                        <FormField label="GCV ARB (Kcal/Kg)" name="gcv_arb" type="number" />
+                        <FormField label="GCV ADB (Kcal/Kg)" name="gcv_adb" type="number" />
+                        <FormField label="TM ARB (%wt)" name="tm_arb" type="number" />
+                        <FormField label="IM ADB (%wt)" name="im_adb" type="number" />
                       </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4">
+
+                    {/* COA */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-mono uppercase tracking-wider text-emerald-400">COA</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField label="NO. COA" name="no_coa" />
+                        <FormField label="Tgl Terbit COA" name="tgl_terbit_coa" />
+                        <FormField label="Durasi Terbit COA" name="durasi_terbit_coa" />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
                       <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }} className="border-slate-700 text-slate-300">Batal</Button>
                       <Button type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-500" data-testid="biomassa-submit-btn">
-                        {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}{editingBiomassa ? "Simpan Perubahan" : "Tambah Data"}
+                        {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        {editingBiomassa ? "Simpan Perubahan" : "Tambah Data"}
                       </Button>
                     </div>
                   </form>
@@ -304,7 +345,7 @@ const BiomassaPage = () => {
                 <TableHead className="text-slate-400 font-mono text-xs">LOT</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">SUPPLIER</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">JENIS</TableHead>
-                <TableHead className="text-slate-400 font-mono text-xs">BERAT (MT)</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">J. TIMBANG (MT)</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">GCV ARB</TableHead>
                 {canEdit && <TableHead className="text-slate-400 font-mono text-xs w-12"></TableHead>}
               </TableRow>
@@ -318,9 +359,9 @@ const BiomassaPage = () => {
                 biomassa.map((item) => (
                   <TableRow key={item.id} className="border-white/5 hover:bg-white/5">
                     <TableCell className="text-slate-300 font-mono text-sm">{item.periode}</TableCell>
-                    <TableCell className="text-slate-300 text-sm max-w-[200px] truncate">{item.shipment_code}</TableCell>
+                    <TableCell className="text-slate-300 text-sm max-w-[150px] truncate">{item.shipment_code}</TableCell>
                     <TableCell className="text-white font-medium">{item.lot}</TableCell>
-                    <TableCell className="text-slate-300 text-sm max-w-[150px] truncate">{item.suppliers}</TableCell>
+                    <TableCell className="text-slate-300 text-sm max-w-[120px] truncate">{item.suppliers}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 text-xs rounded-full border ${getBiomassTypeBadge(item.biomass_type)}`}>
                         {item.biomass_type || "-"}
@@ -334,7 +375,7 @@ const BiomassaPage = () => {
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="text-slate-400 hover:text-white"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-[#0B1221] border-white/10">
                             <DropdownMenuItem onClick={() => handleEdit(item)} className="text-slate-300 focus:text-white focus:bg-white/5"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                            {user?.role === "admin" && (<DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>)}
+                            {isAdmin && (<DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>)}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
