@@ -417,9 +417,11 @@ class BiomassaTNYCreate(BaseModel):
     # Informasi Shipment
     periode: Optional[str] = None
     shipment_code: Optional[str] = None
+    voyage_code: Optional[str] = None
     lot: Optional[str] = None
     suppliers: Optional[str] = None
     shipper: Optional[str] = None
+    lot_1: Optional[str] = None
     tb: Optional[str] = None  # Tug Boat
     bg: Optional[str] = None  # Barge
     biomass_type: Optional[str] = None  # Jenis Biomassa
@@ -428,7 +430,7 @@ class BiomassaTNYCreate(BaseModel):
     berthed_time: Optional[str] = None
     commenced_unloading: Optional[str] = None
     completed_unloading: Optional[str] = None
-    durasi_pembongkaran: Optional[float] = None
+    durasi_pembongkaran_hari: Optional[float] = None
     # Muatan
     bl_mt: Optional[float] = None
     jembatan_timbang_mt: Optional[float] = None
@@ -436,20 +438,18 @@ class BiomassaTNYCreate(BaseModel):
     # COW/ROW
     no_cow_row: Optional[str] = None
     tgl_terbit_cow: Optional[str] = None
-    lama_terbit_row: Optional[str] = None
+    lama_terbit_row: Optional[float] = None
     # Kualitas
-    gcv_adb: Optional[float] = None
     gcv_arb: Optional[float] = None
+    gcv_adb: Optional[float] = None
     tm_arb: Optional[float] = None
-    im_arb: Optional[float] = None
-    tm_adb: Optional[float] = None
     im_adb: Optional[float] = None
     # COA
     no_coa: Optional[str] = None
     tgl_terbit_coa: Optional[str] = None
-    durasi_pembongkaran_2: Optional[float] = None  # Durasi Pembongkaran (duplikat di Excel)
+    durasi_pembongkaran_hari_2: Optional[float] = None
     waktu_tunggu_jam: Optional[float] = None
-    durasi_terbit_coa: Optional[str] = None
+    durasi_terbit_coa: Optional[float] = None
 
 class BiomassaTNYResponse(BiomassaTNYCreate):
     id: str
