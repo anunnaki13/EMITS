@@ -116,6 +116,11 @@ const BargePage = () => {
     setDialogOpen(true);
   };
 
+  const handleView = (barge) => {
+    setViewingBarge(barge);
+    setViewDialogOpen(true);
+  };
+
   const handleDelete = async (bargeId) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
     try {

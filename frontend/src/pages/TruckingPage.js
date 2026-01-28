@@ -117,6 +117,11 @@ const TruckingPage = () => {
     setDialogOpen(true);
   };
 
+  const handleView = (item) => {
+    setViewingTrucking(item);
+    setViewDialogOpen(true);
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
     try {
