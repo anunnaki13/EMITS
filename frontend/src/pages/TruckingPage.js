@@ -28,6 +28,9 @@ const TruckingPage = () => {
   const [editingTrucking, setEditingTrucking] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewingTrucking, setViewingTrucking] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
 
   const initialFormData = {
