@@ -10,7 +10,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 
 ## Core Requirements (Static)
 - Dashboard dengan statistik real-time
-- CRUD untuk 4 kategori: Vessel TNY, Barge TNY, Trucking TNY, Biomassa TNY
+- CRUD untuk 5 kategori: Vessel TNY, Barge TNY, Trucking TNY, Biomassa TNY, **Purchase Order Batubara**
 - Upload Excel dengan auto-parsing
 - Role-based access control
 - Export laporan PDF/Excel
@@ -23,61 +23,81 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 ### Backend (FastAPI)
 - ✅ User authentication (JWT)
 - ✅ Role-based authorization
-- ✅ CRUD endpoints untuk semua kategori (Vessel, Barge, Trucking, Biomassa)
+- ✅ CRUD endpoints untuk semua kategori (Vessel, Barge, Trucking, Biomassa, PO Batubara)
 - ✅ Excel upload & parsing untuk semua kategori
 - ✅ Delete all data endpoint per kategori
 - ✅ Dashboard statistics API
+- ✅ **PO Batubara API** - /api/po-batubara dengan filter year/month
+- ✅ **PO Batubara Years API** - /api/po-batubara/years dengan aggregasi bulanan
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
 - ✅ Dashboard dengan grafik Recharts
-- ✅ Vessel TNY page (tabbed form dengan 5 tab: Shipment, Muatan, Kualitas, Ultimate, Ash Comp)
+- ✅ Vessel TNY page (tabbed form dengan 5 tab)
 - ✅ Barge TNY page (tabbed form lengkap)
 - ✅ Trucking TNY page (tabbed form lengkap)
-- ✅ Biomassa TNY page (tabbed form dengan 4 tab: Shipment, Waktu, Muatan, Kualitas)
+- ✅ Biomassa TNY page (tabbed form dengan 4 tab)
+- ✅ **Purchase Order Batubara page** - Tampilan per tahun/bulan dengan total bulanan dan tahunan
 - ✅ Laporan page (tabs untuk 4 kategori, statistik, filter, tombol export)
 - ✅ Settings page (profil user, manajemen user, info hak akses role)
+- ✅ **Dropdown Navigation** - Menu "Rekap Penerimaan BB" dengan 5 submenu
 - ✅ Responsive sidebar navigation
 - ✅ Dark theme dengan glassmorphism
-- ✅ All forms tested with E2E testing (100% pass rate)
-- ✅ **View Detail Dialog** - Tombol "Lihat" untuk melihat detail data tanpa edit
-- ✅ **Pagination** - 100 data per halaman dengan navigasi First/Prev/Page Numbers/Next/Last
-- ✅ **Data Sorting** - Data diurutkan dari terbaru (halaman 1 = data terbaru)
-- ✅ "Made with Emergent" badge dihapus dari semua halaman
+- ✅ View Detail Dialog - Tombol "Lihat" untuk melihat detail data
+- ✅ Pagination - 100 data per halaman
+- ✅ Data Sorting - Data diurutkan dari terbaru
+
+### Navigation Structure
+```
+├── Dashboard
+├── Rekap Penerimaan BB (Dropdown)
+│   ├── Vessel TNY
+│   ├── Barge TNY
+│   ├── Trucking TNY
+│   ├── Biomassa TNY
+│   └── Purchase Order Batubara ✨ NEW
+├── Laporan
+└── Pengaturan (Admin only)
+```
 
 ## Prioritized Backlog
 
-### P0 (Critical) - DONE
+### P0 (Critical) - DONE ✅
 - [x] User authentication
 - [x] Basic CRUD operations
 - [x] Dashboard overview
+- [x] **Navigation dropdown restructure**
+- [x] **Purchase Order Batubara page**
 
 ### P1 (High Priority)
-- [ ] Real export PDF/Excel implementation
-- [ ] Data validation & error handling improvement
-- [ ] Bulk delete functionality
-- [ ] Pagination for large datasets
+- [ ] Real export PDF/Excel implementation di Laporan
+- [ ] Server-side pagination (current: client-side dengan limit 5000)
+- [ ] Add PO Batubara ke halaman Laporan
 
 ### P2 (Medium Priority)
+- [ ] Refactor backend server.py ke modular structure (/routes, /models, /services)
+- [ ] Refactor frontend duplicate code ke reusable hooks
 - [ ] Advanced filtering & date range
-- [ ] Notification alerts for anomalies
-- [ ] Data import from existing Excel templates
-- [ ] Audit trail / activity log
+- [ ] Fix frontend linting errors
 
 ### P3 (Nice to Have)
-- [ ] Print-friendly views
+- [ ] Dashboard Analytics improvements
 - [ ] Dark/Light mode toggle
 - [ ] Data backup & restore
-- [ ] Multi-language support
+- [ ] Audit trail / activity log
 
 ## Next Tasks
-1. Implement real PDF/Excel export dengan library pdfkit/xlsxwriter
-2. Add pagination untuk tables dengan banyak data
-3. Improve form validation dan error messages
-4. Add date range filter di laporan
+1. Implement real PDF/Excel export di halaman Laporan
+2. Add PO Batubara ke tab di halaman Laporan
+3. Refactor backend server.py ke modular structure
+4. Implement server-side pagination
 
 ## Tech Stack
-- **Frontend**: React 19, Tailwind CSS, Shadcn/UI, Recharts
-- **Backend**: FastAPI, Motor (MongoDB async)
+- **Frontend**: React 19, Tailwind CSS, Shadcn/UI, Recharts, Lucide-React
+- **Backend**: FastAPI, Motor (MongoDB async), Pandas, Openpyxl
 - **Database**: MongoDB
 - **Auth**: JWT (python-jose, bcrypt)
+
+## Test Credentials
+- **Email**: admin@example.com
+- **Password**: adminpassword
