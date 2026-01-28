@@ -1712,6 +1712,320 @@ async def get_dashboard_stats(user: dict = Depends(get_current_user)):
         supplier_stats=supplier_stats
     )
 
+@api_router.get("/dashboard/advanced")
+async def get_dashboard_advanced(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    moda: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Advanced dashboard data with filters"""
+    from datetime import date
+    from dateutil.relativedelta import relativedelta
+    
+    # Calculate 6 months ago
+    today = date.today()
+    six_months_ago = today - relativedelta(months=6)
+    
+    # Build date filter based on completed_unloading field
+    date_filter = {}
+    if year and month:
+        # Filter specific month
+        start_date = f"{year}-{month:02d}-01"
+        if month == 12:
+            end_date = f"{year+1}-01-01"
+        else:
+            end_date = f"{year}-{month+1:02d}-01"
+        date_filter = {"completed_unloading": {"$gte": start_date, "$lt": end_date}}
+    
+    # Moda filter for trucking
+    moda_filter = {}
+    
+    # === 1. Contract Monitoring (Gauge) ===
+    # Total DS MT from all sources
+    vessel_ds = await db.vessels.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}}
+    ]).to_list(1)
+    barge_ds = await db.barges.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}}
+    ]).to_list(1)
+    trucking_ds = await db.trucking.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}}
+    ]).to_list(1)
+    biomassa_ds = await db.biomassa.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$jembatan_timbang_mt", 0]}}}}
+    ]).to_list(1)
+    
+    total_ds_mt = (
+        (vessel_ds[0]["total"] if vessel_ds else 0) +
+        (barge_ds[0]["total"] if barge_ds else 0) +
+        (trucking_ds[0]["total"] if trucking_ds else 0) +
+        (biomassa_ds[0]["total"] if biomassa_ds else 0)
+    )
+    
+    # Total Tonase PO from PO Batubara
+    po_tonase = await db.po_batubara.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$tonase_po", 0]}}}}
+    ]).to_list(1)
+    total_tonase_po = po_tonase[0]["total"] if po_tonase else 0
+    
+    contract_percentage = (total_ds_mt / total_tonase_po * 100) if total_tonase_po > 0 else 0
+    
+    # === 2. Fuel Composition (Donut) ===
+    # Get spec breakdown from vessels and barges (LRC, MRC)
+    vessel_spec = await db.vessels.aggregate([
+        {"$group": {"_id": "$coal_from", "total_ds": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}},
+        {"$match": {"_id": {"$ne": None}}}
+    ]).to_list(100)
+    barge_spec = await db.barges.aggregate([
+        {"$group": {"_id": "$coal_from", "total_ds": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}},
+        {"$match": {"_id": {"$ne": None}}}
+    ]).to_list(100)
+    
+    # Biomass types
+    biomass_types = await db.biomassa.aggregate([
+        {"$group": {"_id": "$biomass_type", "total_ds": {"$sum": {"$ifNull": ["$jembatan_timbang_mt", 0]}}}},
+        {"$match": {"_id": {"$ne": None}}}
+    ]).to_list(100)
+    
+    fuel_composition = []
+    spec_totals = {}
+    for item in vessel_spec + barge_spec:
+        spec = item["_id"] or "Unknown"
+        if "LRC" in spec.upper():
+            spec_totals["LRC"] = spec_totals.get("LRC", 0) + item["total_ds"]
+        elif "MRC" in spec.upper():
+            spec_totals["MRC"] = spec_totals.get("MRC", 0) + item["total_ds"]
+        else:
+            spec_totals[spec] = spec_totals.get(spec, 0) + item["total_ds"]
+    
+    for spec, total in spec_totals.items():
+        fuel_composition.append({"name": spec, "value": total, "type": "coal"})
+    
+    for item in biomass_types:
+        fuel_composition.append({"name": item["_id"] or "Biomassa", "value": item["total_ds"], "type": "biomass"})
+    
+    # Sort by value descending
+    fuel_composition.sort(key=lambda x: x["value"], reverse=True)
+    
+    # === 3. GCV Trend (Line Chart) ===
+    # Get GCV data with dates from vessels and barges
+    gcv_trend = []
+    vessel_gcv_data = await db.vessels.find(
+        {"gcv_arb": {"$ne": None}, "completed_unloading": {"$ne": None}},
+        {"_id": 0, "completed_unloading": 1, "gcv_arb": 1, "name_of_vessel": 1}
+    ).sort("completed_unloading", 1).to_list(500)
+    
+    barge_gcv_data = await db.barges.find(
+        {"gcv_arb": {"$ne": None}, "completed_unloading": {"$ne": None}},
+        {"_id": 0, "completed_unloading": 1, "gcv_arb": 1}
+    ).sort("completed_unloading", 1).to_list(500)
+    
+    # Combine and sort
+    all_gcv = []
+    for v in vessel_gcv_data:
+        try:
+            date_str = str(v.get("completed_unloading", ""))[:10]
+            all_gcv.append({"date": date_str, "gcv": v["gcv_arb"], "source": "vessel"})
+        except:
+            pass
+    for b in barge_gcv_data:
+        try:
+            date_str = str(b.get("completed_unloading", ""))[:10]
+            all_gcv.append({"date": date_str, "gcv": b["gcv_arb"], "source": "barge"})
+        except:
+            pass
+    
+    # Group by date and calculate average
+    gcv_by_date = {}
+    for item in all_gcv:
+        d = item["date"]
+        if d not in gcv_by_date:
+            gcv_by_date[d] = []
+        gcv_by_date[d].append(item["gcv"])
+    
+    for d, values in sorted(gcv_by_date.items()):
+        gcv_trend.append({
+            "date": d,
+            "gcv_avg": sum(values) / len(values),
+            "count": len(values),
+            "target": 4000
+        })
+    
+    # Limit to last 50 data points
+    gcv_trend = gcv_trend[-50:]
+    
+    # === 4. Supplier Economy Analysis (Bar Chart) ===
+    # Calculate Actual Rp/Kcal = (Harga CIF / GCV ARB) / 1000
+    supplier_economy = []
+    
+    # Get merit order data with harga_cif
+    merit_orders = await db.merit_order.find(
+        {"harga_cif": {"$ne": None}, "pemasok": {"$ne": None}},
+        {"_id": 0, "pemasok": 1, "harga_cif": 1, "rp_kcal": 1}
+    ).to_list(1000)
+    
+    # Get GCV by supplier from vessels
+    supplier_gcv = {}
+    vessels_data = await db.vessels.find(
+        {"gcv_arb": {"$ne": None}, "suppliers": {"$ne": None}},
+        {"_id": 0, "suppliers": 1, "gcv_arb": 1}
+    ).to_list(1000)
+    
+    for v in vessels_data:
+        sup = v["suppliers"]
+        if sup not in supplier_gcv:
+            supplier_gcv[sup] = []
+        supplier_gcv[sup].append(v["gcv_arb"])
+    
+    # Calculate Rp/Kcal for each supplier in merit order
+    supplier_rp_kcal = {}
+    for mo in merit_orders:
+        sup = mo["pemasok"]
+        if mo.get("rp_kcal"):
+            if sup not in supplier_rp_kcal:
+                supplier_rp_kcal[sup] = []
+            supplier_rp_kcal[sup].append(mo["rp_kcal"])
+    
+    # Average and sort
+    for sup, values in supplier_rp_kcal.items():
+        avg_rp_kcal = sum(values) / len(values)
+        supplier_economy.append({
+            "supplier": sup[:30] + "..." if len(sup) > 30 else sup,
+            "full_name": sup,
+            "rp_kcal": avg_rp_kcal,
+            "count": len(values)
+        })
+    
+    # Sort by rp_kcal (lowest = most efficient) and take top 10
+    supplier_economy.sort(key=lambda x: x["rp_kcal"])
+    supplier_economy = supplier_economy[:10]
+    
+    # === 5. Slagging Risk Matrix (Heatmap) ===
+    slagging_matrix = []
+    vessels_slagging = await db.vessels.find(
+        {"$or": [{"slagging_index": {"$ne": None}}, {"fouling_index": {"$ne": None}}]},
+        {"_id": 0, "name_of_vessel": 1, "suppliers": 1, "slagging_index": 1, "fouling_index": 1, "completed_unloading": 1}
+    ).sort("completed_unloading", -1).limit(20).to_list(20)
+    
+    barges_slagging = await db.barges.find(
+        {"$or": [{"slagging_index": {"$ne": None}}, {"fouling_index": {"$ne": None}}]},
+        {"_id": 0, "suppliers": 1, "slagging_index": 1, "fouling_index": 1, "completed_unloading": 1}
+    ).sort("completed_unloading", -1).limit(20).to_list(20)
+    
+    def get_risk_level(index_value):
+        if not index_value:
+            return "UNKNOWN"
+        val = str(index_value).upper()
+        if "SEVERE" in val:
+            return "SEVERE"
+        elif "HIGH" in val:
+            return "HIGH"
+        elif "MEDIUM" in val:
+            return "MEDIUM"
+        elif "LOW" in val:
+            return "LOW"
+        return "UNKNOWN"
+    
+    for v in vessels_slagging:
+        slagging_matrix.append({
+            "name": v.get("name_of_vessel", "Unknown Vessel"),
+            "supplier": v.get("suppliers", ""),
+            "slagging": v.get("slagging_index", ""),
+            "slagging_risk": get_risk_level(v.get("slagging_index")),
+            "fouling": v.get("fouling_index", ""),
+            "fouling_risk": get_risk_level(v.get("fouling_index")),
+            "date": str(v.get("completed_unloading", ""))[:10],
+            "type": "vessel"
+        })
+    
+    for b in barges_slagging:
+        slagging_matrix.append({
+            "name": b.get("suppliers", "Unknown Barge"),
+            "supplier": b.get("suppliers", ""),
+            "slagging": b.get("slagging_index", ""),
+            "slagging_risk": get_risk_level(b.get("slagging_index")),
+            "fouling": b.get("fouling_index", ""),
+            "fouling_risk": get_risk_level(b.get("fouling_index")),
+            "date": str(b.get("completed_unloading", ""))[:10],
+            "type": "barge"
+        })
+    
+    # === 6. Six Months Summary ===
+    six_months_summary = []
+    current_date = date.today()
+    
+    for i in range(6):
+        target_date = current_date - relativedelta(months=i)
+        year_val = target_date.year
+        month_val = target_date.month
+        month_name = target_date.strftime("%b %Y")
+        
+        # Count by month
+        vessel_count = await db.vessels.count_documents({
+            "completed_unloading": {"$regex": f"^{year_val}-{month_val:02d}"}
+        })
+        barge_count = await db.barges.count_documents({
+            "completed_unloading": {"$regex": f"^{year_val}-{month_val:02d}"}
+        })
+        trucking_count = await db.trucking.count_documents({
+            "completed_unloading": {"$regex": f"^{year_val}-{month_val:02d}"}
+        })
+        biomassa_count = await db.biomassa.count_documents({
+            "completed_unloading": {"$regex": f"^{year_val}-{month_val:02d}"}
+        })
+        
+        # Tonase by month
+        vessel_ton = await db.vessels.aggregate([
+            {"$match": {"completed_unloading": {"$regex": f"^{year_val}-{month_val:02d}"}}},
+            {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}}
+        ]).to_list(1)
+        barge_ton = await db.barges.aggregate([
+            {"$match": {"completed_unloading": {"$regex": f"^{year_val}-{month_val:02d}"}}},
+            {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}}
+        ]).to_list(1)
+        
+        six_months_summary.append({
+            "month": month_name,
+            "year": year_val,
+            "month_num": month_val,
+            "vessel": vessel_count,
+            "barge": barge_count,
+            "trucking": trucking_count,
+            "biomassa": biomassa_count,
+            "total_shipments": vessel_count + barge_count + trucking_count + biomassa_count,
+            "vessel_tonase": vessel_ton[0]["total"] if vessel_ton else 0,
+            "barge_tonase": barge_ton[0]["total"] if barge_ton else 0,
+            "total_tonase": (vessel_ton[0]["total"] if vessel_ton else 0) + (barge_ton[0]["total"] if barge_ton else 0)
+        })
+    
+    # Reverse to show oldest first
+    six_months_summary.reverse()
+    
+    # === Available filters ===
+    available_periods = []
+    years = [2023, 2024, 2025, 2026]
+    months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+              "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+    for y in years:
+        for m_idx, m_name in enumerate(months, 1):
+            available_periods.append({"year": y, "month": m_idx, "label": f"{m_name} {y}"})
+    
+    available_moda = ["Vessel", "Barge", "Trucking", "Tongkang"]
+    
+    return {
+        "total_ds_mt": total_ds_mt,
+        "total_tonase_po": total_tonase_po,
+        "contract_percentage": min(contract_percentage, 100),
+        "fuel_composition": fuel_composition,
+        "gcv_trend": gcv_trend,
+        "supplier_economy": supplier_economy,
+        "slagging_matrix": slagging_matrix,
+        "six_months_summary": six_months_summary,
+        "available_periods": available_periods[-24:],  # Last 2 years
+        "available_moda": available_moda
+    }
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
