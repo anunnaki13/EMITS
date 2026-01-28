@@ -435,7 +435,7 @@ async def create_barge(data: BargeTNYCreate, user: dict = Depends(require_role([
         "created_by": user["id"]
     }
     await db.barges.insert_one(barge_doc)
-    del barge_doc["_id"] if "_id" in barge_doc else None
+    barge_doc.pop("_id", None)
     return BargeTNYResponse(**barge_doc)
 
 @api_router.get("/barges", response_model=List[BargeTNYResponse])
@@ -489,7 +489,7 @@ async def create_trucking(data: TruckingTNYCreate, user: dict = Depends(require_
         "created_by": user["id"]
     }
     await db.trucking.insert_one(trucking_doc)
-    del trucking_doc["_id"] if "_id" in trucking_doc else None
+    trucking_doc.pop("_id", None)
     return TruckingTNYResponse(**trucking_doc)
 
 @api_router.get("/trucking", response_model=List[TruckingTNYResponse])
@@ -543,7 +543,7 @@ async def create_biomassa(data: BiomassaTNYCreate, user: dict = Depends(require_
         "created_by": user["id"]
     }
     await db.biomassa.insert_one(biomassa_doc)
-    del biomassa_doc["_id"] if "_id" in biomassa_doc else None
+    biomassa_doc.pop("_id", None)
     return BiomassaTNYResponse(**biomassa_doc)
 
 @api_router.get("/biomassa", response_model=List[BiomassaTNYResponse])
