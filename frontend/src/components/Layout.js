@@ -161,6 +161,21 @@ const Layout = ({ children }) => {
             {location.pathname === "/laporan" && <ChevronRight className="w-4 h-4 ml-auto" />}
           </Link>
 
+          {/* AI Intelligence Agent */}
+          <Link
+            to="/ai-intelligence"
+            onClick={() => setSidebarOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              location.pathname === "/ai-intelligence"
+                ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 border border-cyan-500/30"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Bot className="w-5 h-5" />
+            <span className="text-sm font-medium">AI Intelligence</span>
+            {location.pathname === "/ai-intelligence" && <ChevronRight className="w-4 h-4 ml-auto" />}
+          </Link>
+
           {user?.role === "admin" && (
             <>
               <p className="text-[10px] font-mono uppercase tracking-wider text-slate-600 px-3 mb-3 mt-6">
