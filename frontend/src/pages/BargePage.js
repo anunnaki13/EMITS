@@ -51,13 +51,14 @@ const BargePage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchBarges(); }, [search]);
+  useEffect(() => { fetchBarges(); setCurrentPage(1); }, [search]);
 
   const fetchBarges = async () => {
     try {
       const params = search ? { search } : {};
       const response = await axios.get(`${API_URL}/api/barges`, { headers: getAuthHeader(), params });
-      setBarges(response.data);
+      const sortedData = response.data.reverse();
+      setBarges(sortedData);
     } catch (error) {
       toast.error("Gagal memuat data barge");
     } finally {
@@ -66,6 +67,10 @@ const BargePage = () => {
   };
 
   const parseFloat2 = (val) => val ? parseFloat(val) : null;
+
+  const totalPages = Math.ceil(barges.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedBarges = barges.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

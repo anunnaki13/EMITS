@@ -51,13 +51,14 @@ const TruckingPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchTrucking(); }, [search]);
+  useEffect(() => { fetchTrucking(); setCurrentPage(1); }, [search]);
 
   const fetchTrucking = async () => {
     try {
       const params = search ? { search } : {};
       const response = await axios.get(`${API_URL}/api/trucking`, { headers: getAuthHeader(), params });
-      setTrucking(response.data);
+      const sortedData = response.data.reverse();
+      setTrucking(sortedData);
     } catch (error) {
       toast.error("Gagal memuat data trucking");
     } finally {
@@ -67,6 +68,10 @@ const TruckingPage = () => {
 
   const parseFloat2 = (val) => val ? parseFloat(val) : null;
   const parseInt2 = (val) => val ? parseInt(val) : null;
+
+  const totalPages = Math.ceil(trucking.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedTrucking = trucking.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
