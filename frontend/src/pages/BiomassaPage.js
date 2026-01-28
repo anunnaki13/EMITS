@@ -75,6 +75,9 @@ const BiomassaPage = () => {
   const [editingBiomassa, setEditingBiomassa] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewingBiomassa, setViewingBiomassa] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
 
   const initialFormData = {
