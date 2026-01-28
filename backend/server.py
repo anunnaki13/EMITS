@@ -1904,17 +1904,26 @@ async def get_dashboard_advanced(
     supplier_economy.sort(key=lambda x: x["rp_kcal"])
     supplier_economy = supplier_economy[:10]
     
-    # === 5. Slagging Risk Matrix (Heatmap) ===
+    # === 5. Slagging Risk Matrix (Heatmap) - Include Vessel, Barge, and Trucking ===
     slagging_matrix = []
+    
+    # Get from Vessels
     vessels_slagging = await db.vessels.find(
         {"$or": [{"slagging_index": {"$ne": None}}, {"fouling_index": {"$ne": None}}]},
         {"_id": 0, "name_of_vessel": 1, "suppliers": 1, "slagging_index": 1, "fouling_index": 1, "completed_unloading": 1}
-    ).sort("completed_unloading", -1).limit(20).to_list(20)
+    ).sort("completed_unloading", -1).limit(15).to_list(15)
     
+    # Get from Barges
     barges_slagging = await db.barges.find(
         {"$or": [{"slagging_index": {"$ne": None}}, {"fouling_index": {"$ne": None}}]},
+        {"_id": 0, "name_of_barge": 1, "suppliers": 1, "slagging_index": 1, "fouling_index": 1, "completed_unloading": 1}
+    ).sort("completed_unloading", -1).limit(15).to_list(15)
+    
+    # Get from Trucking
+    trucking_slagging = await db.trucking.find(
+        {"$or": [{"slagging_index": {"$ne": None}}, {"fouling_index": {"$ne": None}}]},
         {"_id": 0, "suppliers": 1, "slagging_index": 1, "fouling_index": 1, "completed_unloading": 1}
-    ).sort("completed_unloading", -1).limit(20).to_list(20)
+    ).sort("completed_unloading", -1).limit(15).to_list(15)
     
     def get_risk_level(index_value):
         if not index_value:
@@ -1930,7 +1939,47 @@ async def get_dashboard_advanced(
             return "LOW"
         return "UNKNOWN"
     
+    # Add Vessel data
     for v in vessels_slagging:
+        slagging_matrix.append({
+            "name": v.get("name_of_vessel", "Unknown Vessel"),
+            "supplier": v.get("suppliers", ""),
+            "slagging": v.get("slagging_index", ""),
+            "slagging_risk": get_risk_level(v.get("slagging_index")),
+            "fouling": v.get("fouling_index", ""),
+            "fouling_risk": get_risk_level(v.get("fouling_index")),
+            "date": str(v.get("completed_unloading", ""))[:10],
+            "moda": "Vessel"
+        })
+    
+    # Add Barge data
+    for b in barges_slagging:
+        slagging_matrix.append({
+            "name": b.get("name_of_barge", b.get("suppliers", "Unknown Barge")),
+            "supplier": b.get("suppliers", ""),
+            "slagging": b.get("slagging_index", ""),
+            "slagging_risk": get_risk_level(b.get("slagging_index")),
+            "fouling": b.get("fouling_index", ""),
+            "fouling_risk": get_risk_level(b.get("fouling_index")),
+            "date": str(b.get("completed_unloading", ""))[:10],
+            "moda": "Barge"
+        })
+    
+    # Add Trucking data
+    for t in trucking_slagging:
+        slagging_matrix.append({
+            "name": t.get("suppliers", "Unknown Trucking"),
+            "supplier": t.get("suppliers", ""),
+            "slagging": t.get("slagging_index", ""),
+            "slagging_risk": get_risk_level(t.get("slagging_index")),
+            "fouling": t.get("fouling_index", ""),
+            "fouling_risk": get_risk_level(t.get("fouling_index")),
+            "date": str(t.get("completed_unloading", ""))[:10],
+            "moda": "Trucking"
+        })
+    
+    # Sort by date descending
+    slagging_matrix.sort(key=lambda x: x.get("date", ""), reverse=True)
         slagging_matrix.append({
             "name": v.get("name_of_vessel", "Unknown Vessel"),
             "supplier": v.get("suppliers", ""),
