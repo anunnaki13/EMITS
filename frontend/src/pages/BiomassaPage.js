@@ -179,6 +179,11 @@ const BiomassaPage = () => {
     setDialogOpen(true);
   };
 
+  const handleView = (biomassa) => {
+    setViewingBiomassa(biomassa);
+    setViewDialogOpen(true);
+  };
+
   const handleDelete = async (biomassaId) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
     try {
