@@ -1,11 +1,11 @@
 # PRD: Sistem Manajemen Bahan Bakar Digital PLTU Tenayan
 
 ## Overview
-Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di PLTU Tenayan.
+Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di PLTU Tenayan, dilengkapi dengan AI Intelligence Agent untuk analisis data.
 
 ## User Personas
-1. **Admin** - Akses penuh, kelola pengguna, hapus data
-2. **Operator** - Input data, edit, upload Excel
+1. **Admin** - Akses penuh, kelola pengguna, hapus data, pengaturan AI
+2. **Operator** - Input data, edit, upload Excel, akses AI
 3. **Viewer** - Hanya melihat data dan laporan
 
 ## Core Requirements (Static)
@@ -14,6 +14,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - Upload Excel dengan auto-parsing
 - Role-based access control
 - Export laporan PDF/Excel
+- **AI Intelligence Agent** dengan 4 modul analisis
 - Interface Bahasa Indonesia
 - Dark Mode SaaS Dashboard UI
 
