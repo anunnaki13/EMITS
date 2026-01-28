@@ -16,7 +16,8 @@ import {
   Anchor,
   User,
   Package,
-  ShoppingCart
+  ShoppingCart,
+  Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +51,7 @@ const Layout = ({ children }) => {
     { path: "/trucking", label: "Trucking TNY", icon: Truck },
     { path: "/biomassa", label: "Biomassa TNY", icon: Leaf },
     { path: "/po-batubara", label: "Purchase Order Batubara", icon: ShoppingCart },
+    { path: "/merit-order", label: "Merit Order", icon: Award },
   ];
 
   const isRekapActive = rekapItems.some(item => location.pathname === item.path);
