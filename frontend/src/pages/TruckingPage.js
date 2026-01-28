@@ -143,6 +143,7 @@ const TruckingPage = () => {
   };
 
   const canEdit = user?.role === "admin" || user?.role === "operator";
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="space-y-6" data-testid="trucking-page">
