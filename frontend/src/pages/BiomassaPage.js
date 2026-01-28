@@ -25,6 +25,7 @@ const BiomassaPage = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editingBiomassa, setEditingBiomassa] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -46,6 +47,19 @@ const BiomassaPage = () => {
       toast.error("Gagal memuat data biomassa");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    try {
+      const response = await axios.delete(`${API_URL}/api/biomassa`, { headers: getAuthHeader() });
+      toast.success(response.data.message);
+      fetchBiomassa();
+    } catch (error) {
+      toast.error("Gagal menghapus semua data");
+    } finally {
+      setDeleting(false);
     }
   };
 
