@@ -1151,6 +1151,9 @@ async def upload_biomassa_excel(file: UploadFile = File(...), user: dict = Depen
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents))
         
+        # Clean column names - remove newlines and extra spaces
+        df.columns = df.columns.str.replace('\n', ' ').str.strip()
+        
         def safe_float(val):
             if pd.isna(val) or val == '' or val is None:
                 return None
@@ -1172,39 +1175,39 @@ async def upload_biomassa_excel(file: UploadFile = File(...), user: dict = Depen
                 # Informasi Shipment
                 "periode": safe_str(row.get("Periode")),
                 "shipment_code": safe_str(row.get("Shipment Code")),
+                "voyage_code": safe_str(row.get("Voyage Code")),
                 "lot": safe_str(row.get("Lot")),
                 "suppliers": safe_str(row.get("Suppliers")),
                 "shipper": safe_str(row.get("Shipper")),
+                "lot_1": safe_str(row.get("Lot.1")),
                 "tb": safe_str(row.get("TB")),
                 "bg": safe_str(row.get("BG")),
-                "biomass_type": safe_str(row.get("Biomass")),
+                "biomass_type": safe_str(row.get("Biomass", row.get("Biomass "))),
                 # Waktu Operasional
                 "ta": safe_str(row.get("TA")),
                 "berthed_time": safe_str(row.get("Berthed Time")),
                 "commenced_unloading": safe_str(row.get("Commenced Unloading")),
                 "completed_unloading": safe_str(row.get("Completed Unloading")),
-                "durasi_pembongkaran": safe_float(row.get("Durasi Pembongkaran")),
+                "durasi_pembongkaran_hari": safe_float(row.get("Durasi Pembongkaran (Hari)")),
                 # Muatan
                 "bl_mt": safe_float(row.get("B/L (MT)")),
                 "jembatan_timbang_mt": safe_float(row.get("Jembatan Timbang (MT)")),
-                "surveyor_unloading": safe_str(row.get("Surveyor Unloading")),
+                "surveyor_unloading": safe_str(row.get("Surveyor Unloading", row.get(" Surveyor Unloading "))),
                 # COW/ROW
                 "no_cow_row": safe_str(row.get("NO.COW / ROW")),
                 "tgl_terbit_cow": safe_str(row.get("Tgl Terbit COW")),
-                "lama_terbit_row": safe_str(row.get("Lama terbit Row")),
-                # Kualitas
-                "gcv_adb": safe_float(row.get("GCV (Kcal/Kg) ADB")),
+                "lama_terbit_row": safe_float(row.get("Lama terbit Row")),
+                # Kualitas - handle column names with newlines converted to spaces
                 "gcv_arb": safe_float(row.get("GCV (Kcal/Kg) ARB")),
+                "gcv_adb": safe_float(row.get("GCV (Kcal/Kg) ADB")),
                 "tm_arb": safe_float(row.get("TM (%wt) ARB")),
-                "im_arb": safe_float(row.get("IM (%wt) ARB")),
-                "tm_adb": safe_float(row.get("TM (%wt) ADB")),
-                "im_adb": safe_float(row.get("IM (%wt) ADB")),
+                "im_adb": safe_float(row.get("IM (%wt)  ADB", row.get("IM (%wt) ADB"))),
                 # COA
                 "no_coa": safe_str(row.get("NO. COA")),
                 "tgl_terbit_coa": safe_str(row.get("Tgl Terbit COA")),
-                "durasi_pembongkaran_2": safe_float(row.get("Durasi Pembongkaran.1")),
+                "durasi_pembongkaran_hari_2": safe_float(row.get("Durasi Pembongkaran (Hari).1")),
                 "waktu_tunggu_jam": safe_float(row.get("Waktu Tunggu (Jam)")),
-                "durasi_terbit_coa": safe_str(row.get("DURASI TERBIT COA")),
+                "durasi_terbit_coa": safe_float(row.get("DURASI TERBIT COA")),
                 # Metadata
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "created_by": user["id"]
