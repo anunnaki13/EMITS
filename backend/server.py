@@ -650,6 +650,11 @@ async def delete_trucking(trucking_id: str, user: dict = Depends(require_role(["
         raise HTTPException(status_code=404, detail="Data trucking tidak ditemukan")
     return {"message": "Data trucking berhasil dihapus"}
 
+@api_router.delete("/trucking")
+async def delete_all_trucking(user: dict = Depends(require_role(["admin"]))):
+    result = await db.trucking.delete_many({})
+    return {"message": f"Berhasil menghapus {result.deleted_count} data trucking", "count": result.deleted_count}
+
 # ==================== BIOMASSA TNY ROUTES ====================
 
 @api_router.post("/biomassa", response_model=BiomassaTNYResponse)
