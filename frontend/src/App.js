@@ -8,6 +8,7 @@ import TruckingPage from "@/pages/TruckingPage";
 import BiomassaPage from "@/pages/BiomassaPage";
 import POBatubaraPage from "@/pages/POBatubaraPage";
 import MeritOrderPage from "@/pages/MeritOrderPage";
+import AIIntelligencePage from "@/pages/AIIntelligencePage";
 import LaporanPage from "@/pages/LaporanPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Layout from "@/components/Layout";
