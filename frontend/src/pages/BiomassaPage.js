@@ -517,7 +517,46 @@ const BiomassaPage = () => {
             </TableBody>
           </Table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={biomassaList.length} itemsPerPage={ITEMS_PER_PAGE} />
       </Card>
+
+      {/* View Detail Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="bg-[#0B1221] border-white/10 max-w-4xl max-h-[90vh]">
+          <DialogHeader><DialogTitle className="text-white font-heading">Detail Data Biomassa</DialogTitle></DialogHeader>
+          <ScrollArea className="max-h-[75vh] pr-4">
+            {viewingBiomassa && (
+              <div className="space-y-6 pt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">Periode</p><p className="text-white text-sm">{viewingBiomassa.periode || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Shipment Code</p><p className="text-white text-sm">{viewingBiomassa.shipment_code || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Voyage Code</p><p className="text-white text-sm">{viewingBiomassa.voyage_code || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Lot</p><p className="text-white text-sm">{viewingBiomassa.lot || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Suppliers</p><p className="text-white text-sm">{viewingBiomassa.suppliers || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Shipper</p><p className="text-white text-sm">{viewingBiomassa.shipper || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TB / BG</p><p className="text-white text-sm">{viewingBiomassa.tb || "-"} / {viewingBiomassa.bg || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Jenis Biomassa</p><p className="text-white text-sm">{viewingBiomassa.biomass_type || "-"}</p></div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">Time Arrival</p><p className="text-white text-sm">{viewingBiomassa.ta || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Berthed Time</p><p className="text-white text-sm">{viewingBiomassa.berthed_time || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Commenced Unloading</p><p className="text-white text-sm">{viewingBiomassa.commenced_unloading || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Completed Unloading</p><p className="text-white text-sm">{viewingBiomassa.completed_unloading || "-"}</p></div>
+                </div>
+                <h4 className="text-sm font-mono text-green-400">Data Muatan & Kualitas</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">B/L (MT)</p><p className="text-white text-sm">{viewingBiomassa.bl_mt?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Jembatan Timbang (MT)</p><p className="text-white text-sm">{viewingBiomassa.jembatan_timbang_mt?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">GCV ARB</p><p className="text-white text-sm">{viewingBiomassa.gcv_arb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">GCV ADB</p><p className="text-white text-sm">{viewingBiomassa.gcv_adb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TM ARB</p><p className="text-white text-sm">{viewingBiomassa.tm_arb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">IM ADB</p><p className="text-white text-sm">{viewingBiomassa.im_adb?.toFixed(2) || "-"}</p></div>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
