@@ -381,7 +381,7 @@ async def create_vessel(data: VesselTNYCreate, user: dict = Depends(require_role
         "created_by": user["id"]
     }
     await db.vessels.insert_one(vessel_doc)
-    del vessel_doc["_id"] if "_id" in vessel_doc else None
+    vessel_doc.pop("_id", None)
     return VesselTNYResponse(**vessel_doc)
 
 @api_router.get("/vessels", response_model=List[VesselTNYResponse])
