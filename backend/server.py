@@ -2056,6 +2056,468 @@ async def get_dashboard_advanced(
         "available_moda": available_moda
     }
 
+# ==================== AI INTELLIGENCE AGENT ====================
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+# AI Chat History Collection
+ai_chat_collection = db.ai_chat_history
+
+class AIQueryRequest(BaseModel):
+    query: str
+    module: str = "general"  # general, blending, boiler_risk, contract, logistics
+    session_id: Optional[str] = None
+    parameters: Optional[dict] = None
+
+class AISettingsUpdate(BaseModel):
+    custom_api_key: Optional[str] = None
+    llm_provider: Optional[str] = "gemini"
+    llm_model: Optional[str] = "gemini-2.5-flash"
+
+async def get_database_context(module: str, parameters: dict = None) -> str:
+    """Gather relevant data from database based on module"""
+    context_parts = []
+    
+    if module in ["general", "blending", "contract"]:
+        # Get PO Batubara summary
+        po_data = await db.po_batubara.aggregate([
+            {"$group": {
+                "_id": "$spec",
+                "total_tonase": {"$sum": "$tonase_po"},
+                "count": {"$sum": 1}
+            }}
+        ]).to_list(100)
+        context_parts.append(f"PO Batubara Summary: {po_data}")
+        
+        # Get Merit Order data (top suppliers by efficiency)
+        merit_data = await db.merit_order.find(
+            {"rp_kcal": {"$ne": None}},
+            {"_id": 0, "pemasok": 1, "moda": 1, "tipikal_kcal_kg": 1, "harga_cif": 1, "rp_kcal": 1}
+        ).sort("rp_kcal", 1).limit(10).to_list(10)
+        context_parts.append(f"Top 10 Efficient Suppliers (Merit Order): {merit_data}")
+    
+    if module in ["general", "blending", "boiler_risk"]:
+        # Get recent vessel quality data
+        vessel_quality = await db.vessels.find(
+            {"gcv_arb": {"$ne": None}},
+            {"_id": 0, "name_of_vessel": 1, "suppliers": 1, "gcv_arb": 1, "tm_arb": 1, 
+             "ash_arb": 1, "slagging_index": 1, "fouling_index": 1, "completed_unloading": 1}
+        ).sort("completed_unloading", -1).limit(20).to_list(20)
+        context_parts.append(f"Recent Vessel Quality Data: {vessel_quality}")
+        
+        # Get barge quality data
+        barge_quality = await db.barges.find(
+            {"gcv_arb": {"$ne": None}},
+            {"_id": 0, "suppliers": 1, "gcv_arb": 1, "tm_arb": 1, "ash_arb": 1,
+             "slagging_index": 1, "fouling_index": 1, "completed_unloading": 1}
+        ).sort("completed_unloading", -1).limit(20).to_list(20)
+        context_parts.append(f"Recent Barge Quality Data: {barge_quality}")
+    
+    if module in ["general", "logistics"]:
+        # Get logistics data (B/L vs DS differences)
+        vessel_logistics = await db.vessels.find(
+            {"bl_mt": {"$ne": None}, "ds_mt": {"$ne": None}},
+            {"_id": 0, "name_of_vessel": 1, "suppliers": 1, "bl_mt": 1, "ds_mt": 1, 
+             "commenced_unloading": 1, "completed_unloading": 1}
+        ).sort("completed_unloading", -1).limit(30).to_list(30)
+        context_parts.append(f"Vessel Logistics Data (B/L vs DS): {vessel_logistics}")
+        
+        barge_logistics = await db.barges.find(
+            {"bl_mt": {"$ne": None}, "ds_mt": {"$ne": None}},
+            {"_id": 0, "suppliers": 1, "bl_mt": 1, "ds_mt": 1,
+             "commenced_unloading": 1, "completed_unloading": 1}
+        ).sort("completed_unloading", -1).limit(30).to_list(30)
+        context_parts.append(f"Barge Logistics Data: {barge_logistics}")
+    
+    if module in ["general", "contract"]:
+        # Get contract compliance data
+        po_summary = await db.po_batubara.aggregate([
+            {"$group": {
+                "_id": "$supplier_name",
+                "total_po_tonase": {"$sum": "$tonase_po"},
+                "po_count": {"$sum": 1}
+            }},
+            {"$sort": {"total_po_tonase": -1}},
+            {"$limit": 15}
+        ]).to_list(15)
+        context_parts.append(f"PO by Supplier: {po_summary}")
+        
+        # Get actual receipts
+        vessel_receipts = await db.vessels.aggregate([
+            {"$group": {
+                "_id": "$suppliers",
+                "total_received": {"$sum": "$ds_mt"},
+                "shipment_count": {"$sum": 1}
+            }},
+            {"$sort": {"total_received": -1}},
+            {"$limit": 15}
+        ]).to_list(15)
+        context_parts.append(f"Vessel Receipts by Supplier: {vessel_receipts}")
+    
+    if module == "blending" and parameters:
+        target_gcv = parameters.get("target_gcv", 4000)
+        context_parts.append(f"User Target GCV: {target_gcv} Kcal/kg")
+        
+        # Get available stock for blending
+        available_stock = await db.vessels.find(
+            {"gcv_arb": {"$ne": None}, "ds_mt": {"$gt": 0}},
+            {"_id": 0, "name_of_vessel": 1, "suppliers": 1, "gcv_arb": 1, "ds_mt": 1, "ash_arb": 1}
+        ).sort("completed_unloading", -1).limit(15).to_list(15)
+        context_parts.append(f"Available Vessel Stock for Blending: {available_stock}")
+        
+        biomass_stock = await db.biomassa.find(
+            {"jembatan_timbang_mt": {"$gt": 0}},
+            {"_id": 0, "biomass_type": 1, "jembatan_timbang_mt": 1, "gcv_arb": 1}
+        ).sort("completed_unloading", -1).limit(10).to_list(10)
+        context_parts.append(f"Available Biomass Stock: {biomass_stock}")
+    
+    return "\n\n".join(context_parts)
+
+def get_system_prompt(module: str) -> str:
+    """Get system prompt based on module"""
+    base_prompt = """Anda adalah Tenayan Fuel Intelligence Agent - Asisten ahli Rendal Bahan Bakar PLTU Tenayan.
+Tugas Anda adalah mengolah data dari database (Vessel, Barge, Trucking, Biomassa, PO, dan Merit Order) 
+untuk memberikan wawasan berbasis Data Science, Machine Learning, dan AI.
+
+PENTING:
+- Jawab dalam Bahasa Indonesia
+- Berikan analisis yang akurat berdasarkan data
+- Sertakan perhitungan numerik jika diperlukan
+- Format output dalam tabel atau bullet points untuk kemudahan membaca
+- Berikan rekomendasi actionable
+"""
+    
+    module_prompts = {
+        "blending": base_prompt + """
+MODUL: Smart Blending Optimizer
+Fokus: Optimasi campuran batubara & biomassa secara ekonomis.
+
+Tugas spesifik:
+1. Identifikasi kargo tersedia berdasarkan 'Completed Unloading' terbaru
+2. Lakukan perhitungan optimasi untuk mencari porsi (%) campuran LRC, MRC, dan Biomassa
+3. Batasan: Total campuran harus mencapai Target GCV, dengan Ash Content < 10%
+4. Utamakan stok dengan Rp/Kcal terendah dari Merit Order
+5. Tampilkan hasil: [Nama Supplier] | [Porsi %] | [Tonase Rekomendasi] | [Harga Estimasi]
+
+Rumus GCV Campuran: GCV_mix = Σ(GCV_i × Porsi_i)
+""",
+        "boiler_risk": base_prompt + """
+MODUL: Boiler Risk Warning
+Fokus: Deteksi potensi kerusakan boiler dari data laboratorium.
+
+Tugas spesifik:
+1. Analisis data kualitas kimia: SiO2, Al2O3, Fe2O3, CaO, Na2O, K2O
+2. Hitung indeks Slagging dan Fouling menggunakan rumus standar industri
+3. Kriteria risiko:
+   - Slagging Index > 0.6 atau Fouling Index > 0.4 = 'HIGH RISK'
+   - Na2O > 2% = Peringatan khusus potensi kerak pipa
+4. Tampilkan 'Alert Board' daftar kargo berisiko tinggi di stockpile
+5. Berikan rekomendasi strategi sootblowing
+
+Rumus Slagging Index: Rs = (Base/Acid) × (S content)
+Rumus Fouling Index: Rf = (Base/Acid) × Na2O
+""",
+        "contract": base_prompt + """
+MODUL: Contract Compliance & PO Tracker
+Fokus: Digitalisasi monitoring kontrak tanpa rekap manual.
+
+Tugas spesifik:
+1. Lakukan vlookup otomatis antara PO BB dengan penerimaan (barge, vessel, trucking)
+2. Hitung: Sisa Kuota = Tonase PO - Total DS MT yang diterima
+3. Bandingkan GCV Kontrak (di PO) dengan GCV Realisasi (di Penerimaan)
+4. Output Dashboard:
+   - List PO yang hampir habis (< 10% sisa)
+   - List Supplier dengan GCV di bawah spek kontrak (Defisit Kalori)
+5. Berikan early warning untuk kontrak yang perlu diperpanjang
+""",
+        "logistics": base_prompt + """
+MODUL: Logistic Efficiency & Loss Analysis
+Fokus: Data Science pada efisiensi pengiriman.
+
+Tugas spesifik:
+1. Hitung selisih antara B/L (MT) dan DS (MT) - Draft Survey
+2. Hitung rata-rata % Losses per supplier: ((B/L - DS) / B/L) × 100%
+3. Hitung 'Durasi Pembongkaran' rata-rata per moda transportasi
+4. Output:
+   - 3 Supplier dengan tingkat penyusutan (losses) tertinggi
+   - Tren durasi bongkar per bulan untuk deteksi inefisiensi di Jetty
+   - Anomali pengiriman yang perlu investigasi
+""",
+        "general": base_prompt + """
+MODUL: General Intelligence
+Fokus: Menjawab pertanyaan umum tentang data bahan bakar PLTU Tenayan.
+
+Anda dapat:
+1. Memberikan ringkasan statistik dari semua data
+2. Menjawab pertanyaan spesifik tentang supplier, kualitas, atau pengiriman
+3. Memberikan rekomendasi berdasarkan analisis data
+4. Menjelaskan tren dan pola dalam data historis
+"""
+    }
+    
+    return module_prompts.get(module, module_prompts["general"])
+
+@api_router.post("/ai/query")
+async def ai_query(request: AIQueryRequest, user: dict = Depends(get_current_user)):
+    """Process AI query with database context"""
+    try:
+        # Get user's custom API key or use default
+        user_settings = await db.user_settings.find_one({"user_id": user["id"]})
+        
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        llm_provider = "gemini"
+        llm_model = "gemini-2.5-flash"
+        
+        if user_settings:
+            if user_settings.get("custom_api_key"):
+                api_key = user_settings["custom_api_key"]
+            if user_settings.get("llm_provider"):
+                llm_provider = user_settings["llm_provider"]
+            if user_settings.get("llm_model"):
+                llm_model = user_settings["llm_model"]
+        
+        # Generate session ID if not provided
+        session_id = request.session_id or f"tenayan-ai-{user['id']}-{uuid.uuid4()}"
+        
+        # Get database context
+        db_context = await get_database_context(request.module, request.parameters)
+        
+        # Get system prompt
+        system_prompt = get_system_prompt(request.module)
+        
+        # Initialize LLM Chat
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=session_id,
+            system_message=system_prompt
+        ).with_model(llm_provider, llm_model)
+        
+        # Prepare message with context
+        full_query = f"""DATA CONTEXT:
+{db_context}
+
+USER QUERY:
+{request.query}
+
+Berikan analisis dan jawaban berdasarkan data di atas."""
+        
+        user_message = UserMessage(text=full_query)
+        
+        # Get AI response
+        response = await chat.send_message(user_message)
+        
+        # Save to chat history
+        chat_entry = {
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "session_id": session_id,
+            "module": request.module,
+            "query": request.query,
+            "response": response,
+            "parameters": request.parameters,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await ai_chat_collection.insert_one(chat_entry)
+        
+        return {
+            "response": response,
+            "session_id": session_id,
+            "module": request.module
+        }
+        
+    except Exception as e:
+        logger.error(f"AI Query Error: {e}")
+        raise HTTPException(status_code=500, detail=f"AI Query failed: {str(e)}")
+
+@api_router.get("/ai/history")
+async def get_ai_chat_history(
+    session_id: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=100),
+    user: dict = Depends(get_current_user)
+):
+    """Get AI chat history for user"""
+    query = {"user_id": user["id"]}
+    if session_id:
+        query["session_id"] = session_id
+    
+    history = await ai_chat_collection.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    return history
+
+@api_router.delete("/ai/history")
+async def clear_ai_chat_history(user: dict = Depends(get_current_user)):
+    """Clear AI chat history for user"""
+    result = await ai_chat_collection.delete_many({"user_id": user["id"]})
+    return {"message": f"Berhasil menghapus {result.deleted_count} riwayat chat"}
+
+@api_router.get("/ai/settings")
+async def get_ai_settings(user: dict = Depends(get_current_user)):
+    """Get user's AI settings"""
+    settings = await db.user_settings.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not settings:
+        return {
+            "custom_api_key": None,
+            "llm_provider": "gemini",
+            "llm_model": "gemini-2.5-flash",
+            "using_default": True
+        }
+    return {
+        **settings,
+        "using_default": not bool(settings.get("custom_api_key"))
+    }
+
+@api_router.put("/ai/settings")
+async def update_ai_settings(settings: AISettingsUpdate, user: dict = Depends(get_current_user)):
+    """Update user's AI settings"""
+    update_data = {
+        "user_id": user["id"],
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if settings.custom_api_key is not None:
+        update_data["custom_api_key"] = settings.custom_api_key if settings.custom_api_key else None
+    if settings.llm_provider:
+        update_data["llm_provider"] = settings.llm_provider
+    if settings.llm_model:
+        update_data["llm_model"] = settings.llm_model
+    
+    await db.user_settings.update_one(
+        {"user_id": user["id"]},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    return {"message": "Pengaturan AI berhasil disimpan"}
+
+# Quick Analysis Endpoints for Dashboard Modules
+@api_router.get("/ai/quick/blending-suggestion")
+async def get_blending_suggestion(target_gcv: int = 4000, user: dict = Depends(get_current_user)):
+    """Get quick blending suggestion without full AI query"""
+    # Get available coal stock
+    vessels = await db.vessels.find(
+        {"gcv_arb": {"$ne": None}, "ds_mt": {"$gt": 0}},
+        {"_id": 0, "name_of_vessel": 1, "suppliers": 1, "gcv_arb": 1, "ds_mt": 1, "ash_arb": 1}
+    ).sort("completed_unloading", -1).limit(10).to_list(10)
+    
+    biomass = await db.biomassa.find(
+        {"jembatan_timbang_mt": {"$gt": 0}},
+        {"_id": 0, "biomass_type": 1, "jembatan_timbang_mt": 1}
+    ).limit(5).to_list(5)
+    
+    return {
+        "target_gcv": target_gcv,
+        "available_coal": vessels,
+        "available_biomass": biomass,
+        "recommendation": "Gunakan modul AI untuk analisis blending yang lebih detail"
+    }
+
+@api_router.get("/ai/quick/boiler-alerts")
+async def get_boiler_alerts(user: dict = Depends(get_current_user)):
+    """Get quick boiler risk alerts"""
+    # Get high risk items
+    high_risk_vessels = await db.vessels.find(
+        {"$or": [
+            {"slagging_index": {"$regex": "HIGH|SEVERE", "$options": "i"}},
+            {"fouling_index": {"$regex": "HIGH|SEVERE", "$options": "i"}}
+        ]},
+        {"_id": 0, "name_of_vessel": 1, "suppliers": 1, "slagging_index": 1, "fouling_index": 1}
+    ).sort("completed_unloading", -1).limit(10).to_list(10)
+    
+    high_risk_barges = await db.barges.find(
+        {"$or": [
+            {"slagging_index": {"$regex": "HIGH|SEVERE", "$options": "i"}},
+            {"fouling_index": {"$regex": "HIGH|SEVERE", "$options": "i"}}
+        ]},
+        {"_id": 0, "suppliers": 1, "slagging_index": 1, "fouling_index": 1}
+    ).sort("completed_unloading", -1).limit(10).to_list(10)
+    
+    return {
+        "high_risk_vessels": high_risk_vessels,
+        "high_risk_barges": high_risk_barges,
+        "total_alerts": len(high_risk_vessels) + len(high_risk_barges)
+    }
+
+@api_router.get("/ai/quick/contract-status")
+async def get_contract_status(user: dict = Depends(get_current_user)):
+    """Get quick contract compliance status"""
+    # Get PO summary
+    po_summary = await db.po_batubara.aggregate([
+        {"$group": {
+            "_id": "$supplier_name",
+            "total_po": {"$sum": "$tonase_po"},
+            "po_count": {"$sum": 1}
+        }},
+        {"$sort": {"total_po": -1}},
+        {"$limit": 10}
+    ]).to_list(10)
+    
+    # Get receipts
+    receipts = await db.vessels.aggregate([
+        {"$group": {
+            "_id": "$suppliers",
+            "total_received": {"$sum": "$ds_mt"}
+        }}
+    ]).to_list(100)
+    
+    receipts_map = {r["_id"]: r["total_received"] for r in receipts if r["_id"]}
+    
+    contract_status = []
+    for po in po_summary:
+        supplier = po["_id"]
+        received = receipts_map.get(supplier, 0)
+        remaining = po["total_po"] - received
+        percentage = (received / po["total_po"] * 100) if po["total_po"] > 0 else 0
+        
+        contract_status.append({
+            "supplier": supplier,
+            "total_po": po["total_po"],
+            "received": received,
+            "remaining": remaining,
+            "percentage": percentage,
+            "status": "CRITICAL" if percentage > 90 else "WARNING" if percentage > 70 else "OK"
+        })
+    
+    return {"contracts": contract_status}
+
+@api_router.get("/ai/quick/logistics-losses")
+async def get_logistics_losses(user: dict = Depends(get_current_user)):
+    """Get quick logistics losses analysis"""
+    # Calculate losses from vessels
+    vessels = await db.vessels.find(
+        {"bl_mt": {"$ne": None}, "ds_mt": {"$ne": None}},
+        {"_id": 0, "suppliers": 1, "bl_mt": 1, "ds_mt": 1}
+    ).to_list(1000)
+    
+    supplier_losses = {}
+    for v in vessels:
+        supplier = v.get("suppliers", "Unknown")
+        bl = v.get("bl_mt", 0) or 0
+        ds = v.get("ds_mt", 0) or 0
+        if bl > 0:
+            loss_pct = ((bl - ds) / bl) * 100
+            if supplier not in supplier_losses:
+                supplier_losses[supplier] = []
+            supplier_losses[supplier].append(loss_pct)
+    
+    # Calculate averages
+    losses_summary = []
+    for supplier, losses in supplier_losses.items():
+        avg_loss = sum(losses) / len(losses)
+        losses_summary.append({
+            "supplier": supplier,
+            "avg_loss_pct": avg_loss,
+            "shipment_count": len(losses)
+        })
+    
+    # Sort by highest loss
+    losses_summary.sort(key=lambda x: x["avg_loss_pct"], reverse=True)
+    
+    return {
+        "top_losses": losses_summary[:5],
+        "lowest_losses": losses_summary[-5:] if len(losses_summary) > 5 else []
+    }
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
