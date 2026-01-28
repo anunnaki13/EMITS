@@ -532,6 +532,11 @@ async def delete_vessel(vessel_id: str, user: dict = Depends(require_role(["admi
         raise HTTPException(status_code=404, detail="Data vessel tidak ditemukan")
     return {"message": "Data vessel berhasil dihapus"}
 
+@api_router.delete("/vessels")
+async def delete_all_vessels(user: dict = Depends(require_role(["admin"]))):
+    result = await db.vessels.delete_many({})
+    return {"message": f"Berhasil menghapus {result.deleted_count} data vessel", "count": result.deleted_count}
+
 # ==================== BARGE TNY ROUTES ====================
 
 @api_router.post("/barges", response_model=BargeTNYResponse)
