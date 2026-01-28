@@ -36,7 +36,10 @@ import {
   Shield,
   User,
   Mail,
-  Loader2
+  Loader2,
+  Bot,
+  Key,
+  Save
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
