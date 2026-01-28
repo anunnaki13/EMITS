@@ -932,21 +932,93 @@ async def upload_barge_excel(file: UploadFile = File(...), user: dict = Depends(
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents))
         
+        def safe_float(val):
+            if pd.isna(val) or val == '' or val is None:
+                return None
+            try:
+                return float(val)
+            except:
+                return None
+        
+        def safe_str(val):
+            if pd.isna(val) or val is None:
+                return ""
+            return str(val).strip()
+        
         records = []
         for _, row in df.iterrows():
             barge_id = str(uuid.uuid4())
             barge_doc = {
                 "id": barge_id,
-                "periode_ta": str(row.get("Periode TA (Rakor)", "")),
-                "periode_realisasi": str(row.get("Periode Realisasi", "")),
-                "shipment_code": str(row.get("Shipment Code", "")),
-                "voyage_code": str(row.get("Voyage Code", "")),
-                "suppliers": str(row.get("Suppliers", "")),
-                "voyage": str(row.get("Voyage", "")),
-                "name_of_barge": str(row.get("Name Of Barge", row.get("Name Of Vessel", ""))),
-                "coal_from": str(row.get("Coal From", "")),
-                "bl_mt": float(row.get("B/L (MT)", 0)) if pd.notna(row.get("B/L (MT)")) else None,
-                "ds_mt": float(row.get("DS (MT)", 0)) if pd.notna(row.get("DS (MT)")) else None,
+                # Informasi Shipment
+                "periode": safe_str(row.get("Periode")),
+                "shipment_code": safe_str(row.get("Shipment Code")),
+                "voyage_code": safe_str(row.get("Voyage Code")),
+                "shipment": safe_str(row.get("Shipment")),
+                "suppliers": safe_str(row.get("Suppliers")),
+                "voyage": safe_str(row.get("Voyage")),
+                "tb": safe_str(row.get("TB")),
+                "bg": safe_str(row.get("BG")),
+                "coal_from": safe_str(row.get("Coal From")),
+                # Waktu Operasional
+                "ta": safe_str(row.get("TA")),
+                "berthed_time": safe_str(row.get("Berthed Time")),
+                "commenced_unloading": safe_str(row.get("Commenced Unloading")),
+                "completed_unloading": safe_str(row.get("Completed Unloading")),
+                "durasi_pembongkaran_hari": safe_float(row.get("Durasi Pembongkaran (Hari)")),
+                "durasi_pembongkaran_jam": safe_float(row.get("Durasi Pembongkaran (Jam)")),
+                "waktu_tunggu_jam": safe_float(row.get("waktu tunggu (Jam)")),
+                # Muatan
+                "bl_mt": safe_float(row.get("B/L (MT)")),
+                "ds_mt": safe_float(row.get("DS (MT)")),
+                # COW
+                "no_cow": safe_str(row.get("NO.COW")),
+                "tgl_terbit_cow": safe_str(row.get("Tgl Terbit COW")),
+                # Kualitas - GCV
+                "gcv_arb": safe_float(row.get("GCV (Kcal/Kg)\nARB", row.get("GCV (Kcal/Kg) ARB"))),
+                "gcv_adb": safe_float(row.get("GCV (Kcal/Kg)\nADB", row.get("GCV (Kcal/Kg) ADB"))),
+                "gcv_db": safe_float(row.get("GCV (Kcal/Kg)\nDB", row.get("GCV (Kcal/Kg) DB"))),
+                # Kualitas - Moisture
+                "tm_arb": safe_float(row.get("TM (%wt)\nARB", row.get("TM (%wt) ARB"))),
+                "im_adb": safe_float(row.get("IM (%wt) \nADB", row.get("IM (%wt) ADB"))),
+                # Kualitas - Ash Content
+                "ash_arb": safe_float(row.get("Ash \nContent (%wt) \nARB", row.get("Ash Content (%wt) ARB"))),
+                "ash_adb": safe_float(row.get("Ash \nContent (%wt)\nADB", row.get("Ash Content (%wt) ADB"))),
+                "ash_db": safe_float(row.get("Ash \nContent (%wt)\nDB", row.get("Ash Content (%wt) DB"))),
+                # Kualitas - VM & FC
+                "vm_arb": safe_float(row.get("VM (%wt)\nARB")), "vm_adb": safe_float(row.get("VM (%wt)\nADB")),
+                "fc_arb": safe_float(row.get("FC (%wt)\nARB")), "fc_adb": safe_float(row.get("FC (%wt)\nADB")),
+                # Kualitas - Sulfur
+                "ts_arb": safe_float(row.get("Total Sulphur (%wt)\nARB")),
+                "ts_adb": safe_float(row.get("Total Sulphur (%wt)\nADB")),
+                "ts_db": safe_float(row.get("Total Sulphur (%wt)\nDB")),
+                "ts_dafb": safe_float(row.get("Total Sulphur (%wt)\nDAFB")),
+                # Ultimate Analysis
+                "c_arb": safe_float(row.get("C (%wt)\nARB")), "c_adb": safe_float(row.get("C (%wt)\nADB")),
+                "h_arb": safe_float(row.get("H (%wt)\nARB")), "h_adb": safe_float(row.get("H (%wt)\nADB")),
+                "n_arb": safe_float(row.get("N (%wt)\nARB")), "n_adb": safe_float(row.get("N (%wt)\nADB")),
+                "n_dafb": safe_float(row.get("N (%wt)\nDAFB")),
+                "o_arb": safe_float(row.get("O (%wt)\nARB")), "o_adb": safe_float(row.get("O (%wt)\nADB")),
+                # HGI & Index
+                "hgi": safe_float(row.get("HGI (Point Index)")),
+                "slagging_index": safe_str(row.get("Slagging (Index)")),
+                "fouling_index": safe_str(row.get("Fouling (Index)")),
+                "idt_reducing": safe_float(row.get("IDT Reducing (C°)")),
+                # Ash Composition
+                "sio2_db": safe_float(row.get("SiO2 (%DB)")), "al2o3_db": safe_float(row.get("Al2O3 (%DB)")),
+                "tio2_db": safe_float(row.get("TiO2 (%DB)")), "fe2o3_db": safe_float(row.get("Fe2O3 (%DB)")),
+                "cao_db": safe_float(row.get("CaO (%DB)")), "mgo_db": safe_float(row.get("MgO (%DB)")),
+                "k2o_db": safe_float(row.get("K2O (%DB)")), "na2o_db": safe_float(row.get("Na2O (%DB)")),
+                "so3_db": safe_float(row.get("SO3 (%DB)")), "p2o5_db": safe_float(row.get("P2O5 (%DB)")),
+                "mno2_db": safe_float(row.get("MnO2 (%DB)")), "mn3o4_db": safe_float(row.get("Mn3O4 (%DB)")),
+                # Size Analysis
+                "size_70mm": safe_float(row.get("< 70 mm (%wt)")), "size_50mm": safe_float(row.get("< 50 mm (%wt)")),
+                "size_32mm": safe_float(row.get("< 32 mm (%wt)")), "size_2_38mm": safe_float(row.get("< 2,38 mm (%wt)")),
+                # COA
+                "no_coa": safe_str(row.get("NO. COA")),
+                "tgl_terbit_coa": safe_str(row.get("Tgl Terbit COA")),
+                "durasi_terbit_coa": safe_str(row.get("DURASI TERBIT COA")),
+                # Metadata
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "created_by": user["id"]
             }
