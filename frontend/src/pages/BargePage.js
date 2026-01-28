@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Anchor, Plus, Search, Upload, MoreHorizontal, Edit, Trash2, Loader2, FileSpreadsheet, AlertTriangle } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -27,13 +28,23 @@ const BargePage = () => {
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    periode_ta: "", periode_realisasi: "", shipment_code: "", voyage_code: "",
-    suppliers: "", voyage: "", name_of_barge: "", coal_from: "",
-    time_arrival: "", berthed: "", time_commenced_unloading: "", completed_unloading: "",
-    durasi_pembongkaran_hari: "", bl_mt: "", ds_mt: "", no_cow: "",
-    tgl_terbit_cow: "", gcv_arb: "", tm_arb: "", no_coa: ""
-  });
+  const initialFormData = {
+    periode: "", shipment_code: "", voyage_code: "", shipment: "", suppliers: "", voyage: "",
+    tb: "", bg: "", coal_from: "", ta: "", berthed_time: "", commenced_unloading: "", completed_unloading: "",
+    durasi_pembongkaran_hari: "", durasi_pembongkaran_jam: "", waktu_tunggu_jam: "",
+    bl_mt: "", ds_mt: "", no_cow: "", tgl_terbit_cow: "",
+    gcv_arb: "", gcv_adb: "", gcv_db: "", tm_arb: "", im_adb: "",
+    ash_arb: "", ash_adb: "", ash_db: "", vm_arb: "", vm_adb: "", fc_arb: "", fc_adb: "",
+    ts_arb: "", ts_adb: "", ts_db: "", ts_dafb: "",
+    c_arb: "", c_adb: "", h_arb: "", h_adb: "", n_arb: "", n_adb: "", n_dafb: "", o_arb: "", o_adb: "",
+    hgi: "", slagging_index: "", fouling_index: "", idt_reducing: "",
+    sio2_db: "", al2o3_db: "", tio2_db: "", fe2o3_db: "", cao_db: "", mgo_db: "",
+    k2o_db: "", na2o_db: "", so3_db: "", p2o5_db: "", mno2_db: "", mn3o4_db: "",
+    size_70mm: "", size_50mm: "", size_32mm: "", size_2_38mm: "",
+    no_coa: "", tgl_terbit_coa: "", durasi_terbit_coa: ""
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => { fetchBarges(); }, [search]);
 
@@ -49,31 +60,24 @@ const BargePage = () => {
     }
   };
 
-  const handleDeleteAll = async () => {
-    setDeleting(true);
-    try {
-      const response = await axios.delete(`${API_URL}/api/barges`, { headers: getAuthHeader() });
-      toast.success(response.data.message);
-      fetchBarges();
-    } catch (error) {
-      toast.error("Gagal menghapus semua data");
-    } finally {
-      setDeleting(false);
-    }
-  };
+  const parseFloat2 = (val) => val ? parseFloat(val) : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const dataToSend = {
-        ...formData,
-        durasi_pembongkaran_hari: formData.durasi_pembongkaran_hari ? parseFloat(formData.durasi_pembongkaran_hari) : null,
-        bl_mt: formData.bl_mt ? parseFloat(formData.bl_mt) : null,
-        ds_mt: formData.ds_mt ? parseFloat(formData.ds_mt) : null,
-        gcv_arb: formData.gcv_arb ? parseFloat(formData.gcv_arb) : null,
-        tm_arb: formData.tm_arb ? parseFloat(formData.tm_arb) : null
-      };
+      const dataToSend = { ...formData };
+      // Convert numeric fields
+      const numericFields = ['durasi_pembongkaran_hari', 'durasi_pembongkaran_jam', 'waktu_tunggu_jam',
+        'bl_mt', 'ds_mt', 'gcv_arb', 'gcv_adb', 'gcv_db', 'tm_arb', 'im_adb',
+        'ash_arb', 'ash_adb', 'ash_db', 'vm_arb', 'vm_adb', 'fc_arb', 'fc_adb',
+        'ts_arb', 'ts_adb', 'ts_db', 'ts_dafb', 'c_arb', 'c_adb', 'h_arb', 'h_adb',
+        'n_arb', 'n_adb', 'n_dafb', 'o_arb', 'o_adb', 'hgi', 'idt_reducing',
+        'sio2_db', 'al2o3_db', 'tio2_db', 'fe2o3_db', 'cao_db', 'mgo_db',
+        'k2o_db', 'na2o_db', 'so3_db', 'p2o5_db', 'mno2_db', 'mn3o4_db',
+        'size_70mm', 'size_50mm', 'size_32mm', 'size_2_38mm'];
+      numericFields.forEach(f => { dataToSend[f] = parseFloat2(formData[f]); });
+
       if (editingBarge) {
         await axios.put(`${API_URL}/api/barges/${editingBarge.id}`, dataToSend, { headers: getAuthHeader() });
         toast.success("Data barge berhasil diperbarui");
@@ -93,19 +97,12 @@ const BargePage = () => {
 
   const handleEdit = (barge) => {
     setEditingBarge(barge);
-    setFormData({
-      periode_ta: barge.periode_ta || "", periode_realisasi: barge.periode_realisasi || "",
-      shipment_code: barge.shipment_code || "", voyage_code: barge.voyage_code || "",
-      suppliers: barge.suppliers || "", voyage: barge.voyage || "",
-      name_of_barge: barge.name_of_barge || "", coal_from: barge.coal_from || "",
-      time_arrival: barge.time_arrival || "", berthed: barge.berthed || "",
-      time_commenced_unloading: barge.time_commenced_unloading || "", completed_unloading: barge.completed_unloading || "",
-      durasi_pembongkaran_hari: barge.durasi_pembongkaran_hari?.toString() || "",
-      bl_mt: barge.bl_mt?.toString() || "", ds_mt: barge.ds_mt?.toString() || "",
-      no_cow: barge.no_cow || "", tgl_terbit_cow: barge.tgl_terbit_cow || "",
-      gcv_arb: barge.gcv_arb?.toString() || "", tm_arb: barge.tm_arb?.toString() || "",
-      no_coa: barge.no_coa || ""
+    const newFormData = {};
+    Object.keys(initialFormData).forEach(key => {
+      const val = barge[key];
+      newFormData[key] = val !== null && val !== undefined ? String(val) : "";
     });
+    setFormData(newFormData);
     setDialogOpen(true);
   };
 
@@ -120,14 +117,27 @@ const BargePage = () => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    try {
+      const response = await axios.delete(`${API_URL}/api/barges`, { headers: getAuthHeader() });
+      toast.success(response.data.message);
+      fetchBarges();
+    } catch (error) {
+      toast.error("Gagal menghapus semua data");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
+    const fd = new FormData();
+    fd.append("file", file);
     setSubmitting(true);
     try {
-      const response = await axios.post(`${API_URL}/api/upload/barge`, formData, {
+      const response = await axios.post(`${API_URL}/api/upload/barge`, fd, {
         headers: { ...getAuthHeader(), "Content-Type": "multipart/form-data" }
       });
       toast.success(response.data.message);
@@ -141,19 +151,18 @@ const BargePage = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      periode_ta: "", periode_realisasi: "", shipment_code: "", voyage_code: "",
-      suppliers: "", voyage: "", name_of_barge: "", coal_from: "",
-      time_arrival: "", berthed: "", time_commenced_unloading: "", completed_unloading: "",
-      durasi_pembongkaran_hari: "", bl_mt: "", ds_mt: "", no_cow: "",
-      tgl_terbit_cow: "", gcv_arb: "", tm_arb: "", no_coa: ""
-    });
-    setEditingBarge(null);
-  };
-
+  const resetForm = () => { setFormData(initialFormData); setEditingBarge(null); };
   const canEdit = user?.role === "admin" || user?.role === "operator";
   const isAdmin = user?.role === "admin";
+
+  const FormField = ({ label, name, type = "text" }) => (
+    <div className="space-y-2">
+      <Label className="text-slate-300 text-xs">{label}</Label>
+      <Input type={type} step={type === "number" ? "0.001" : undefined} value={formData[name]}
+        onChange={(e) => setFormData({...formData, [name]: e.target.value})}
+        className="bg-slate-950/50 border-slate-800 text-white h-9 text-sm" />
+    </div>
+  );
 
   return (
     <div className="space-y-6" data-testid="barge-page">
@@ -177,8 +186,7 @@ const BargePage = () => {
                 <AlertDialogContent className="bg-[#0B1221] border-white/10">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-white flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-400" />
-                      Hapus Semua Data Barge?
+                      <AlertTriangle className="w-5 h-5 text-red-400" />Hapus Semua Data Barge?
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-slate-400">
                       Tindakan ini akan menghapus <span className="text-red-400 font-bold">{barges.length}</span> data barge secara permanen.
@@ -200,11 +208,12 @@ const BargePage = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-[#0B1221] border-white/10 max-w-md">
-                <DialogHeader><DialogTitle className="text-white font-heading">Upload Data Excel</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="text-white font-heading">Upload Data Excel Barge</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-blue-500/50 transition-colors">
                     <FileSpreadsheet className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-                    <p className="text-slate-400 mb-4">Pilih file Excel (.xlsx, .xls)</p>
+                    <p className="text-slate-400 mb-2">Format kolom Excel harus sesuai template</p>
+                    <p className="text-slate-500 text-xs mb-4">Kolom: Periode, Shipment Code, TB, BG, Suppliers, dll</p>
                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
                     <Button onClick={() => fileInputRef.current?.click()} disabled={submitting} className="bg-blue-600 hover:bg-blue-500">
                       {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Pilih File
@@ -219,48 +228,162 @@ const BargePage = () => {
                   <Plus className="w-4 h-4 mr-2" />Tambah Data
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#0B1221] border-white/10 max-w-4xl max-h-[90vh]">
+              <DialogContent className="bg-[#0B1221] border-white/10 max-w-5xl max-h-[90vh]">
                 <DialogHeader><DialogTitle className="text-white font-heading">{editingBarge ? "Edit Data Barge" : "Tambah Data Barge"}</DialogTitle></DialogHeader>
-                <ScrollArea className="max-h-[70vh] pr-4">
+                <ScrollArea className="max-h-[75vh] pr-4">
                   <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-mono uppercase tracking-wider text-blue-400">Informasi Shipment</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">Periode TA</Label><Input value={formData.periode_ta} onChange={(e) => setFormData({...formData, periode_ta: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="barge-periode-ta" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Periode Realisasi</Label><Input value={formData.periode_realisasi} onChange={(e) => setFormData({...formData, periode_realisasi: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Shipment Code</Label><Input value={formData.shipment_code} onChange={(e) => setFormData({...formData, shipment_code: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="barge-shipment-code" /></div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">Voyage Code</Label><Input value={formData.voyage_code} onChange={(e) => setFormData({...formData, voyage_code: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Supplier</Label><Input value={formData.suppliers} onChange={(e) => setFormData({...formData, suppliers: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="barge-suppliers" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Voyage</Label><Input value={formData.voyage} onChange={(e) => setFormData({...formData, voyage: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required /></div>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-mono uppercase tracking-wider text-blue-400">Informasi Tongkang</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">Nama Barge</Label><Input value={formData.name_of_barge} onChange={(e) => setFormData({...formData, name_of_barge: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required data-testid="barge-name" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">Asal Batubara</Label><Input value={formData.coal_from} onChange={(e) => setFormData({...formData, coal_from: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" required /></div>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-mono uppercase tracking-wider text-blue-400">Data Muatan</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">B/L (MT)</Label><Input type="number" step="0.001" value={formData.bl_mt} onChange={(e) => setFormData({...formData, bl_mt: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" data-testid="barge-bl-mt" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">DS (MT)</Label><Input type="number" step="0.001" value={formData.ds_mt} onChange={(e) => setFormData({...formData, ds_mt: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" data-testid="barge-ds-mt" /></div>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-mono uppercase tracking-wider text-blue-400">Data Kualitas</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label className="text-slate-300">GCV ARB (Kcal/Kg)</Label><Input type="number" value={formData.gcv_arb} onChange={(e) => setFormData({...formData, gcv_arb: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" /></div>
-                        <div className="space-y-2"><Label className="text-slate-300">TM ARB (%)</Label><Input type="number" step="0.01" value={formData.tm_arb} onChange={(e) => setFormData({...formData, tm_arb: e.target.value})} className="bg-slate-950/50 border-slate-800 text-white" /></div>
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4">
+                    <Tabs defaultValue="shipment" className="w-full">
+                      <TabsList className="grid w-full grid-cols-5 bg-slate-900/50">
+                        <TabsTrigger value="shipment" className="text-xs data-[state=active]:bg-blue-500/20">Shipment</TabsTrigger>
+                        <TabsTrigger value="muatan" className="text-xs data-[state=active]:bg-blue-500/20">Muatan</TabsTrigger>
+                        <TabsTrigger value="kualitas" className="text-xs data-[state=active]:bg-blue-500/20">Kualitas</TabsTrigger>
+                        <TabsTrigger value="ultimate" className="text-xs data-[state=active]:bg-blue-500/20">Ultimate</TabsTrigger>
+                        <TabsTrigger value="ash" className="text-xs data-[state=active]:bg-blue-500/20">Ash Comp</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="shipment" className="space-y-4 mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="Periode" name="periode" />
+                          <FormField label="Shipment Code" name="shipment_code" />
+                          <FormField label="Voyage Code" name="voyage_code" />
+                          <FormField label="Shipment" name="shipment" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="Suppliers" name="suppliers" />
+                          <FormField label="Voyage" name="voyage" />
+                          <FormField label="TB (Tug Boat)" name="tb" />
+                          <FormField label="BG (Barge)" name="bg" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="Coal From" name="coal_from" />
+                          <FormField label="TA (Time Arrival)" name="ta" />
+                          <FormField label="Berthed Time" name="berthed_time" />
+                          <FormField label="Commenced Unloading" name="commenced_unloading" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="Completed Unloading" name="completed_unloading" />
+                          <FormField label="Durasi Pembongkaran (Hari)" name="durasi_pembongkaran_hari" type="number" />
+                          <FormField label="Durasi Pembongkaran (Jam)" name="durasi_pembongkaran_jam" type="number" />
+                          <FormField label="Waktu Tunggu (Jam)" name="waktu_tunggu_jam" type="number" />
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="muatan" className="space-y-4 mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="B/L (MT)" name="bl_mt" type="number" />
+                          <FormField label="DS (MT)" name="ds_mt" type="number" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="NO. COW" name="no_cow" />
+                          <FormField label="Tgl Terbit COW" name="tgl_terbit_cow" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField label="NO. COA" name="no_coa" />
+                          <FormField label="Tgl Terbit COA" name="tgl_terbit_coa" />
+                          <FormField label="Durasi Terbit COA" name="durasi_terbit_coa" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Size Analysis</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="< 70 mm (%wt)" name="size_70mm" type="number" />
+                          <FormField label="< 50 mm (%wt)" name="size_50mm" type="number" />
+                          <FormField label="< 32 mm (%wt)" name="size_32mm" type="number" />
+                          <FormField label="< 2,38 mm (%wt)" name="size_2_38mm" type="number" />
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="kualitas" className="space-y-4 mt-4">
+                        <h4 className="text-sm font-mono text-blue-400">GCV (Kcal/Kg)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField label="GCV ARB" name="gcv_arb" type="number" />
+                          <FormField label="GCV ADB" name="gcv_adb" type="number" />
+                          <FormField label="GCV DB" name="gcv_db" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Moisture (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="TM ARB" name="tm_arb" type="number" />
+                          <FormField label="IM ADB" name="im_adb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Ash Content (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField label="Ash ARB" name="ash_arb" type="number" />
+                          <FormField label="Ash ADB" name="ash_adb" type="number" />
+                          <FormField label="Ash DB" name="ash_db" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">VM & FC (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="VM ARB" name="vm_arb" type="number" />
+                          <FormField label="VM ADB" name="vm_adb" type="number" />
+                          <FormField label="FC ARB" name="fc_arb" type="number" />
+                          <FormField label="FC ADB" name="fc_adb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Total Sulphur (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="TS ARB" name="ts_arb" type="number" />
+                          <FormField label="TS ADB" name="ts_adb" type="number" />
+                          <FormField label="TS DB" name="ts_db" type="number" />
+                          <FormField label="TS DAFB" name="ts_dafb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Index</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="HGI (Point Index)" name="hgi" type="number" />
+                          <FormField label="Slagging Index" name="slagging_index" />
+                          <FormField label="Fouling Index" name="fouling_index" />
+                          <FormField label="IDT Reducing (C°)" name="idt_reducing" type="number" />
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="ultimate" className="space-y-4 mt-4">
+                        <h4 className="text-sm font-mono text-blue-400">Carbon (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="C ARB" name="c_arb" type="number" />
+                          <FormField label="C ADB" name="c_adb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Hydrogen (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="H ARB" name="h_arb" type="number" />
+                          <FormField label="H ADB" name="h_adb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Nitrogen (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField label="N ARB" name="n_arb" type="number" />
+                          <FormField label="N ADB" name="n_adb" type="number" />
+                          <FormField label="N DAFB" name="n_dafb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-blue-400 mt-4">Oxygen (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="O ARB" name="o_arb" type="number" />
+                          <FormField label="O ADB" name="o_adb" type="number" />
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="ash" className="space-y-4 mt-4">
+                        <h4 className="text-sm font-mono text-blue-400">Ash Composition (%DB)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="SiO2" name="sio2_db" type="number" />
+                          <FormField label="Al2O3" name="al2o3_db" type="number" />
+                          <FormField label="TiO2" name="tio2_db" type="number" />
+                          <FormField label="Fe2O3" name="fe2o3_db" type="number" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="CaO" name="cao_db" type="number" />
+                          <FormField label="MgO" name="mgo_db" type="number" />
+                          <FormField label="K2O" name="k2o_db" type="number" />
+                          <FormField label="Na2O" name="na2o_db" type="number" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <FormField label="SO3" name="so3_db" type="number" />
+                          <FormField label="P2O5" name="p2o5_db" type="number" />
+                          <FormField label="MnO2" name="mno2_db" type="number" />
+                          <FormField label="Mn3O4" name="mn3o4_db" type="number" />
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
                       <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }} className="border-slate-700 text-slate-300">Batal</Button>
                       <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-500" data-testid="barge-submit-btn">
-                        {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}{editingBarge ? "Simpan Perubahan" : "Tambah Data"}
+                        {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        {editingBarge ? "Simpan Perubahan" : "Tambah Data"}
                       </Button>
                     </div>
                   </form>
@@ -283,7 +406,7 @@ const BargePage = () => {
               <TableRow className="border-white/5 hover:bg-transparent">
                 <TableHead className="text-slate-400 font-mono text-xs">PERIODE</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">SHIPMENT CODE</TableHead>
-                <TableHead className="text-slate-400 font-mono text-xs">BARGE</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">TB / BG</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">SUPPLIER</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">ASAL</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">DS (MT)</TableHead>
@@ -299,11 +422,11 @@ const BargePage = () => {
               ) : (
                 barges.map((barge) => (
                   <TableRow key={barge.id} className="border-white/5 hover:bg-white/5">
-                    <TableCell className="text-slate-300 font-mono text-sm">{barge.periode_ta}</TableCell>
-                    <TableCell className="text-slate-300 text-sm max-w-[200px] truncate">{barge.shipment_code}</TableCell>
-                    <TableCell className="text-white font-medium">{barge.name_of_barge}</TableCell>
-                    <TableCell className="text-slate-300 text-sm max-w-[150px] truncate">{barge.suppliers}</TableCell>
-                    <TableCell className="text-slate-400 text-sm max-w-[150px] truncate">{barge.coal_from}</TableCell>
+                    <TableCell className="text-slate-300 font-mono text-sm">{barge.periode}</TableCell>
+                    <TableCell className="text-slate-300 text-sm max-w-[150px] truncate">{barge.shipment_code}</TableCell>
+                    <TableCell className="text-white font-medium">{barge.tb} / {barge.bg}</TableCell>
+                    <TableCell className="text-slate-300 text-sm max-w-[120px] truncate">{barge.suppliers}</TableCell>
+                    <TableCell className="text-slate-400 text-sm max-w-[120px] truncate">{barge.coal_from}</TableCell>
                     <TableCell className="text-blue-400 font-mono">{barge.ds_mt?.toLocaleString() || "-"}</TableCell>
                     <TableCell className="text-amber-400 font-mono">{barge.gcv_arb?.toLocaleString() || "-"}</TableCell>
                     {canEdit && (
@@ -312,7 +435,7 @@ const BargePage = () => {
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="text-slate-400 hover:text-white"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-[#0B1221] border-white/10">
                             <DropdownMenuItem onClick={() => handleEdit(barge)} className="text-slate-300 focus:text-white focus:bg-white/5"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                            {user?.role === "admin" && (<DropdownMenuItem onClick={() => handleDelete(barge.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>)}
+                            {isAdmin && (<DropdownMenuItem onClick={() => handleDelete(barge.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>)}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
