@@ -59,8 +59,17 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 │   ├── Purchase Order Batubara
 │   └── Merit Order
 ├── Laporan
+├── AI Intelligence ✨ NEW
 └── Pengaturan (Admin only)
+    └── Pengaturan AI/LLM ✨ NEW
 ```
+
+## AI Intelligence Agent Modules
+1. **General Intelligence** - Pertanyaan umum tentang data
+2. **Smart Blending Optimizer** - Optimasi campuran batubara & biomassa
+3. **Boiler Risk Warning** - Deteksi risiko slagging/fouling
+4. **Contract Compliance** - Monitoring PO & kontrak
+5. **Logistics Analysis** - Efisiensi & losses pengiriman
 
 ## Prioritized Backlog
 
