@@ -415,18 +415,18 @@ class TruckingTNYResponse(TruckingTNYCreate):
 # Biomassa TNY Model - Complete fields based on PLTU Tenayan Excel template
 class BiomassaTNYCreate(BaseModel):
     # Informasi Shipment
-    periode: str
-    shipment_code: str
-    voyage_code: str
-    lot: str
-    suppliers: str
-    shipper: str
+    periode: Optional[str] = None
+    shipment_code: Optional[str] = None
+    voyage_code: Optional[str] = None
+    lot: Optional[str] = None
+    suppliers: Optional[str] = None
+    shipper: Optional[str] = None
     lot_detail: Optional[str] = None
     tb: Optional[str] = None  # Tug Boat
     bg: Optional[str] = None  # Barge
-    biomass_type: str  # WOODCHIP, SAWDUST, OIL PALM MESOCARP FIBER
+    biomass_type: Optional[str] = None  # Jenis Biomassa
     # Waktu Operasional
-    ta: Optional[str] = None
+    ta: Optional[str] = None  # Time Arrival
     berthed_time: Optional[str] = None
     commenced_unloading: Optional[str] = None
     completed_unloading: Optional[str] = None
@@ -435,16 +435,11 @@ class BiomassaTNYCreate(BaseModel):
     # Muatan
     bl_mt: Optional[float] = None
     jembatan_timbang_mt: Optional[float] = None
-    surveyor: Optional[str] = None
+    surveyor_unloading: Optional[str] = None
     # COW/ROW
-    no_cow: Optional[str] = None
+    no_cow_row: Optional[str] = None
     tgl_terbit_cow: Optional[str] = None
     lama_terbit_row: Optional[str] = None
-    # Kualitas
-    gcv_arb: Optional[float] = None
-    gcv_adb: Optional[float] = None
-    tm_arb: Optional[float] = None
-    im_adb: Optional[float] = None
     # COA
     no_coa: Optional[str] = None
     tgl_terbit_coa: Optional[str] = None
