@@ -476,6 +476,7 @@ const Dashboard = () => {
             <CardTitle className="font-heading text-sm sm:text-base text-white flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-400" />
               Matriks Risiko Slagging & Fouling
+              <span className="ml-auto text-[10px] font-normal text-slate-500">Vessel, Barge, Trucking</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -484,7 +485,8 @@ const Dashboard = () => {
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-[#0B1221]">
                     <tr className="border-b border-slate-800">
-                      <th className="text-left py-2 px-2 text-slate-500 font-medium">Kapal/Supplier</th>
+                      <th className="text-left py-2 px-2 text-slate-500 font-medium">Nama/Supplier</th>
+                      <th className="text-center py-2 px-2 text-slate-500 font-medium">Moda</th>
                       <th className="text-center py-2 px-2 text-slate-500 font-medium">Slagging</th>
                       <th className="text-center py-2 px-2 text-slate-500 font-medium">Fouling</th>
                       <th className="text-right py-2 px-2 text-slate-500 font-medium">Tanggal</th>
@@ -494,8 +496,17 @@ const Dashboard = () => {
                     {slaggingMatrix.map((row, idx) => (
                       <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-900/30">
                         <td className="py-2 px-2">
-                          <p className="text-white font-medium truncate max-w-[120px]">{row.name}</p>
-                          <p className="text-[10px] text-slate-500 truncate max-w-[120px]">{row.supplier}</p>
+                          <p className="text-white font-medium truncate max-w-[100px]">{row.name}</p>
+                          <p className="text-[10px] text-slate-500 truncate max-w-[100px]">{row.supplier}</p>
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <span className={`px-2 py-1 rounded text-[10px] font-medium ${
+                            row.moda === 'Vessel' ? 'bg-cyan-500/20 text-cyan-400' :
+                            row.moda === 'Barge' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-amber-500/20 text-amber-400'
+                          }`}>
+                            {row.moda}
+                          </span>
                         </td>
                         <td className="py-2 px-2 text-center">
                           <span 
@@ -527,7 +538,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <p className="text-center text-slate-500 py-16">Belum ada data slagging/fouling</p>
-            )}
+            )}}
             {/* Risk Legend */}
             <div className="flex flex-wrap gap-3 mt-4 justify-center">
               {Object.entries(RISK_COLORS).filter(([k]) => k !== 'UNKNOWN').map(([label, color]) => (
