@@ -709,6 +709,11 @@ async def delete_biomassa(biomassa_id: str, user: dict = Depends(require_role(["
         raise HTTPException(status_code=404, detail="Data biomassa tidak ditemukan")
     return {"message": "Data biomassa berhasil dihapus"}
 
+@api_router.delete("/biomassa")
+async def delete_all_biomassa(user: dict = Depends(require_role(["admin"]))):
+    result = await db.biomassa.delete_many({})
+    return {"message": f"Berhasil menghapus {result.deleted_count} data biomassa", "count": result.deleted_count}
+
 # ==================== EXCEL UPLOAD ROUTES ====================
 
 @api_router.post("/upload/vessel")
