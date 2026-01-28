@@ -76,11 +76,9 @@ const BiomassaPage = () => {
   const initialFormData = {
     periode: "",
     shipment_code: "",
-    voyage_code: "",
     lot: "",
     suppliers: "",
     shipper: "",
-    lot_detail: "",
     tb: "",
     bg: "",
     biomass_type: "",
@@ -88,16 +86,23 @@ const BiomassaPage = () => {
     berthed_time: "",
     commenced_unloading: "",
     completed_unloading: "",
-    durasi_pembongkaran_hari: "",
-    waktu_tunggu_jam: "",
+    durasi_pembongkaran: "",
     bl_mt: "",
     jembatan_timbang_mt: "",
     surveyor_unloading: "",
     no_cow_row: "",
     tgl_terbit_cow: "",
     lama_terbit_row: "",
+    gcv_adb: "",
+    gcv_arb: "",
+    tm_arb: "",
+    im_arb: "",
+    tm_adb: "",
+    im_adb: "",
     no_coa: "",
     tgl_terbit_coa: "",
+    durasi_pembongkaran_2: "",
+    waktu_tunggu_jam: "",
     durasi_terbit_coa: ""
   };
 
@@ -130,10 +135,17 @@ const BiomassaPage = () => {
     try {
       const dataToSend = {
         ...formData,
-        durasi_pembongkaran_hari: parseFloat2(formData.durasi_pembongkaran_hari),
-        waktu_tunggu_jam: parseFloat2(formData.waktu_tunggu_jam),
+        durasi_pembongkaran: parseFloat2(formData.durasi_pembongkaran),
         bl_mt: parseFloat2(formData.bl_mt),
-        jembatan_timbang_mt: parseFloat2(formData.jembatan_timbang_mt)
+        jembatan_timbang_mt: parseFloat2(formData.jembatan_timbang_mt),
+        gcv_adb: parseFloat2(formData.gcv_adb),
+        gcv_arb: parseFloat2(formData.gcv_arb),
+        tm_arb: parseFloat2(formData.tm_arb),
+        im_arb: parseFloat2(formData.im_arb),
+        tm_adb: parseFloat2(formData.tm_adb),
+        im_adb: parseFloat2(formData.im_adb),
+        durasi_pembongkaran_2: parseFloat2(formData.durasi_pembongkaran_2),
+        waktu_tunggu_jam: parseFloat2(formData.waktu_tunggu_jam)
       };
 
       if (editingBiomassa) {
@@ -263,14 +275,13 @@ const BiomassaPage = () => {
                       Hapus Semua Data Biomassa?
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-slate-400">
-                      Tindakan ini akan menghapus <span className="text-red-400 font-bold">{biomassaList.length}</span> data biomassa secara permanen. Data yang sudah dihapus tidak dapat dikembalikan.
+                      Tindakan ini akan menghapus <span className="text-red-400 font-bold">{biomassaList.length}</span> data biomassa secara permanen.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel className="border-slate-700 text-slate-300">Batal</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDeleteAll} disabled={deleting} className="bg-red-600 hover:bg-red-500">
-                      {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Ya, Hapus Semua
+                      {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Ya, Hapus Semua
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -288,7 +299,7 @@ const BiomassaPage = () => {
                   <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-green-500/50 transition-colors">
                     <FileSpreadsheet className="w-12 h-12 text-slate-500 mx-auto mb-4" />
                     <p className="text-slate-400 mb-2">Format kolom Excel harus sesuai template</p>
-                    <p className="text-slate-500 text-xs mb-4">Header: Periode, Shipment Code, Voyage Code, Lot Suppliers, dll.</p>
+                    <p className="text-slate-500 text-xs mb-4">Header: Periode, Shipment Code, Lot, Suppliers, Shipper, TB, BG, Biomass, dll.</p>
                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
                     <Button onClick={() => fileInputRef.current?.click()} disabled={submitting} className="bg-green-600 hover:bg-green-500">
                       {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Pilih File
@@ -303,15 +314,16 @@ const BiomassaPage = () => {
                   <Plus className="w-4 h-4 mr-2" />Tambah Data
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#0B1221] border-white/10 max-w-4xl max-h-[90vh]">
+              <DialogContent className="bg-[#0B1221] border-white/10 max-w-5xl max-h-[90vh]">
                 <DialogHeader><DialogTitle className="text-white font-heading">{editingBiomassa ? "Edit Data Biomassa" : "Tambah Data Biomassa"}</DialogTitle></DialogHeader>
                 <ScrollArea className="max-h-[75vh] pr-4">
                   <form onSubmit={handleSubmit} className="space-y-6 pt-4" data-testid="biomassa-form">
                     <Tabs defaultValue="shipment" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4 bg-slate-900/50">
+                      <TabsList className="grid w-full grid-cols-5 bg-slate-900/50">
                         <TabsTrigger value="shipment" className="text-xs data-[state=active]:bg-green-500/20">Shipment</TabsTrigger>
                         <TabsTrigger value="waktu" className="text-xs data-[state=active]:bg-green-500/20">Waktu</TabsTrigger>
                         <TabsTrigger value="muatan" className="text-xs data-[state=active]:bg-green-500/20">Muatan</TabsTrigger>
+                        <TabsTrigger value="kualitas" className="text-xs data-[state=active]:bg-green-500/20">Kualitas</TabsTrigger>
                         <TabsTrigger value="dokumen" className="text-xs data-[state=active]:bg-green-500/20">Dokumen</TabsTrigger>
                       </TabsList>
                       
@@ -320,17 +332,16 @@ const BiomassaPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField label="Periode" name="periode" placeholder="Jan-25" />
                           <FormField label="Shipment Code" name="shipment_code" />
-                          <FormField label="Voyage Code" name="voyage_code" />
+                          <FormField label="Lot" name="lot" />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField label="Lot Suppliers" name="lot" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField label="Suppliers" name="suppliers" />
-                          <FormField label="Shipper Lot" name="shipper" />
+                          <FormField label="Shipper" name="shipper" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField label="TB (Tug Boat)" name="tb" />
                           <FormField label="BG (Barge)" name="bg" />
-                          <FormField label="Biomass Type" name="biomass_type" placeholder="WOODCHIP, SAWDUST, dll." />
+                          <FormField label="Biomass" name="biomass_type" placeholder="WOODCHIP, SAWDUST, dll." />
                         </div>
                       </TabsContent>
                       
@@ -345,7 +356,7 @@ const BiomassaPage = () => {
                           <FormField label="Completed Unloading" name="completed_unloading" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField label="Durasi Pembongkaran (Hari)" name="durasi_pembongkaran_hari" type="number" />
+                          <FormField label="Durasi Pembongkaran" name="durasi_pembongkaran" type="number" />
                           <FormField label="Waktu Tunggu (Jam)" name="waktu_tunggu_jam" type="number" />
                         </div>
                       </TabsContent>
@@ -356,6 +367,24 @@ const BiomassaPage = () => {
                           <FormField label="B/L (MT)" name="bl_mt" type="number" />
                           <FormField label="Jembatan Timbang (MT)" name="jembatan_timbang_mt" type="number" />
                           <FormField label="Surveyor Unloading" name="surveyor_unloading" />
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="kualitas" className="space-y-4 mt-4">
+                        <h4 className="text-sm font-mono text-green-400">GCV (Kcal/Kg)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="GCV ADB" name="gcv_adb" type="number" />
+                          <FormField label="GCV ARB" name="gcv_arb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-green-400 mt-4">TM (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="TM ARB" name="tm_arb" type="number" />
+                          <FormField label="TM ADB" name="tm_adb" type="number" />
+                        </div>
+                        <h4 className="text-sm font-mono text-green-400 mt-4">IM (%wt)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField label="IM ARB" name="im_arb" type="number" />
+                          <FormField label="IM ADB" name="im_adb" type="number" />
                         </div>
                       </TabsContent>
                       
@@ -415,7 +444,7 @@ const BiomassaPage = () => {
                 <TableHead className="text-slate-400 font-mono text-xs">Supplier</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">Biomass</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">B/L (MT)</TableHead>
-                <TableHead className="text-slate-400 font-mono text-xs">Jemb. Timbang (MT)</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">GCV ARB</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -444,7 +473,7 @@ const BiomassaPage = () => {
                       </span>
                     </TableCell>
                     <TableCell className="text-slate-300 text-sm font-mono">{biomassa.bl_mt?.toLocaleString() || '-'}</TableCell>
-                    <TableCell className="text-green-400 text-sm font-mono">{biomassa.jembatan_timbang_mt?.toLocaleString() || '-'}</TableCell>
+                    <TableCell className="text-green-400 text-sm font-mono">{biomassa.gcv_arb?.toLocaleString() || '-'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -485,20 +514,19 @@ const BiomassaPage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
                   <div><p className="text-slate-500 text-xs">Periode</p><p className="text-white text-sm">{viewingBiomassa.periode || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Shipment Code</p><p className="text-white text-sm">{viewingBiomassa.shipment_code || "-"}</p></div>
-                  <div><p className="text-slate-500 text-xs">Voyage Code</p><p className="text-white text-sm">{viewingBiomassa.voyage_code || "-"}</p></div>
-                  <div><p className="text-slate-500 text-xs">Lot Suppliers</p><p className="text-white text-sm">{viewingBiomassa.lot || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Lot</p><p className="text-white text-sm">{viewingBiomassa.lot || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Suppliers</p><p className="text-white text-sm">{viewingBiomassa.suppliers || "-"}</p></div>
-                  <div><p className="text-slate-500 text-xs">Shipper Lot</p><p className="text-white text-sm">{viewingBiomassa.shipper || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Shipper</p><p className="text-white text-sm">{viewingBiomassa.shipper || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">TB / BG</p><p className="text-white text-sm">{viewingBiomassa.tb || "-"} / {viewingBiomassa.bg || "-"}</p></div>
-                  <div><p className="text-slate-500 text-xs">Biomass Type</p><p className="text-white text-sm">{viewingBiomassa.biomass_type || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Biomass</p><p className="text-white text-sm">{viewingBiomassa.biomass_type || "-"}</p></div>
                 </div>
                 <h4 className="text-sm font-mono text-green-400">Waktu Operasional</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
-                  <div><p className="text-slate-500 text-xs">TA (Time Arrival)</p><p className="text-white text-sm">{viewingBiomassa.ta || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TA</p><p className="text-white text-sm">{viewingBiomassa.ta || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Berthed Time</p><p className="text-white text-sm">{viewingBiomassa.berthed_time || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Commenced Unloading</p><p className="text-white text-sm">{viewingBiomassa.commenced_unloading || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Completed Unloading</p><p className="text-white text-sm">{viewingBiomassa.completed_unloading || "-"}</p></div>
-                  <div><p className="text-slate-500 text-xs">Durasi Pembongkaran (Hari)</p><p className="text-white text-sm">{viewingBiomassa.durasi_pembongkaran_hari || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Durasi Pembongkaran</p><p className="text-white text-sm">{viewingBiomassa.durasi_pembongkaran || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Waktu Tunggu (Jam)</p><p className="text-white text-sm">{viewingBiomassa.waktu_tunggu_jam || "-"}</p></div>
                 </div>
                 <h4 className="text-sm font-mono text-green-400">Data Muatan</h4>
@@ -506,6 +534,15 @@ const BiomassaPage = () => {
                   <div><p className="text-slate-500 text-xs">B/L (MT)</p><p className="text-white text-sm">{viewingBiomassa.bl_mt?.toLocaleString() || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Jembatan Timbang (MT)</p><p className="text-white text-sm">{viewingBiomassa.jembatan_timbang_mt?.toLocaleString() || "-"}</p></div>
                   <div><p className="text-slate-500 text-xs">Surveyor Unloading</p><p className="text-white text-sm">{viewingBiomassa.surveyor_unloading || "-"}</p></div>
+                </div>
+                <h4 className="text-sm font-mono text-green-400">Kualitas</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">GCV ADB (Kcal/Kg)</p><p className="text-white text-sm">{viewingBiomassa.gcv_adb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">GCV ARB (Kcal/Kg)</p><p className="text-white text-sm">{viewingBiomassa.gcv_arb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TM ARB (%wt)</p><p className="text-white text-sm">{viewingBiomassa.tm_arb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">IM ARB (%wt)</p><p className="text-white text-sm">{viewingBiomassa.im_arb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TM ADB (%wt)</p><p className="text-white text-sm">{viewingBiomassa.tm_adb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">IM ADB (%wt)</p><p className="text-white text-sm">{viewingBiomassa.im_adb?.toFixed(2) || "-"}</p></div>
                 </div>
                 <h4 className="text-sm font-mono text-green-400">Dokumen COW/ROW & COA</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-slate-900/50 rounded-lg">
