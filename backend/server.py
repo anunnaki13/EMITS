@@ -838,6 +838,180 @@ async def delete_all_biomassa(user: dict = Depends(require_role(["admin"]))):
     result = await db.biomassa.delete_many({})
     return {"message": f"Berhasil menghapus {result.deleted_count} data biomassa", "count": result.deleted_count}
 
+# ==================== PO BATUBARA ROUTES ====================
+
+@api_router.get("/po-batubara", response_model=List[POBatubaraResponse])
+async def get_po_batubara(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10000, ge=1, le=10000),
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    search: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    query = {}
+    if year:
+        query["completed_year"] = year
+    if month:
+        query["completed_month"] = month
+    if search:
+        query["$or"] = [
+            {"po_number": {"$regex": search, "$options": "i"}},
+            {"supplier_name": {"$regex": search, "$options": "i"}},
+            {"no_shipment": {"$regex": search, "$options": "i"}}
+        ]
+    po_list = await db.po_batubara.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    return [POBatubaraResponse(**p) for p in po_list]
+
+@api_router.get("/po-batubara/years")
+async def get_po_years(user: dict = Depends(get_current_user)):
+    """Get list of available years with monthly summaries"""
+    pipeline = [
+        {"$match": {"completed_year": {"$ne": None}}},
+        {"$group": {
+            "_id": {"year": "$completed_year", "month": "$completed_month"},
+            "count": {"$sum": 1},
+            "total_tonase": {"$sum": "$tonase_po"},
+            "total_value": {"$sum": "$total"}
+        }},
+        {"$sort": {"_id.year": -1, "_id.month": 1}}
+    ]
+    results = await db.po_batubara.aggregate(pipeline).to_list(1000)
+    
+    # Organize by year
+    years_data = {}
+    for r in results:
+        year = r["_id"]["year"]
+        month = r["_id"]["month"]
+        if year not in years_data:
+            years_data[year] = {"year": year, "months": {}, "total_count": 0, "total_tonase": 0, "total_value": 0}
+        years_data[year]["months"][month] = {
+            "month": month,
+            "count": r["count"],
+            "total_tonase": r["total_tonase"] or 0,
+            "total_value": r["total_value"] or 0
+        }
+        years_data[year]["total_count"] += r["count"]
+        years_data[year]["total_tonase"] += r["total_tonase"] or 0
+        years_data[year]["total_value"] += r["total_value"] or 0
+    
+    return list(years_data.values())
+
+@api_router.post("/po-batubara", response_model=POBatubaraResponse)
+async def create_po_batubara(po: POBatubaraCreate, user: dict = Depends(require_role(["admin", "operator"]))):
+    po_id = str(uuid.uuid4())
+    po_doc = {
+        "id": po_id,
+        **po.model_dump(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user["id"]
+    }
+    await db.po_batubara.insert_one(po_doc)
+    return POBatubaraResponse(**{k: v for k, v in po_doc.items() if k != "_id"})
+
+@api_router.get("/po-batubara/{po_id}", response_model=POBatubaraResponse)
+async def get_po_batubara_by_id(po_id: str, user: dict = Depends(get_current_user)):
+    po = await db.po_batubara.find_one({"id": po_id}, {"_id": 0})
+    if not po:
+        raise HTTPException(status_code=404, detail="Data PO tidak ditemukan")
+    return POBatubaraResponse(**po)
+
+@api_router.put("/po-batubara/{po_id}", response_model=POBatubaraResponse)
+async def update_po_batubara(po_id: str, po: POBatubaraCreate, user: dict = Depends(require_role(["admin", "operator"]))):
+    existing = await db.po_batubara.find_one({"id": po_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Data PO tidak ditemukan")
+    await db.po_batubara.update_one({"id": po_id}, {"$set": po.model_dump()})
+    updated = await db.po_batubara.find_one({"id": po_id}, {"_id": 0})
+    return POBatubaraResponse(**updated)
+
+@api_router.delete("/po-batubara/{po_id}")
+async def delete_po_batubara(po_id: str, user: dict = Depends(require_role(["admin"]))):
+    result = await db.po_batubara.delete_one({"id": po_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Data PO tidak ditemukan")
+    return {"message": "Data PO berhasil dihapus"}
+
+@api_router.delete("/po-batubara")
+async def delete_all_po_batubara(user: dict = Depends(require_role(["admin"]))):
+    result = await db.po_batubara.delete_many({})
+    return {"message": f"Berhasil menghapus {result.deleted_count} data PO", "count": result.deleted_count}
+
+@api_router.post("/upload/po-batubara")
+async def upload_po_batubara_excel(file: UploadFile = File(...), user: dict = Depends(require_role(["admin", "operator"]))):
+    try:
+        contents = await file.read()
+        df = pd.read_excel(io.BytesIO(contents))
+        
+        def safe_float(val):
+            if pd.isna(val) or val == '' or val is None:
+                return None
+            try:
+                return float(val)
+            except:
+                return None
+        
+        def safe_str(val):
+            if pd.isna(val) or val is None:
+                return ""
+            return str(val).strip()
+        
+        def parse_datetime(val):
+            if pd.isna(val) or val is None:
+                return None, None, None
+            try:
+                if isinstance(val, str):
+                    dt = pd.to_datetime(val)
+                else:
+                    dt = val
+                return str(dt), dt.year, dt.month
+            except:
+                return str(val), None, None
+        
+        records = []
+        for _, row in df.iterrows():
+            po_id = str(uuid.uuid4())
+            completed_str, completed_year, completed_month = parse_datetime(row.get("Completed"))
+            
+            po_doc = {
+                "id": po_id,
+                "district_code": safe_str(row.get("District Code")),
+                "district_name": safe_str(row.get("District Name")),
+                "periode": safe_str(row.get("Periode")),
+                "stock_code": safe_float(row.get("Stock Code")),
+                "warehouse": safe_float(row.get("Warehouse")),
+                "po_number": safe_str(row.get("PO Number")),
+                "supplier_code": safe_str(row.get("Supplier Code")),
+                "supplier_name": safe_str(row.get("Supplier Name")),
+                "spec": safe_str(row.get("Spec")),
+                "vessel_tugboat": safe_str(row.get("Vessel / Tugboat")),
+                "barge": safe_str(row.get("Barge")),
+                "no_jadwal": safe_str(row.get("No Jadwal")),
+                "id_bbo_no_pengiriman": safe_str(row.get("Id BBO (No Pengiriman)")),
+                "id_bbo_trans": safe_str(row.get("Id BBO Trans")),
+                "no_shipment": safe_str(row.get("No Shipment")),
+                "time_arrival": safe_str(row.get("Time Arrival")),
+                "completed": completed_str,
+                "completed_year": completed_year,
+                "completed_month": completed_month,
+                "tonase_po": safe_float(row.get("Tonase PO")),
+                "tonase_po_1000": safe_float(row.get("Tonase PO*1000")),
+                "inventory_price": safe_float(row.get("Inventory Price")),
+                "freight_inventory_fob": safe_float(row.get("Freight Inventory (FOB)")),
+                "total": safe_float(row.get("Total")),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": user["id"]
+            }
+            records.append(po_doc)
+        
+        if records:
+            await db.po_batubara.insert_many(records)
+        
+        return {"message": f"Berhasil mengimport {len(records)} data PO Batubara", "count": len(records)}
+    except Exception as e:
+        logger.error(f"Error uploading PO batubara excel: {e}")
+        raise HTTPException(status_code=400, detail=f"Gagal memproses file: {str(e)}")
+
 # ==================== EXCEL UPLOAD ROUTES ====================
 
 @api_router.post("/upload/vessel")
