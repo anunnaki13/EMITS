@@ -461,7 +461,40 @@ const TruckingPage = () => {
             </TableBody>
           </Table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={trucking.length} itemsPerPage={ITEMS_PER_PAGE} />
       </Card>
+
+      {/* View Detail Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="bg-[#0B1221] border-white/10 max-w-4xl max-h-[90vh]">
+          <DialogHeader><DialogTitle className="text-white font-heading">Detail Data Trucking</DialogTitle></DialogHeader>
+          <ScrollArea className="max-h-[75vh] pr-4">
+            {viewingTrucking && (
+              <div className="space-y-6 pt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">Periode TA</p><p className="text-white text-sm">{viewingTrucking.periode_ta || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Periode Realisasi</p><p className="text-white text-sm">{viewingTrucking.periode_realisasi || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Shipment Code</p><p className="text-white text-sm">{viewingTrucking.shipment_code || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Transportasi</p><p className="text-white text-sm">{viewingTrucking.transportasi || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Suppliers</p><p className="text-white text-sm">{viewingTrucking.suppliers || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Coal From</p><p className="text-white text-sm">{viewingTrucking.coal_from || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">DS (MT)</p><p className="text-white text-sm">{viewingTrucking.ds_mt?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">RIT</p><p className="text-white text-sm">{viewingTrucking.rit || "-"}</p></div>
+                </div>
+                <h4 className="text-sm font-mono text-amber-400">Kualitas</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">GCV ARB</p><p className="text-white text-sm">{viewingTrucking.gcv_arb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">GCV ADB</p><p className="text-white text-sm">{viewingTrucking.gcv_adb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TM ARB</p><p className="text-white text-sm">{viewingTrucking.tm_arb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">IM ADB</p><p className="text-white text-sm">{viewingTrucking.im_adb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Ash ARB</p><p className="text-white text-sm">{viewingTrucking.ash_arb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">HGI</p><p className="text-white text-sm">{viewingTrucking.hgi || "-"}</p></div>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -460,7 +460,40 @@ const BargePage = () => {
             </TableBody>
           </Table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={barges.length} itemsPerPage={ITEMS_PER_PAGE} />
       </Card>
+
+      {/* View Detail Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="bg-[#0B1221] border-white/10 max-w-4xl max-h-[90vh]">
+          <DialogHeader><DialogTitle className="text-white font-heading">Detail Data Barge</DialogTitle></DialogHeader>
+          <ScrollArea className="max-h-[75vh] pr-4">
+            {viewingBarge && (
+              <div className="space-y-6 pt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">Periode</p><p className="text-white text-sm">{viewingBarge.periode || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Shipment Code</p><p className="text-white text-sm">{viewingBarge.shipment_code || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TB</p><p className="text-white text-sm">{viewingBarge.tb || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">BG</p><p className="text-white text-sm">{viewingBarge.bg || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Suppliers</p><p className="text-white text-sm">{viewingBarge.suppliers || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Coal From</p><p className="text-white text-sm">{viewingBarge.coal_from || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">B/L (MT)</p><p className="text-white text-sm">{viewingBarge.bl_mt?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">DS (MT)</p><p className="text-white text-sm">{viewingBarge.ds_mt?.toLocaleString() || "-"}</p></div>
+                </div>
+                <h4 className="text-sm font-mono text-blue-400">Kualitas</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div><p className="text-slate-500 text-xs">GCV ARB</p><p className="text-white text-sm">{viewingBarge.gcv_arb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">GCV ADB</p><p className="text-white text-sm">{viewingBarge.gcv_adb?.toLocaleString() || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">TM ARB</p><p className="text-white text-sm">{viewingBarge.tm_arb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">IM ADB</p><p className="text-white text-sm">{viewingBarge.im_adb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">Ash ARB</p><p className="text-white text-sm">{viewingBarge.ash_arb?.toFixed(2) || "-"}</p></div>
+                  <div><p className="text-slate-500 text-xs">HGI</p><p className="text-white text-sm">{viewingBarge.hgi || "-"}</p></div>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
