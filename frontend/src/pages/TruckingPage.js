@@ -426,7 +426,7 @@ const TruckingPage = () => {
                 <TableHead className="text-slate-400 font-mono text-xs">DS (MT)</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">RIT</TableHead>
                 <TableHead className="text-slate-400 font-mono text-xs">GCV ARB</TableHead>
-                {canEdit && <TableHead className="text-slate-400 font-mono text-xs w-12"></TableHead>}
+                <TableHead className="text-slate-400 font-mono text-xs w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
