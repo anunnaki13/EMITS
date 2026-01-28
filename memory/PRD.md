@@ -76,10 +76,11 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 ### P0 (Critical) - DONE ✅
 - [x] User authentication
 - [x] Basic CRUD operations
-- [x] **Dashboard Advanced dengan 7 visualisasi**
+- [x] Dashboard Advanced
 - [x] Navigation dropdown restructure
-- [x] Purchase Order Batubara page
-- [x] Merit Order page
+- [x] All data entry pages
+- [x] **AI Intelligence Agent**
+- [x] **AI Settings in Settings page**
 
 ### P1 (High Priority)
 - [ ] Real export PDF/Excel implementation di Laporan
