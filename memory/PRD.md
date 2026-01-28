@@ -18,26 +18,28 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - Dark Mode SaaS Dashboard UI
 
 ## What's Been Implemented ✅
-*Date: January 28, 2025*
+*Last Updated: January 28, 2026*
 
 ### Backend (FastAPI)
 - ✅ User authentication (JWT)
 - ✅ Role-based authorization
-- ✅ CRUD endpoints untuk semua kategori
-- ✅ Excel upload & parsing
+- ✅ CRUD endpoints untuk semua kategori (Vessel, Barge, Trucking, Biomassa)
+- ✅ Excel upload & parsing untuk semua kategori
+- ✅ Delete all data endpoint per kategori
 - ✅ Dashboard statistics API
 
 ### Frontend (React)
-- ✅ Login/Register page
+- ✅ Login/Register page dengan dark theme
 - ✅ Dashboard dengan grafik Recharts
-- ✅ Vessel TNY page (table, form, upload)
-- ✅ Barge TNY page (table, form, upload)
-- ✅ Trucking TNY page (table, form, upload)
-- ✅ Biomassa TNY page (table, form, upload)
-- ✅ Laporan page (export options)
-- ✅ Settings page (user management)
+- ✅ Vessel TNY page (tabbed form dengan 5 tab: Shipment, Muatan, Kualitas, Ultimate, Ash Comp)
+- ✅ Barge TNY page (tabbed form lengkap)
+- ✅ Trucking TNY page (tabbed form lengkap)
+- ✅ Biomassa TNY page (tabbed form dengan 4 tab: Shipment, Waktu, Muatan, Kualitas)
+- ✅ Laporan page (tabs untuk 4 kategori, statistik, filter, tombol export)
+- ✅ Settings page (profil user, manajemen user, info hak akses role)
 - ✅ Responsive sidebar navigation
 - ✅ Dark theme dengan glassmorphism
+- ✅ All forms tested with E2E testing (100% pass rate)
 
 ## Prioritized Backlog
 
