@@ -1046,6 +1046,168 @@ async def upload_po_batubara_excel(file: UploadFile = File(...), user: dict = De
         logger.error(f"Error uploading PO batubara excel: {e}")
         raise HTTPException(status_code=400, detail=f"Gagal memproses file: {str(e)}")
 
+# ==================== MERIT ORDER ROUTES ====================
+
+@api_router.get("/merit-order", response_model=List[MeritOrderResponse])
+async def get_merit_orders(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10000, ge=1, le=10000),
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    search: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    query = {}
+    if year:
+        query["periode_year"] = year
+    if month:
+        query["periode_month"] = month
+    if search:
+        query["$or"] = [
+            {"pemasok": {"$regex": search, "$options": "i"}},
+            {"moda": {"$regex": search, "$options": "i"}},
+            {"jenis_kontrak": {"$regex": search, "$options": "i"}}
+        ]
+    mo_list = await db.merit_order.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(limit).to_list(limit)
+    return [MeritOrderResponse(**m) for m in mo_list]
+
+@api_router.get("/merit-order/periods")
+async def get_merit_order_periods(user: dict = Depends(get_current_user)):
+    """Get list of available periods with summaries"""
+    pipeline = [
+        {"$match": {"periode_year": {"$ne": None}}},
+        {"$group": {
+            "_id": {"year": "$periode_year", "month": "$periode_month"},
+            "count": {"$sum": 1},
+            "avg_rp_kcal": {"$avg": "$rp_kcal"},
+            "min_rp_kcal": {"$min": "$rp_kcal"},
+            "max_rp_kcal": {"$max": "$rp_kcal"}
+        }},
+        {"$sort": {"_id.year": -1, "_id.month": -1}}
+    ]
+    results = await db.merit_order.aggregate(pipeline).to_list(1000)
+    
+    # Organize by year
+    years_data = {}
+    for r in results:
+        year = r["_id"]["year"]
+        month = r["_id"]["month"]
+        if year not in years_data:
+            years_data[year] = {"year": year, "months": {}, "total_count": 0}
+        years_data[year]["months"][month] = {
+            "month": month,
+            "count": r["count"],
+            "avg_rp_kcal": r["avg_rp_kcal"] or 0,
+            "min_rp_kcal": r["min_rp_kcal"] or 0,
+            "max_rp_kcal": r["max_rp_kcal"] or 0
+        }
+        years_data[year]["total_count"] += r["count"]
+    
+    return list(years_data.values())
+
+@api_router.post("/merit-order", response_model=MeritOrderResponse)
+async def create_merit_order(mo: MeritOrderCreate, user: dict = Depends(require_role(["admin", "operator"]))):
+    mo_id = str(uuid.uuid4())
+    mo_doc = {
+        "id": mo_id,
+        **mo.model_dump(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user["id"]
+    }
+    await db.merit_order.insert_one(mo_doc)
+    return MeritOrderResponse(**{k: v for k, v in mo_doc.items() if k != "_id"})
+
+@api_router.get("/merit-order/{mo_id}", response_model=MeritOrderResponse)
+async def get_merit_order_by_id(mo_id: str, user: dict = Depends(get_current_user)):
+    mo = await db.merit_order.find_one({"id": mo_id}, {"_id": 0})
+    if not mo:
+        raise HTTPException(status_code=404, detail="Data Merit Order tidak ditemukan")
+    return MeritOrderResponse(**mo)
+
+@api_router.put("/merit-order/{mo_id}", response_model=MeritOrderResponse)
+async def update_merit_order(mo_id: str, mo: MeritOrderCreate, user: dict = Depends(require_role(["admin", "operator"]))):
+    existing = await db.merit_order.find_one({"id": mo_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Data Merit Order tidak ditemukan")
+    await db.merit_order.update_one({"id": mo_id}, {"$set": mo.model_dump()})
+    updated = await db.merit_order.find_one({"id": mo_id}, {"_id": 0})
+    return MeritOrderResponse(**updated)
+
+@api_router.delete("/merit-order/{mo_id}")
+async def delete_merit_order(mo_id: str, user: dict = Depends(require_role(["admin"]))):
+    result = await db.merit_order.delete_one({"id": mo_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Data Merit Order tidak ditemukan")
+    return {"message": "Data Merit Order berhasil dihapus"}
+
+@api_router.delete("/merit-order")
+async def delete_all_merit_orders(user: dict = Depends(require_role(["admin"]))):
+    result = await db.merit_order.delete_many({})
+    return {"message": f"Berhasil menghapus {result.deleted_count} data Merit Order", "count": result.deleted_count}
+
+@api_router.post("/upload/merit-order")
+async def upload_merit_order_excel(file: UploadFile = File(...), user: dict = Depends(require_role(["admin", "operator"]))):
+    try:
+        contents = await file.read()
+        df = pd.read_excel(io.BytesIO(contents))
+        
+        def safe_float(val):
+            if pd.isna(val) or val == '' or val is None or val == '-':
+                return None
+            try:
+                return float(val)
+            except:
+                return None
+        
+        def safe_str(val):
+            if pd.isna(val) or val is None:
+                return ""
+            return str(val).strip()
+        
+        def parse_periode(val):
+            if pd.isna(val) or val is None:
+                return None, None, None
+            try:
+                if isinstance(val, str):
+                    dt = pd.to_datetime(val)
+                else:
+                    dt = val
+                return str(dt.date()), dt.year, dt.month
+            except:
+                return str(val), None, None
+        
+        records = []
+        for _, row in df.iterrows():
+            mo_id = str(uuid.uuid4())
+            periode_str, periode_year, periode_month = parse_periode(row.get("Periode"))
+            
+            mo_doc = {
+                "id": mo_id,
+                "periode": periode_str,
+                "periode_year": periode_year,
+                "periode_month": periode_month,
+                "pemasok": safe_str(row.get("Pemasok")),
+                "moda": safe_str(row.get("Moda")),
+                "tipikal_kcal_kg": safe_float(row.get("Tipikal (Kcal/Kg)")),
+                "jenis_kontrak": safe_str(row.get("Jenis Kontrak")),
+                "harga_batubara": safe_float(row.get("Harga Batubara (RP/Ton)")),
+                "harga_freight": safe_float(row.get("Harga Freight (RP/Ton)")),
+                "harga_cif": safe_float(row.get("Harga CIF(RP/Ton)")),
+                "rp_kg": safe_float(row.get("RP/Kg")),
+                "rp_kcal": safe_float(row.get("RP/Kcal")),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": user["id"]
+            }
+            records.append(mo_doc)
+        
+        if records:
+            await db.merit_order.insert_many(records)
+        
+        return {"message": f"Berhasil mengimport {len(records)} data Merit Order", "count": len(records)}
+    except Exception as e:
+        logger.error(f"Error uploading merit order excel: {e}")
+        raise HTTPException(status_code=400, detail=f"Gagal memproses file: {str(e)}")
+
 # ==================== EXCEL UPLOAD ROUTES ====================
 
 @api_router.post("/upload/vessel")
