@@ -412,51 +412,46 @@ class TruckingTNYResponse(TruckingTNYCreate):
     created_at: str
     created_by: Optional[str] = None
 
-# Biomassa TNY Model
+# Biomassa TNY Model - Complete fields based on PLTU Tenayan Excel template
 class BiomassaTNYCreate(BaseModel):
+    # Informasi Shipment
     periode: str
     shipment_code: str
+    voyage_code: str
     lot: str
     suppliers: str
     shipper: str
+    lot_detail: Optional[str] = None
+    tb: Optional[str] = None  # Tug Boat
+    bg: Optional[str] = None  # Barge
     biomass_type: str  # WOODCHIP, SAWDUST, OIL PALM MESOCARP FIBER
+    # Waktu Operasional
+    ta: Optional[str] = None
     berthed_time: Optional[str] = None
-    commenced: Optional[str] = None
-    completed: Optional[str] = None
-    durasi_pembongkaran: Optional[float] = None
+    commenced_unloading: Optional[str] = None
+    completed_unloading: Optional[str] = None
+    durasi_pembongkaran_hari: Optional[float] = None
+    waktu_tunggu_jam: Optional[float] = None
+    # Muatan
+    bl_mt: Optional[float] = None
     jembatan_timbang_mt: Optional[float] = None
     surveyor: Optional[str] = None
+    # COW/ROW
     no_cow: Optional[str] = None
     tgl_terbit_cow: Optional[str] = None
+    lama_terbit_row: Optional[str] = None
+    # Kualitas
     gcv_arb: Optional[float] = None
     gcv_adb: Optional[float] = None
     tm_arb: Optional[float] = None
-    im_arb: Optional[float] = None
+    im_adb: Optional[float] = None
+    # COA
     no_coa: Optional[str] = None
     tgl_terbit_coa: Optional[str] = None
+    durasi_terbit_coa: Optional[str] = None
 
-class BiomassaTNYResponse(BaseModel):
+class BiomassaTNYResponse(BiomassaTNYCreate):
     id: str
-    periode: str
-    shipment_code: str
-    lot: str
-    suppliers: str
-    shipper: str
-    biomass_type: str
-    berthed_time: Optional[str] = None
-    commenced: Optional[str] = None
-    completed: Optional[str] = None
-    durasi_pembongkaran: Optional[float] = None
-    jembatan_timbang_mt: Optional[float] = None
-    surveyor: Optional[str] = None
-    no_cow: Optional[str] = None
-    tgl_terbit_cow: Optional[str] = None
-    gcv_arb: Optional[float] = None
-    gcv_adb: Optional[float] = None
-    tm_arb: Optional[float] = None
-    im_arb: Optional[float] = None
-    no_coa: Optional[str] = None
-    tgl_terbit_coa: Optional[str] = None
     created_at: str
     created_by: Optional[str] = None
 
