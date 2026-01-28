@@ -468,14 +468,14 @@ const BiomassaPage = () => {
                     <Loader2 className="w-6 h-6 animate-spin text-green-400 mx-auto" />
                   </TableCell>
                 </TableRow>
-              ) : biomassaList.length === 0 ? (
+              ) : paginatedBiomassa.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                     Belum ada data biomassa
                   </TableCell>
                 </TableRow>
               ) : (
-                biomassaList.map((biomassa) => (
+                paginatedBiomassa.map((biomassa) => (
                   <TableRow key={biomassa.id} className="border-white/5 hover:bg-slate-900/50" data-testid={`biomassa-row-${biomassa.id}`}>
                     <TableCell className="text-slate-300 text-sm">{biomassa.periode}</TableCell>
                     <TableCell className="text-white font-medium text-sm">{biomassa.shipment_code}</TableCell>
@@ -492,23 +492,24 @@ const BiomassaPage = () => {
                     <TableCell className="text-slate-300 text-sm font-mono">{biomassa.bl_mt?.toLocaleString() || '-'}</TableCell>
                     <TableCell className="text-green-400 text-sm font-mono">{biomassa.gcv_arb?.toLocaleString() || '-'}</TableCell>
                     <TableCell>
-                      {canEdit && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`action-btn-${biomassa.id}`}>
-                              <MoreHorizontal className="h-4 w-4 text-slate-400" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-[#0B1221] border-slate-800">
-                            <DropdownMenuItem onClick={() => handleEdit(biomassa)} className="text-slate-300 hover:bg-slate-800 cursor-pointer">
-                              <Edit className="w-4 h-4 mr-2" />Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(biomassa.id)} className="text-red-400 hover:bg-slate-800 cursor-pointer">
-                              <Trash2 className="w-4 h-4 mr-2" />Hapus
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`action-btn-${biomassa.id}`}>
+                            <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-[#0B1221] border-slate-800">
+                          <DropdownMenuItem onClick={() => handleView(biomassa)} className="text-slate-300 hover:bg-slate-800 cursor-pointer">
+                            <Eye className="w-4 h-4 mr-2" />Lihat
+                          </DropdownMenuItem>
+                          {canEdit && <DropdownMenuItem onClick={() => handleEdit(biomassa)} className="text-slate-300 hover:bg-slate-800 cursor-pointer">
+                            <Edit className="w-4 h-4 mr-2" />Edit
+                          </DropdownMenuItem>}
+                          {isAdmin && <DropdownMenuItem onClick={() => handleDelete(biomassa.id)} className="text-red-400 hover:bg-slate-800 cursor-pointer">
+                            <Trash2 className="w-4 h-4 mr-2" />Hapus
+                          </DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
