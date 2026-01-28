@@ -24,6 +24,7 @@ const TruckingPage = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editingTrucking, setEditingTrucking] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -43,6 +44,19 @@ const TruckingPage = () => {
       toast.error("Gagal memuat data trucking");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    try {
+      const response = await axios.delete(`${API_URL}/api/trucking`, { headers: getAuthHeader() });
+      toast.success(response.data.message);
+      fetchTrucking();
+    } catch (error) {
+      toast.error("Gagal menghapus semua data");
+    } finally {
+      setDeleting(false);
     }
   };
 
