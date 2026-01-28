@@ -587,7 +587,7 @@ async def create_vessel(data: VesselTNYCreate, user: dict = Depends(require_role
 @api_router.get("/vessels", response_model=List[VesselTNYResponse])
 async def get_vessels(
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(10000, ge=1, le=10000),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
@@ -646,7 +646,7 @@ async def create_barge(data: BargeTNYCreate, user: dict = Depends(require_role([
 @api_router.get("/barges", response_model=List[BargeTNYResponse])
 async def get_barges(
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(10000, ge=1, le=10000),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
