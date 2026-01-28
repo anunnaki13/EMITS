@@ -1,0 +1,149 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "Tenayan Command Center",
+      "metaphor": "The Bridge of a Spaceship applied to Industrial Energy",
+      "principles": [
+        "Fusion: Industrial Grime x Cyberpunk Precision",
+        "Density: High data density, zero clutter",
+        "Depth: Glassmorphism to create hierarchy in the dark",
+        "Motion: Micro-interactions signal 'System Alive'"
+      ]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Rajdhani, sans-serif",
+        "body": "Manrope, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "imports": [
+        "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600&family=Rajdhani:wght@500;600;700&display=swap');"
+      ],
+      "usage": {
+        "h1": "font-heading font-bold text-4xl tracking-tight text-white",
+        "h2": "font-heading font-semibold text-2xl tracking-tight text-slate-100",
+        "h3": "font-heading font-medium text-xl text-slate-200",
+        "body": "font-body text-sm text-slate-400 leading-relaxed",
+        "label": "font-mono text-xs uppercase tracking-wider text-slate-500",
+        "data": "font-mono text-sm font-medium text-cyan-400"
+      }
+    },
+    "colors": {
+      "palette": {
+        "background": "#02040A",
+        "surface": "#0B1221",
+        "surface_highlight": "#151E32",
+        "primary": "#06B6D4",
+        "secondary": "#3B82F6",
+        "accent": "#F59E0B",
+        "success": "#10B981",
+        "danger": "#EF4444",
+        "text_primary": "#F8FAFC",
+        "text_secondary": "#94A3B8"
+      },
+      "css_overrides": {
+        "root": {
+          "--background": "224 71% 4%",
+          "--foreground": "213 31% 91%",
+          "--card": "222 47% 11%",
+          "--card-foreground": "213 31% 91%",
+          "--popover": "222 47% 11%",
+          "--popover-foreground": "213 31% 91%",
+          "--primary": "189 94% 43%",
+          "--primary-foreground": "222 47% 11%",
+          "--secondary": "217 91% 60%",
+          "--secondary-foreground": "210 40% 98%",
+          "--muted": "217 33% 17%",
+          "--muted-foreground": "215 20% 65%",
+          "--accent": "217 33% 17%",
+          "--accent-foreground": "210 40% 98%",
+          "--destructive": "0 62.8% 30.6%",
+          "--destructive-foreground": "210 40% 98%",
+          "--border": "217 33% 17%",
+          "--input": "217 33% 17%",
+          "--ring": "189 94% 43%"
+        }
+      }
+    },
+    "layout": {
+      "spacing": {
+        "container_padding": "p-6 md:p-8 lg:p-12",
+        "section_gap": "gap-8",
+        "widget_gap": "gap-6"
+      },
+      "grid_strategy": "Bento Grid Mode B (High Density)",
+      "border_radius": {
+        "card": "rounded-xl",
+        "button": "rounded-lg",
+        "input": "rounded-md"
+      }
+    },
+    "components": {
+      "card": {
+        "style": "glass",
+        "classes": "bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50",
+        "hover": "hover:border-cyan-500/30 hover:bg-slate-900/60 transition-all duration-300"
+      },
+      "button": {
+        "primary": "bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] border border-cyan-400/20",
+        "secondary": "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700",
+        "ghost": "hover:bg-white/5 text-slate-400 hover:text-white"
+      },
+      "input": {
+        "base": "bg-slate-950/50 border-slate-800 text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 placeholder:text-slate-600"
+      },
+      "table": {
+        "wrapper": "rounded-xl border border-white/5 overflow-hidden",
+        "header": "bg-slate-900/80 text-slate-400 font-mono text-xs uppercase tracking-wider",
+        "row": "border-b border-white/5 hover:bg-white/5 transition-colors",
+        "cell": "py-4 px-6 text-sm text-slate-300"
+      }
+    },
+    "visual_enhancers": {
+      "glassmorphism": "backdrop-blur-xl bg-opacity-40",
+      "neon_glow": "shadow-[0_0_15px_rgba(6,182,212,0.15)]",
+      "grid_lines": "bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"
+    },
+    "assets": {
+      "images": {
+        "hero_coal_ship": {
+          "url": "https://images.unsplash.com/photo-1719574235159-8488f3d5feba",
+          "alt": "Aerial view of coal cargo ship",
+          "usage": "Dashboard Hero / Vessel Page Header"
+        },
+        "biomass_pile": {
+          "url": "https://images.unsplash.com/photo-1765881092731-17f6d855a0b1",
+          "alt": "Industrial woodchip biomass pile",
+          "usage": "Biomass Page Header / Card Background"
+        },
+        "coal_truck": {
+          "url": "https://images.unsplash.com/photo-1695601510327-1553ba5f8bb4",
+          "alt": "Industrial transport truck",
+          "usage": "Trucking Page Header"
+        }
+      },
+      "icons": "lucide-react"
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. THEME SETUP: Update `app/frontend/src/index.css` with the CSS variables provided in `colors.css_overrides`. This is CRITICAL for the dark mode look.",
+    "2. FONTS: Add the Google Fonts import to `app/frontend/src/index.css` at the very top.",
+    "3. LAYOUT: Use the 'Bento Grid' strategy. Don't just stack cards. Use `col-span-2` or `row-span-2` to create visual interest.",
+    "4. GLASSMORPHISM: Apply the `card.classes` to all main containers. Do not use solid opaque backgrounds for cards.",
+    "5. LANGUAGE: Ensure all UI text (labels, buttons, headers) is in INDONESIAN as requested.",
+    "6. CHARTS: Use `recharts` (via Shadcn charts). Style them with the `primary` (Cyan) and `secondary` (Blue) colors. Avoid default rainbow colors.",
+    "7. FORMS: Split long forms (Vessel Input) into logical sections (e.g., 'Informasi Kapal', 'Muatan', 'Waktu'). Use `Card` components to group them.",
+    "8. TESTING: Add `data-testid` to all inputs and buttons (e.g., `data-testid='submit-vessel-btn'`)."
+  ],
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: `transition: all`. This results in breaking transforms.",
+    "You MUST NOT center align the app container.",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Use `sonner` for toasts."
+  ]
+}
