@@ -6,6 +6,7 @@ import VesselPage from "@/pages/VesselPage";
 import BargePage from "@/pages/BargePage";
 import TruckingPage from "@/pages/TruckingPage";
 import BiomassaPage from "@/pages/BiomassaPage";
+import POBatubaraPage from "@/pages/POBatubaraPage";
 import LaporanPage from "@/pages/LaporanPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Layout from "@/components/Layout";
@@ -77,6 +78,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><BiomassaPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/po-batubara"
+        element={
+          <ProtectedRoute>
+            <Layout><POBatubaraPage /></Layout>
           </ProtectedRoute>
         }
       />
