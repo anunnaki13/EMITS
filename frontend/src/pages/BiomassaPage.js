@@ -114,13 +114,14 @@ const BiomassaPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchBiomassa(); }, [search]);
+  useEffect(() => { fetchBiomassa(); setCurrentPage(1); }, [search]);
 
   const fetchBiomassa = async () => {
     try {
       const params = search ? { search } : {};
       const response = await axios.get(`${API_URL}/api/biomassa`, { headers: getAuthHeader(), params });
-      setBiomassaList(response.data);
+      const sortedData = response.data.reverse();
+      setBiomassaList(sortedData);
     } catch (error) {
       toast.error("Gagal memuat data biomassa");
     } finally {
@@ -129,6 +130,10 @@ const BiomassaPage = () => {
   };
 
   const parseFloat2 = (val) => val ? parseFloat(val) : null;
+
+  const totalPages = Math.ceil(biomassaList.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedBiomassa = biomassaList.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
