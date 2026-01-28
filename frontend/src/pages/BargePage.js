@@ -431,11 +431,11 @@ const BargePage = () => {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={canEdit ? 8 : 7} className="text-center py-12"><Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400" /></TableCell></TableRow>
-              ) : barges.length === 0 ? (
-                <TableRow><TableCell colSpan={canEdit ? 8 : 7} className="text-center py-12 text-slate-500">Tidak ada data barge</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-12"><Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-400" /></TableCell></TableRow>
+              ) : paginatedBarges.length === 0 ? (
+                <TableRow><TableCell colSpan={8} className="text-center py-12 text-slate-500">Tidak ada data barge</TableCell></TableRow>
               ) : (
-                barges.map((barge) => (
+                paginatedBarges.map((barge) => (
                   <TableRow key={barge.id} className="border-white/5 hover:bg-white/5">
                     <TableCell className="text-slate-300 font-mono text-sm">{barge.periode}</TableCell>
                     <TableCell className="text-slate-300 text-sm max-w-[150px] truncate">{barge.shipment_code}</TableCell>
@@ -444,17 +444,16 @@ const BargePage = () => {
                     <TableCell className="text-slate-400 text-sm max-w-[120px] truncate">{barge.coal_from}</TableCell>
                     <TableCell className="text-blue-400 font-mono">{barge.ds_mt?.toLocaleString() || "-"}</TableCell>
                     <TableCell className="text-amber-400 font-mono">{barge.gcv_arb?.toLocaleString() || "-"}</TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="text-slate-400 hover:text-white"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-[#0B1221] border-white/10">
-                            <DropdownMenuItem onClick={() => handleEdit(barge)} className="text-slate-300 focus:text-white focus:bg-white/5"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                            {isAdmin && (<DropdownMenuItem onClick={() => handleDelete(barge.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>)}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="text-slate-400 hover:text-white"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-[#0B1221] border-white/10">
+                          <DropdownMenuItem onClick={() => handleView(barge)} className="text-slate-300 focus:text-white focus:bg-white/5"><Eye className="w-4 h-4 mr-2" />Lihat</DropdownMenuItem>
+                          {canEdit && <DropdownMenuItem onClick={() => handleEdit(barge)} className="text-slate-300 focus:text-white focus:bg-white/5"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>}
+                          {isAdmin && <DropdownMenuItem onClick={() => handleDelete(barge.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               )}

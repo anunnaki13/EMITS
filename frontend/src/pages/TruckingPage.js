@@ -431,11 +431,11 @@ const TruckingPage = () => {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={canEdit ? 9 : 8} className="text-center py-12"><Loader2 className="w-6 h-6 animate-spin mx-auto text-amber-400" /></TableCell></TableRow>
-              ) : trucking.length === 0 ? (
-                <TableRow><TableCell colSpan={canEdit ? 9 : 8} className="text-center py-12 text-slate-500">Tidak ada data trucking</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-12"><Loader2 className="w-6 h-6 animate-spin mx-auto text-amber-400" /></TableCell></TableRow>
+              ) : paginatedTrucking.length === 0 ? (
+                <TableRow><TableCell colSpan={9} className="text-center py-12 text-slate-500">Tidak ada data trucking</TableCell></TableRow>
               ) : (
-                trucking.map((item) => (
+                paginatedTrucking.map((item) => (
                   <TableRow key={item.id} className="border-white/5 hover:bg-white/5">
                     <TableCell className="text-slate-300 font-mono text-sm">{item.periode_ta}</TableCell>
                     <TableCell className="text-slate-300 text-sm max-w-[150px] truncate">{item.shipment_code}</TableCell>
@@ -445,17 +445,16 @@ const TruckingPage = () => {
                     <TableCell className="text-amber-400 font-mono">{item.ds_mt?.toLocaleString() || "-"}</TableCell>
                     <TableCell className="text-cyan-400 font-mono">{item.rit || "-"}</TableCell>
                     <TableCell className="text-amber-400 font-mono">{item.gcv_arb?.toLocaleString() || "-"}</TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="text-slate-400 hover:text-white"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-[#0B1221] border-white/10">
-                            <DropdownMenuItem onClick={() => handleEdit(item)} className="text-slate-300 focus:text-white focus:bg-white/5"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                            {isAdmin && (<DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>)}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="text-slate-400 hover:text-white"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-[#0B1221] border-white/10">
+                          <DropdownMenuItem onClick={() => handleView(item)} className="text-slate-300 focus:text-white focus:bg-white/5"><Eye className="w-4 h-4 mr-2" />Lihat</DropdownMenuItem>
+                          {canEdit && <DropdownMenuItem onClick={() => handleEdit(item)} className="text-slate-300 focus:text-white focus:bg-white/5"><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>}
+                          {isAdmin && <DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-red-400 focus:text-red-300 focus:bg-red-500/10"><Trash2 className="w-4 h-4 mr-2" />Hapus</DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
