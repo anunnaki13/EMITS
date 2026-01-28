@@ -456,6 +456,38 @@ class BiomassaTNYResponse(BiomassaTNYCreate):
     created_at: str
     created_by: Optional[str] = None
 
+# PO Batubara Model
+class POBatubaraCreate(BaseModel):
+    district_code: Optional[str] = None
+    district_name: Optional[str] = None
+    periode: Optional[str] = None
+    stock_code: Optional[float] = None
+    warehouse: Optional[float] = None
+    po_number: Optional[str] = None
+    supplier_code: Optional[str] = None
+    supplier_name: Optional[str] = None
+    spec: Optional[str] = None
+    vessel_tugboat: Optional[str] = None
+    barge: Optional[str] = None
+    no_jadwal: Optional[str] = None
+    id_bbo_no_pengiriman: Optional[str] = None
+    id_bbo_trans: Optional[str] = None
+    no_shipment: Optional[str] = None
+    time_arrival: Optional[str] = None
+    completed: Optional[str] = None
+    completed_year: Optional[int] = None
+    completed_month: Optional[int] = None
+    tonase_po: Optional[float] = None
+    tonase_po_1000: Optional[float] = None
+    inventory_price: Optional[float] = None
+    freight_inventory_fob: Optional[float] = None
+    total: Optional[float] = None
+
+class POBatubaraResponse(POBatubaraCreate):
+    id: str
+    created_at: str
+    created_by: Optional[str] = None
+
 # Dashboard Stats Model
 class DashboardStats(BaseModel):
     total_vessel: int
