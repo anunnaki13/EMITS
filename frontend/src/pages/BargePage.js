@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Anchor, Plus, Search, Upload, MoreHorizontal, Edit, Trash2, Loader2, FileSpreadsheet } from "lucide-react";
+import { Anchor, Plus, Search, Upload, MoreHorizontal, Edit, Trash2, Loader2, FileSpreadsheet, AlertTriangle } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -23,6 +24,7 @@ const BargePage = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editingBarge, setEditingBarge] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -44,6 +46,19 @@ const BargePage = () => {
       toast.error("Gagal memuat data barge");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    try {
+      const response = await axios.delete(`${API_URL}/api/barges`, { headers: getAuthHeader() });
+      toast.success(response.data.message);
+      fetchBarges();
+    } catch (error) {
+      toast.error("Gagal menghapus semua data");
+    } finally {
+      setDeleting(false);
     }
   };
 
