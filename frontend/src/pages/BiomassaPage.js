@@ -57,10 +57,13 @@ import {
   Trash2,
   Loader2,
   FileSpreadsheet,
-  AlertTriangle
+  AlertTriangle,
+  Eye
 } from "lucide-react";
+import Pagination from "@/components/Pagination";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const ITEMS_PER_PAGE = 100;
 
 const BiomassaPage = () => {
   const { user, getAuthHeader } = useAuth();
