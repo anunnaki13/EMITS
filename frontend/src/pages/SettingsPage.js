@@ -51,6 +51,15 @@ const SettingsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
+  // AI Settings state
+  const [aiSettings, setAiSettings] = useState({
+    custom_api_key: "",
+    llm_provider: "gemini",
+    llm_model: "gemini-2.5-flash",
+    using_default: true
+  });
+  const [savingAI, setSavingAI] = useState(false);
+  
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -60,7 +69,39 @@ const SettingsPage = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchAISettings();
   }, []);
+
+  const fetchAISettings = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/ai/settings`, { headers: getAuthHeader() });
+      setAiSettings({
+        custom_api_key: response.data.custom_api_key || "",
+        llm_provider: response.data.llm_provider || "gemini",
+        llm_model: response.data.llm_model || "gemini-2.5-flash",
+        using_default: response.data.using_default
+      });
+    } catch (error) {
+      console.log("AI settings not available");
+    }
+  };
+
+  const handleSaveAISettings = async () => {
+    setSavingAI(true);
+    try {
+      await axios.put(`${API_URL}/api/ai/settings`, {
+        custom_api_key: aiSettings.custom_api_key || null,
+        llm_provider: aiSettings.llm_provider,
+        llm_model: aiSettings.llm_model
+      }, { headers: getAuthHeader() });
+      toast.success("Pengaturan AI berhasil disimpan");
+      fetchAISettings();
+    } catch (error) {
+      toast.error("Gagal menyimpan pengaturan AI");
+    } finally {
+      setSavingAI(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
