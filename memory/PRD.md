@@ -24,13 +24,12 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 ### Backend (FastAPI)
 - ✅ User authentication (JWT)
 - ✅ Role-based authorization
-- ✅ CRUD endpoints untuk semua kategori (Vessel, Barge, Trucking, Biomassa, PO Batubara, Merit Order)
+- ✅ CRUD endpoints untuk semua kategori
 - ✅ Excel upload & parsing untuk semua kategori
-- ✅ Delete all data endpoint per kategori
-- ✅ Dashboard statistics API
-- ✅ **Advanced Dashboard API** - /api/dashboard/advanced dengan data agregasi komprehensif
-- ✅ PO Batubara API dengan filter year/month
-- ✅ Merit Order API dengan CRUD lengkap
+- ✅ Dashboard statistics API & Advanced Dashboard API
+- ✅ **AI Intelligence API** - /api/ai/query dengan 4 modul
+- ✅ **AI Quick Analysis Endpoints** - blending, boiler alerts, contract status, logistics losses
+- ✅ **AI Settings API** - Custom API key management
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
