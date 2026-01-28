@@ -234,51 +234,93 @@ class VesselTNYResponse(BaseModel):
     created_at: str
     created_by: Optional[str] = None
 
-# Barge TNY Model
+# Barge TNY Model - Complete fields based on PLTU Tenayan Excel template
 class BargeTNYCreate(BaseModel):
-    periode_ta: str
-    periode_realisasi: str
+    # Informasi Shipment
+    periode: str
     shipment_code: str
     voyage_code: str
+    shipment: Optional[str] = None
     suppliers: str
     voyage: str
-    name_of_barge: str
+    tb: Optional[str] = None  # Tug Boat
+    bg: Optional[str] = None  # Barge Name
     coal_from: str
-    time_arrival: Optional[str] = None
-    berthed: Optional[str] = None
-    time_commenced_unloading: Optional[str] = None
+    # Waktu Operasional
+    ta: Optional[str] = None  # Time Arrival
+    berthed_time: Optional[str] = None
+    commenced_unloading: Optional[str] = None
     completed_unloading: Optional[str] = None
     durasi_pembongkaran_hari: Optional[float] = None
+    durasi_pembongkaran_jam: Optional[float] = None
+    waktu_tunggu_jam: Optional[float] = None
+    # Muatan
     bl_mt: Optional[float] = None
     ds_mt: Optional[float] = None
+    # COW
     no_cow: Optional[str] = None
     tgl_terbit_cow: Optional[str] = None
+    # Kualitas - GCV
     gcv_arb: Optional[float] = None
+    gcv_adb: Optional[float] = None
+    gcv_db: Optional[float] = None
+    # Kualitas - Moisture
     tm_arb: Optional[float] = None
+    im_adb: Optional[float] = None
+    # Kualitas - Ash Content
+    ash_arb: Optional[float] = None
+    ash_adb: Optional[float] = None
+    ash_db: Optional[float] = None
+    # Kualitas - VM & FC
+    vm_arb: Optional[float] = None
+    vm_adb: Optional[float] = None
+    fc_arb: Optional[float] = None
+    fc_adb: Optional[float] = None
+    # Kualitas - Sulfur
+    ts_arb: Optional[float] = None
+    ts_adb: Optional[float] = None
+    ts_db: Optional[float] = None
+    ts_dafb: Optional[float] = None
+    # Ultimate Analysis
+    c_arb: Optional[float] = None
+    c_adb: Optional[float] = None
+    h_arb: Optional[float] = None
+    h_adb: Optional[float] = None
+    n_arb: Optional[float] = None
+    n_adb: Optional[float] = None
+    n_dafb: Optional[float] = None
+    o_arb: Optional[float] = None
+    o_adb: Optional[float] = None
+    # HGI & Index
+    hgi: Optional[float] = None
+    slagging_index: Optional[str] = None
+    fouling_index: Optional[str] = None
+    idt_reducing: Optional[float] = None
+    # Ash Composition
+    sio2_db: Optional[float] = None
+    al2o3_db: Optional[float] = None
+    tio2_db: Optional[float] = None
+    fe2o3_db: Optional[float] = None
+    cao_db: Optional[float] = None
+    mgo_db: Optional[float] = None
+    k2o_db: Optional[float] = None
+    na2o_db: Optional[float] = None
+    so3_db: Optional[float] = None
+    p2o5_db: Optional[float] = None
+    mno2_db: Optional[float] = None
+    mn3o4_db: Optional[float] = None
+    # Size Analysis
+    size_70mm: Optional[float] = None
+    size_50mm: Optional[float] = None
+    size_32mm: Optional[float] = None
+    size_2_38mm: Optional[float] = None
+    # COA
     no_coa: Optional[str] = None
+    tgl_terbit_coa: Optional[str] = None
+    durasi_terbit_coa: Optional[str] = None
 
-class BargeTNYResponse(BaseModel):
+class BargeTNYResponse(BargeTNYCreate):
     id: str
-    periode_ta: str
-    periode_realisasi: str
-    shipment_code: str
-    voyage_code: str
-    suppliers: str
-    voyage: str
-    name_of_barge: str
-    coal_from: str
-    time_arrival: Optional[str] = None
-    berthed: Optional[str] = None
-    time_commenced_unloading: Optional[str] = None
-    completed_unloading: Optional[str] = None
-    durasi_pembongkaran_hari: Optional[float] = None
-    bl_mt: Optional[float] = None
-    ds_mt: Optional[float] = None
-    no_cow: Optional[str] = None
-    tgl_terbit_cow: Optional[str] = None
-    gcv_arb: Optional[float] = None
-    tm_arb: Optional[float] = None
-    no_coa: Optional[str] = None
     created_at: str
     created_by: Optional[str] = None
 
