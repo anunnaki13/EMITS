@@ -521,6 +521,26 @@ class DashboardStats(BaseModel):
     monthly_trend: List[dict]
     supplier_stats: List[dict]
 
+# Advanced Dashboard Models
+class DashboardAdvanced(BaseModel):
+    # Contract Monitoring (Gauge)
+    total_ds_mt: float
+    total_tonase_po: float
+    contract_percentage: float
+    # Fuel Composition (Donut)
+    fuel_composition: List[dict]
+    # GCV Trend (Line Chart)
+    gcv_trend: List[dict]
+    # Supplier Economy Analysis (Bar Chart)
+    supplier_economy: List[dict]
+    # Slagging Risk Matrix (Heatmap)
+    slagging_matrix: List[dict]
+    # 6 Months Summary
+    six_months_summary: List[dict]
+    # Filter options
+    available_periods: List[dict]
+    available_moda: List[str]
+
 # ==================== AUTH HELPERS ====================
 
 def hash_password(password: str) -> str:
