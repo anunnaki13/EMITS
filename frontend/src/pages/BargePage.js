@@ -153,6 +153,7 @@ const BargePage = () => {
   };
 
   const canEdit = user?.role === "admin" || user?.role === "operator";
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="space-y-6" data-testid="barge-page">
@@ -162,10 +163,36 @@ const BargePage = () => {
             <Anchor className="w-8 h-8 text-blue-400" />
             Barge TNY
           </h1>
-          <p className="text-slate-400 mt-1">Data penerimaan batubara via tongkang</p>
+          <p className="text-slate-400 mt-1">Data penerimaan batubara via tongkang ({barges.length} data)</p>
         </div>
         {canEdit && (
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            {isAdmin && barges.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10" data-testid="delete-all-barge-btn">
+                    <Trash2 className="w-4 h-4 mr-2" />Hapus Semua
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-[#0B1221] border-white/10">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-red-400" />
+                      Hapus Semua Data Barge?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-slate-400">
+                      Tindakan ini akan menghapus <span className="text-red-400 font-bold">{barges.length}</span> data barge secara permanen.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="border-slate-700 text-slate-300">Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAll} disabled={deleting} className="bg-red-600 hover:bg-red-500">
+                      {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Ya, Hapus Semua
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800" data-testid="barge-upload-btn">
