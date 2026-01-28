@@ -33,24 +33,20 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
-- ✅ **Dashboard Advanced** dengan visualisasi lengkap:
-  - Panel Monitoring Kontrak (Gauge Chart) - Realisasi vs PO
-  - Summary Stats 6 Bulan Terakhir
-  - Tren Penerimaan 6 Bulan (Bar Chart) dengan tabel detail
-  - **Komposisi Bahan Bakar (Donut Chart)** - Batubara LRC/MRC dari PO + Biomassa WOODCHIP/SAWDUST
-  - Tren Kualitas GCV (Line Chart) dengan target 4000 Kcal/Kg
-  - Analisis Ekonomi Supplier (Horizontal Bar Chart) - RP/Kcal terendah
-  - **Matriks Risiko Slagging & Fouling** - Data dari Vessel, Barge, DAN Trucking dengan kolom Moda
-  - Filter interaktif berdasarkan Moda
-- ✅ Vessel TNY page (tabbed form dengan 5 tab)
-- ✅ Barge TNY page (tabbed form lengkap)
-- ✅ Trucking TNY page (tabbed form lengkap)
-- ✅ Biomassa TNY page (tabbed form dengan 4 tab)
+- ✅ **Dashboard Advanced** dengan 7 visualisasi
+- ✅ Vessel TNY, Barge TNY, Trucking TNY, Biomassa TNY pages
 - ✅ Purchase Order Batubara page
 - ✅ Merit Order page
+- ✅ **Tenayan Fuel Intelligence Agent** dengan:
+  - Smart Blending Optimizer modul
+  - Boiler Risk Warning modul
+  - Contract Compliance & PO Tracker modul
+  - Logistic Efficiency & Loss Analysis modul
+  - Chat interface dengan markdown rendering
+  - Quick Insights panel
+  - Suggested queries
 - ✅ Laporan page
-- ✅ Settings page
-- ✅ Dropdown Navigation dengan 6 submenu
+- ✅ **Settings page** dengan pengaturan AI/LLM API key
 
 ### Navigation Structure
 ```
