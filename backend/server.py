@@ -1150,20 +1150,60 @@ async def upload_biomassa_excel(file: UploadFile = File(...), user: dict = Depen
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents))
         
+        def safe_float(val):
+            if pd.isna(val) or val == '' or val is None:
+                return None
+            try:
+                return float(val)
+            except:
+                return None
+        
+        def safe_str(val):
+            if pd.isna(val) or val is None:
+                return ""
+            return str(val).strip()
+        
         records = []
         for _, row in df.iterrows():
             biomassa_id = str(uuid.uuid4())
             biomassa_doc = {
                 "id": biomassa_id,
-                "periode": str(row.get("Periode", "")),
-                "shipment_code": str(row.get("Shipment Code", "")),
-                "lot": str(row.get("Lot", "")),
-                "suppliers": str(row.get("Suppliers", "")),
-                "shipper": str(row.get("Shipper", "")),
-                "biomass_type": str(row.get("Biomass", row.get("Biomass Type", ""))),
-                "jembatan_timbang_mt": float(row.get("Jembatan Timbang (MT)", 0)) if pd.notna(row.get("Jembatan Timbang (MT)")) else None,
-                "gcv_arb": float(row.get("GCV (Kcal/Kg) ARB", 0)) if pd.notna(row.get("GCV (Kcal/Kg) ARB")) else None,
-                "tm_arb": float(row.get("TM (%wt) ARB", 0)) if pd.notna(row.get("TM (%wt) ARB")) else None,
+                # Informasi Shipment
+                "periode": safe_str(row.get("Periode")),
+                "shipment_code": safe_str(row.get("Shipment Code")),
+                "voyage_code": safe_str(row.get("Voyage Code")),
+                "lot": safe_str(row.get("LOT")),
+                "suppliers": safe_str(row.get("Suppliers")),
+                "shipper": safe_str(row.get("Shipper")),
+                "lot_detail": safe_str(row.get("LOT.1")),
+                "tb": safe_str(row.get("TB")),
+                "bg": safe_str(row.get("BG")),
+                "biomass_type": safe_str(row.get("Biomass")),
+                # Waktu Operasional
+                "ta": safe_str(row.get("TA")),
+                "berthed_time": safe_str(row.get("Berthed Time")),
+                "commenced_unloading": safe_str(row.get("Commenced Unloading")),
+                "completed_unloading": safe_str(row.get("Completed Unloading")),
+                "durasi_pembongkaran_hari": safe_float(row.get("Durasi Pembongkaran (Hari)")),
+                "waktu_tunggu_jam": safe_float(row.get("Waktu Tunggu (Jam)")),
+                # Muatan
+                "bl_mt": safe_float(row.get("B/L (MT)")),
+                "jembatan_timbang_mt": safe_float(row.get("Jembatan Timbang (MT)")),
+                "surveyor": safe_str(row.get("Surveyor")),
+                # COW/ROW
+                "no_cow": safe_str(row.get("NO.ROW")),
+                "tgl_terbit_cow": safe_str(row.get("Tgl Terbit ROW")),
+                "lama_terbit_row": safe_str(row.get("Lama Terbit ROW (Hari)")),
+                # Kualitas
+                "gcv_arb": safe_float(row.get("GCV (Kcal/Kg)\nARB", row.get("GCV (Kcal/Kg) ARB"))),
+                "gcv_adb": safe_float(row.get("GCV (Kcal/Kg)\nADB", row.get("GCV (Kcal/Kg) ADB"))),
+                "tm_arb": safe_float(row.get("TM (%wt)\nARB", row.get("TM (%wt) ARB"))),
+                "im_adb": safe_float(row.get("IM (%wt) \nADB", row.get("IM (%wt) ADB"))),
+                # COA
+                "no_coa": safe_str(row.get("NO. COA")),
+                "tgl_terbit_coa": safe_str(row.get("Tgl Terbit COA")),
+                "durasi_terbit_coa": safe_str(row.get("DURASI TERBIT COA")),
+                # Metadata
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "created_by": user["id"]
             }
