@@ -37,10 +37,10 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
   - Panel Monitoring Kontrak (Gauge Chart) - Realisasi vs PO
   - Summary Stats 6 Bulan Terakhir
   - Tren Penerimaan 6 Bulan (Bar Chart) dengan tabel detail
-  - Komposisi Bahan Bakar (Donut Chart)
+  - **Komposisi Bahan Bakar (Donut Chart)** - Batubara LRC/MRC dari PO + Biomassa WOODCHIP/SAWDUST
   - Tren Kualitas GCV (Line Chart) dengan target 4000 Kcal/Kg
   - Analisis Ekonomi Supplier (Horizontal Bar Chart) - RP/Kcal terendah
-  - Matriks Risiko Slagging & Fouling (Heatmap Table)
+  - **Matriks Risiko Slagging & Fouling** - Data dari Vessel, Barge, DAN Trucking dengan kolom Moda
   - Filter interaktif berdasarkan Moda
 - ✅ Vessel TNY page (tabbed form dengan 5 tab)
 - ✅ Barge TNY page (tabbed form lengkap)
