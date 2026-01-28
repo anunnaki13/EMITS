@@ -310,6 +310,109 @@ const SettingsPage = () => {
         </Card>
       </div>
 
+      {/* AI Settings Card */}
+      <Card className="glass-card border-white/5 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+            <Bot className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="text-white font-medium">Pengaturan AI Intelligence</h3>
+            <p className="text-slate-500 text-sm">
+              {aiSettings.using_default 
+                ? "Menggunakan Emergent LLM Key (default)" 
+                : "Menggunakan API Key custom"
+              }
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-sm flex items-center gap-2">
+                <Key className="w-4 h-4" />
+                API Key (Gemini/OpenAI)
+              </Label>
+              <Input
+                type="password"
+                value={aiSettings.custom_api_key}
+                onChange={(e) => setAiSettings({...aiSettings, custom_api_key: e.target.value})}
+                placeholder="Kosongkan untuk menggunakan Emergent Key"
+                className="bg-slate-900/50 border-slate-700 text-white"
+                data-testid="ai-api-key-input"
+              />
+              <p className="text-xs text-slate-500">
+                Jika kosong, sistem akan menggunakan Emergent LLM Key secara otomatis
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-sm">Provider</Label>
+              <Select 
+                value={aiSettings.llm_provider} 
+                onValueChange={(val) => setAiSettings({...aiSettings, llm_provider: val})}
+              >
+                <SelectTrigger className="bg-slate-900/50 border-slate-700 text-white" data-testid="ai-provider-select">
+                  <SelectValue placeholder="Pilih provider" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0B1221] border-slate-800">
+                  <SelectItem value="gemini" className="text-slate-300">Google Gemini</SelectItem>
+                  <SelectItem value="openai" className="text-slate-300">OpenAI</SelectItem>
+                  <SelectItem value="anthropic" className="text-slate-300">Anthropic Claude</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-sm">Model</Label>
+              <Select 
+                value={aiSettings.llm_model} 
+                onValueChange={(val) => setAiSettings({...aiSettings, llm_model: val})}
+              >
+                <SelectTrigger className="bg-slate-900/50 border-slate-700 text-white" data-testid="ai-model-select">
+                  <SelectValue placeholder="Pilih model" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0B1221] border-slate-800">
+                  {aiSettings.llm_provider === "gemini" && (
+                    <>
+                      <SelectItem value="gemini-2.5-flash" className="text-slate-300">Gemini 2.5 Flash</SelectItem>
+                      <SelectItem value="gemini-2.5-pro" className="text-slate-300">Gemini 2.5 Pro</SelectItem>
+                    </>
+                  )}
+                  {aiSettings.llm_provider === "openai" && (
+                    <>
+                      <SelectItem value="gpt-4o" className="text-slate-300">GPT-4o</SelectItem>
+                      <SelectItem value="gpt-4o-mini" className="text-slate-300">GPT-4o Mini</SelectItem>
+                    </>
+                  )}
+                  {aiSettings.llm_provider === "anthropic" && (
+                    <>
+                      <SelectItem value="claude-sonnet-4-20250514" className="text-slate-300">Claude Sonnet 4</SelectItem>
+                      <SelectItem value="claude-haiku-4-20250514" className="text-slate-300">Claude Haiku 4</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="pt-4">
+              <Button 
+                onClick={handleSaveAISettings}
+                disabled={savingAI}
+                className="w-full bg-cyan-600 hover:bg-cyan-500"
+                data-testid="save-ai-settings-btn"
+              >
+                {savingAI ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                Simpan Pengaturan AI
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <Card className="glass-card border-white/5 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
