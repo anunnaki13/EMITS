@@ -488,6 +488,26 @@ class POBatubaraResponse(POBatubaraCreate):
     created_at: str
     created_by: Optional[str] = None
 
+# Merit Order Model
+class MeritOrderCreate(BaseModel):
+    periode: Optional[str] = None
+    periode_year: Optional[int] = None
+    periode_month: Optional[int] = None
+    pemasok: Optional[str] = None
+    moda: Optional[str] = None  # Tongkang, Trucking, Vessel
+    tipikal_kcal_kg: Optional[float] = None
+    jenis_kontrak: Optional[str] = None  # CIF, CFR, FOB
+    harga_batubara: Optional[float] = None  # RP/Ton
+    harga_freight: Optional[float] = None  # RP/Ton
+    harga_cif: Optional[float] = None  # RP/Ton
+    rp_kg: Optional[float] = None
+    rp_kcal: Optional[float] = None
+
+class MeritOrderResponse(MeritOrderCreate):
+    id: str
+    created_at: str
+    created_by: Optional[str] = None
+
 # Dashboard Stats Model
 class DashboardStats(BaseModel):
     total_vessel: int
