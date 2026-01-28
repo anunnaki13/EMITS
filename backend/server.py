@@ -1771,39 +1771,42 @@ async def get_dashboard_advanced(
     
     contract_percentage = (total_ds_mt / total_tonase_po * 100) if total_tonase_po > 0 else 0
     
-    # === 2. Fuel Composition (Donut) ===
-    # Get spec breakdown from vessels and barges (LRC, MRC)
-    vessel_spec = await db.vessels.aggregate([
-        {"$group": {"_id": "$coal_from", "total_ds": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}},
-        {"$match": {"_id": {"$ne": None}}}
-    ]).to_list(100)
-    barge_spec = await db.barges.aggregate([
-        {"$group": {"_id": "$coal_from", "total_ds": {"$sum": {"$ifNull": ["$ds_mt", 0]}}}},
-        {"$match": {"_id": {"$ne": None}}}
+    # === 2. Fuel Composition (Donut) - Based on PO Batubara spec (LRC/MRC) and Biomassa types ===
+    # Get coal spec (LRC, MRC) from PO Batubara with tonase
+    po_spec_data = await db.po_batubara.aggregate([
+        {"$match": {"spec": {"$ne": None}, "tonase_po": {"$ne": None}}},
+        {"$group": {"_id": "$spec", "total_tonase": {"$sum": {"$ifNull": ["$tonase_po", 0]}}, "count": {"$sum": 1}}}
     ]).to_list(100)
     
-    # Biomass types
+    # Get biomass types from biomassa collection
     biomass_types = await db.biomassa.aggregate([
-        {"$group": {"_id": "$biomass_type", "total_ds": {"$sum": {"$ifNull": ["$jembatan_timbang_mt", 0]}}}},
-        {"$match": {"_id": {"$ne": None}}}
+        {"$match": {"biomass_type": {"$ne": None}}},
+        {"$group": {"_id": "$biomass_type", "total_tonase": {"$sum": {"$ifNull": ["$jembatan_timbang_mt", 0]}}, "count": {"$sum": 1}}}
     ]).to_list(100)
     
     fuel_composition = []
-    spec_totals = {}
-    for item in vessel_spec + barge_spec:
-        spec = item["_id"] or "Unknown"
-        if "LRC" in spec.upper():
-            spec_totals["LRC"] = spec_totals.get("LRC", 0) + item["total_ds"]
-        elif "MRC" in spec.upper():
-            spec_totals["MRC"] = spec_totals.get("MRC", 0) + item["total_ds"]
-        else:
-            spec_totals[spec] = spec_totals.get(spec, 0) + item["total_ds"]
     
-    for spec, total in spec_totals.items():
-        fuel_composition.append({"name": spec, "value": total, "type": "coal"})
+    # Add coal types (LRC, MRC) from PO
+    for item in po_spec_data:
+        spec_name = item["_id"]
+        if spec_name:
+            fuel_composition.append({
+                "name": f"Batubara {spec_name}",
+                "value": item["total_tonase"],
+                "count": item["count"],
+                "type": "coal"
+            })
     
+    # Add biomass types
     for item in biomass_types:
-        fuel_composition.append({"name": item["_id"] or "Biomassa", "value": item["total_ds"], "type": "biomass"})
+        btype = item["_id"]
+        if btype:
+            fuel_composition.append({
+                "name": f"Biomassa {btype}",
+                "value": item["total_tonase"],
+                "count": item["count"],
+                "type": "biomass"
+            })
     
     # Sort by value descending
     fuel_composition.sort(key=lambda x: x["value"], reverse=True)
