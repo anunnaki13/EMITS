@@ -1,0 +1,148 @@
+{
+  "summary": {
+    "total_tests": 23,
+    "passed_tests": 23,
+    "success_rate": 100.0,
+    "timestamp": "2026-01-28T18:45:35.145150"
+  },
+  "detailed_results": [
+    {
+      "test": "Health Check",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:33.872153"
+    },
+    {
+      "test": "API Health",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:33.915501"
+    },
+    {
+      "test": "Login",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.202419"
+    },
+    {
+      "test": "Get Current User",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.247348"
+    },
+    {
+      "test": "Get Vessels",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.295598"
+    },
+    {
+      "test": "Create Vessel",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.360906"
+    },
+    {
+      "test": "Get Vessel by ID",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.401355"
+    },
+    {
+      "test": "Update Vessel",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.448868"
+    },
+    {
+      "test": "Delete Vessel",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.489461"
+    },
+    {
+      "test": "Get Barges",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.525130"
+    },
+    {
+      "test": "Create Barge",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.577040"
+    },
+    {
+      "test": "Get Barge by ID",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.655875"
+    },
+    {
+      "test": "Delete Barge",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.696868"
+    },
+    {
+      "test": "Get Trucking",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.735299"
+    },
+    {
+      "test": "Create Trucking",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.799364"
+    },
+    {
+      "test": "Get Trucking by ID",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.836673"
+    },
+    {
+      "test": "Delete Trucking",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.883365"
+    },
+    {
+      "test": "Get Biomassa",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.926376"
+    },
+    {
+      "test": "Create Biomassa",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:34.974391"
+    },
+    {
+      "test": "Get Biomassa by ID",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:35.013566"
+    },
+    {
+      "test": "Delete Biomassa",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:35.051532"
+    },
+    {
+      "test": "Get Dashboard Stats",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:35.094991"
+    },
+    {
+      "test": "Get Users List",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-28T18:45:35.144203"
+    }
+  ]
+}
