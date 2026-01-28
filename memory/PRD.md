@@ -104,10 +104,11 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 3. Refactor backend server.py ke modular structure
 
 ## Tech Stack
-- **Frontend**: React 19, Tailwind CSS, Shadcn/UI, Recharts, Lucide-React
-- **Backend**: FastAPI, Motor (MongoDB async), Pandas, Openpyxl, python-dateutil
+- **Frontend**: React 19, Tailwind CSS, Shadcn/UI, Recharts, Lucide-React, react-markdown
+- **Backend**: FastAPI, Motor (MongoDB async), Pandas, Openpyxl, emergentintegrations
 - **Database**: MongoDB
 - **Auth**: JWT (python-jose, bcrypt)
+- **AI**: Gemini via Emergent LLM Key
 
 ## Test Credentials
 - **Email**: admin@example.com
