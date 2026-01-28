@@ -7,6 +7,7 @@ import BargePage from "@/pages/BargePage";
 import TruckingPage from "@/pages/TruckingPage";
 import BiomassaPage from "@/pages/BiomassaPage";
 import POBatubaraPage from "@/pages/POBatubaraPage";
+import MeritOrderPage from "@/pages/MeritOrderPage";
 import LaporanPage from "@/pages/LaporanPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Layout from "@/components/Layout";
@@ -86,6 +87,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><POBatubaraPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/merit-order"
+        element={
+          <ProtectedRoute>
+            <Layout><MeritOrderPage /></Layout>
           </ProtectedRoute>
         }
       />
