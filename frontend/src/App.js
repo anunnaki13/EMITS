@@ -100,6 +100,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/ai-intelligence"
+        element={
+          <ProtectedRoute>
+            <Layout><AIIntelligencePage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/laporan"
         element={
           <ProtectedRoute>
