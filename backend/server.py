@@ -705,7 +705,7 @@ async def create_trucking(data: TruckingTNYCreate, user: dict = Depends(require_
 @api_router.get("/trucking", response_model=List[TruckingTNYResponse])
 async def get_trucking(
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(10000, ge=1, le=10000),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
@@ -764,7 +764,7 @@ async def create_biomassa(data: BiomassaTNYCreate, user: dict = Depends(require_
 @api_router.get("/biomassa", response_model=List[BiomassaTNYResponse])
 async def get_biomassa(
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(10000, ge=1, le=10000),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
