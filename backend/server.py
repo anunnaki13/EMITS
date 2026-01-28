@@ -943,6 +943,9 @@ async def upload_po_batubara_excel(file: UploadFile = File(...), user: dict = De
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents))
         
+        # Clean column names - remove newlines and extra spaces
+        df.columns = df.columns.str.replace('\n', ' ').str.strip()
+        
         def safe_float(val):
             if pd.isna(val) or val == '' or val is None:
                 return None
@@ -960,7 +963,10 @@ async def upload_po_batubara_excel(file: UploadFile = File(...), user: dict = De
             if pd.isna(val) or val is None:
                 return None, None, None
             try:
-                if isinstance(val, str):
+                if isinstance(val, (int, float)):
+                    # Excel serial date
+                    dt = pd.to_datetime('1899-12-30') + pd.to_timedelta(val, 'D')
+                elif isinstance(val, str):
                     dt = pd.to_datetime(val)
                 else:
                     dt = val
@@ -968,37 +974,45 @@ async def upload_po_batubara_excel(file: UploadFile = File(...), user: dict = De
             except:
                 return str(val), None, None
         
+        def get_col(row, *possible_names):
+            """Try multiple column names to get value"""
+            for name in possible_names:
+                val = row.get(name)
+                if val is not None and not (isinstance(val, float) and pd.isna(val)):
+                    return val
+            return None
+        
         records = []
         for _, row in df.iterrows():
             po_id = str(uuid.uuid4())
-            completed_str, completed_year, completed_month = parse_datetime(row.get("Completed"))
+            completed_str, completed_year, completed_month = parse_datetime(get_col(row, "Completed"))
             
             po_doc = {
                 "id": po_id,
-                "district_code": safe_str(row.get("District Code")),
-                "district_name": safe_str(row.get("District Name")),
-                "periode": safe_str(row.get("Periode")),
-                "stock_code": safe_float(row.get("Stock Code")),
-                "warehouse": safe_float(row.get("Warehouse")),
-                "po_number": safe_str(row.get("PO Number")),
-                "supplier_code": safe_str(row.get("Supplier Code")),
-                "supplier_name": safe_str(row.get("Supplier Name")),
-                "spec": safe_str(row.get("Spec")),
-                "vessel_tugboat": safe_str(row.get("Vessel / Tugboat")),
-                "barge": safe_str(row.get("Barge")),
-                "no_jadwal": safe_str(row.get("No Jadwal")),
-                "id_bbo_no_pengiriman": safe_str(row.get("Id BBO (No Pengiriman)")),
-                "id_bbo_trans": safe_str(row.get("Id BBO Trans")),
-                "no_shipment": safe_str(row.get("No Shipment")),
-                "time_arrival": safe_str(row.get("Time Arrival")),
+                "district_code": safe_str(get_col(row, "District Code")),
+                "district_name": safe_str(get_col(row, "District Name")),
+                "periode": safe_str(get_col(row, "Periode")),
+                "stock_code": safe_float(get_col(row, "Stock Code")),
+                "warehouse": safe_float(get_col(row, "Warehouse")),
+                "po_number": safe_str(get_col(row, "PO Number")),
+                "supplier_code": safe_str(get_col(row, "Supplier Code")),
+                "supplier_name": safe_str(get_col(row, "Supplier Name")),
+                "spec": safe_str(get_col(row, "Spec")),
+                "vessel_tugboat": safe_str(get_col(row, "Vessel / Tugboat", "Vessel/Tugboat")),
+                "barge": safe_str(get_col(row, "Barge No", "Barge")),
+                "no_jadwal": safe_str(get_col(row, "No Jadwal", "Jadwal Id BBO (No Pengiriman)")),
+                "id_bbo_no_pengiriman": safe_str(get_col(row, "Id BBO (No Pengiriman)", "Jadwal Id BBO (No Pengiriman)")),
+                "id_bbo_trans": safe_str(get_col(row, "Id BBO Trans")),
+                "no_shipment": safe_str(get_col(row, "No Shipment")),
+                "time_arrival": safe_str(get_col(row, "Time Arrival")),
                 "completed": completed_str,
                 "completed_year": completed_year,
                 "completed_month": completed_month,
-                "tonase_po": safe_float(row.get("Tonase PO")),
-                "tonase_po_1000": safe_float(row.get("Tonase PO*1000")),
-                "inventory_price": safe_float(row.get("Inventory Price")),
-                "freight_inventory_fob": safe_float(row.get("Freight Inventory (FOB)")),
-                "total": safe_float(row.get("Total")),
+                "tonase_po": safe_float(get_col(row, "Tonase PO")),
+                "tonase_po_1000": safe_float(get_col(row, "Tonase PO*1000")),
+                "inventory_price": safe_float(get_col(row, "Inventory Price")),
+                "freight_inventory_fob": safe_float(get_col(row, "Freight Inventory (FOB)", "Freight", "Inventory (FOB)")),
+                "total": safe_float(get_col(row, "Total")),
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "created_by": user["id"]
             }
