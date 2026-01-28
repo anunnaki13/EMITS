@@ -16,6 +16,7 @@ import { Truck, Plus, Search, Upload, MoreHorizontal, Edit, Trash2, Loader2, Fil
 import Pagination from "@/components/Pagination";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const ITEMS_PER_PAGE = 100;
 
 const TruckingPage = () => {
   const { user, getAuthHeader } = useAuth();
