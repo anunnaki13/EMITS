@@ -81,13 +81,14 @@ class TestMeritOrderAPI:
         print(f"✓ Merit order data structure is correct with all required fields")
     
     def test_04_merit_order_moda_values(self):
-        """Test moda field has valid values (Vessel, Tongkang, Trucking)"""
+        """Test moda field has valid values (Vessel variants, Tongkang, Trucking)"""
         response = self.session.get(f"{BASE_URL}/api/merit-order")
         
         assert response.status_code == 200
         data = response.json()
         
-        valid_moda = {"Vessel", "Tongkang", "Trucking"}
+        # Valid moda values include Vessel variants from Excel data
+        valid_moda = {"Vessel", "Tongkang", "Trucking", "Vessel Hand Size", "Vessel Supramax"}
         moda_found = set()
         
         for record in data:
