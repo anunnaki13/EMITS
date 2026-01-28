@@ -63,8 +63,9 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
-# Vessel TNY Model
+# Vessel TNY Model - Complete fields based on PLTU Tenayan Excel template
 class VesselTNYCreate(BaseModel):
+    # Informasi Shipment
     periode_ta: str
     periode_realisasi: str
     shipment_code: str
@@ -73,28 +74,82 @@ class VesselTNYCreate(BaseModel):
     voyage: str
     name_of_vessel: str
     coal_from: str
+    # Waktu Operasional
     time_arrival: Optional[str] = None
-    berthed: Optional[str] = None
-    time_commenced_unloading: Optional[str] = None
+    berthed_time: Optional[str] = None
+    commenced_unloading: Optional[str] = None
     completed_unloading: Optional[str] = None
     durasi_pembongkaran_hari: Optional[float] = None
+    durasi_pembongkaran_jam: Optional[float] = None
+    waktu_tunggu_jam: Optional[float] = None
+    # Muatan
     bl_mt: Optional[float] = None
     ds_mt: Optional[float] = None
+    # COW (Certificate of Weighing)
     no_cow: Optional[str] = None
     tgl_terbit_cow: Optional[str] = None
+    # Kualitas - GCV
     gcv_arb: Optional[float] = None
     gcv_adb: Optional[float] = None
+    gcv_db: Optional[float] = None
+    # Kualitas - Moisture
     tm_arb: Optional[float] = None
-    im_arb: Optional[float] = None
+    im_adb: Optional[float] = None
+    # Kualitas - Ash Content
     ash_arb: Optional[float] = None
+    ash_adb: Optional[float] = None
+    ash_db: Optional[float] = None
+    # Kualitas - VM & FC
+    vm_arb: Optional[float] = None
+    vm_adb: Optional[float] = None
+    fc_arb: Optional[float] = None
+    fc_adb: Optional[float] = None
+    # Kualitas - Sulfur
+    ts_arb: Optional[float] = None
+    ts_adb: Optional[float] = None
+    ts_db: Optional[float] = None
+    ts_dafb: Optional[float] = None
+    # Ultimate Analysis
+    c_arb: Optional[float] = None
+    c_adb: Optional[float] = None
+    h_arb: Optional[float] = None
+    h_adb: Optional[float] = None
+    n_arb: Optional[float] = None
+    n_adb: Optional[float] = None
+    n_dafb: Optional[float] = None
+    o_arb: Optional[float] = None
+    o_adb: Optional[float] = None
+    # HGI & Index
     hgi: Optional[float] = None
     slagging_index: Optional[str] = None
     fouling_index: Optional[str] = None
+    idt_reducing: Optional[float] = None
+    # Ash Composition
+    sio2_db: Optional[float] = None
+    al2o3_db: Optional[float] = None
+    tio2_db: Optional[float] = None
+    fe2o3_db: Optional[float] = None
+    cao_db: Optional[float] = None
+    mgo_db: Optional[float] = None
+    k2o_db: Optional[float] = None
+    na2o_db: Optional[float] = None
+    so3_db: Optional[float] = None
+    p2o5_db: Optional[float] = None
+    mno2_db: Optional[float] = None
+    mn3o4_db: Optional[float] = None
+    # Size Analysis
+    size_70mm: Optional[float] = None
+    size_50mm: Optional[float] = None
+    size_32mm: Optional[float] = None
+    size_2_38mm: Optional[float] = None
+    # COA (Certificate of Analysis)
     no_coa: Optional[str] = None
     tgl_terbit_coa: Optional[str] = None
+    durasi_terbit_coa: Optional[str] = None
 
 class VesselTNYResponse(BaseModel):
     id: str
+    # Informasi Shipment
     periode_ta: str
     periode_realisasi: str
     shipment_code: str
@@ -103,25 +158,79 @@ class VesselTNYResponse(BaseModel):
     voyage: str
     name_of_vessel: str
     coal_from: str
+    # Waktu Operasional
     time_arrival: Optional[str] = None
-    berthed: Optional[str] = None
-    time_commenced_unloading: Optional[str] = None
+    berthed_time: Optional[str] = None
+    commenced_unloading: Optional[str] = None
     completed_unloading: Optional[str] = None
     durasi_pembongkaran_hari: Optional[float] = None
+    durasi_pembongkaran_jam: Optional[float] = None
+    waktu_tunggu_jam: Optional[float] = None
+    # Muatan
     bl_mt: Optional[float] = None
     ds_mt: Optional[float] = None
+    # COW
     no_cow: Optional[str] = None
     tgl_terbit_cow: Optional[str] = None
+    # Kualitas - GCV
     gcv_arb: Optional[float] = None
     gcv_adb: Optional[float] = None
+    gcv_db: Optional[float] = None
+    # Kualitas - Moisture
     tm_arb: Optional[float] = None
-    im_arb: Optional[float] = None
+    im_adb: Optional[float] = None
+    # Kualitas - Ash Content
     ash_arb: Optional[float] = None
+    ash_adb: Optional[float] = None
+    ash_db: Optional[float] = None
+    # Kualitas - VM & FC
+    vm_arb: Optional[float] = None
+    vm_adb: Optional[float] = None
+    fc_arb: Optional[float] = None
+    fc_adb: Optional[float] = None
+    # Kualitas - Sulfur
+    ts_arb: Optional[float] = None
+    ts_adb: Optional[float] = None
+    ts_db: Optional[float] = None
+    ts_dafb: Optional[float] = None
+    # Ultimate Analysis
+    c_arb: Optional[float] = None
+    c_adb: Optional[float] = None
+    h_arb: Optional[float] = None
+    h_adb: Optional[float] = None
+    n_arb: Optional[float] = None
+    n_adb: Optional[float] = None
+    n_dafb: Optional[float] = None
+    o_arb: Optional[float] = None
+    o_adb: Optional[float] = None
+    # HGI & Index
     hgi: Optional[float] = None
     slagging_index: Optional[str] = None
     fouling_index: Optional[str] = None
+    idt_reducing: Optional[float] = None
+    # Ash Composition
+    sio2_db: Optional[float] = None
+    al2o3_db: Optional[float] = None
+    tio2_db: Optional[float] = None
+    fe2o3_db: Optional[float] = None
+    cao_db: Optional[float] = None
+    mgo_db: Optional[float] = None
+    k2o_db: Optional[float] = None
+    na2o_db: Optional[float] = None
+    so3_db: Optional[float] = None
+    p2o5_db: Optional[float] = None
+    mno2_db: Optional[float] = None
+    mn3o4_db: Optional[float] = None
+    # Size Analysis
+    size_70mm: Optional[float] = None
+    size_50mm: Optional[float] = None
+    size_32mm: Optional[float] = None
+    size_2_38mm: Optional[float] = None
+    # COA
     no_coa: Optional[str] = None
     tgl_terbit_coa: Optional[str] = None
+    durasi_terbit_coa: Optional[str] = None
+    # Metadata
     created_at: str
     created_by: Optional[str] = None
 
