@@ -1980,28 +1980,6 @@ async def get_dashboard_advanced(
     
     # Sort by date descending
     slagging_matrix.sort(key=lambda x: x.get("date", ""), reverse=True)
-        slagging_matrix.append({
-            "name": v.get("name_of_vessel", "Unknown Vessel"),
-            "supplier": v.get("suppliers", ""),
-            "slagging": v.get("slagging_index", ""),
-            "slagging_risk": get_risk_level(v.get("slagging_index")),
-            "fouling": v.get("fouling_index", ""),
-            "fouling_risk": get_risk_level(v.get("fouling_index")),
-            "date": str(v.get("completed_unloading", ""))[:10],
-            "type": "vessel"
-        })
-    
-    for b in barges_slagging:
-        slagging_matrix.append({
-            "name": b.get("suppliers", "Unknown Barge"),
-            "supplier": b.get("suppliers", ""),
-            "slagging": b.get("slagging_index", ""),
-            "slagging_risk": get_risk_level(b.get("slagging_index")),
-            "fouling": b.get("fouling_index", ""),
-            "fouling_risk": get_risk_level(b.get("fouling_index")),
-            "date": str(b.get("completed_unloading", ""))[:10],
-            "type": "barge"
-        })
     
     # === 6. Six Months Summary ===
     six_months_summary = []
