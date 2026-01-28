@@ -591,6 +591,11 @@ async def delete_barge(barge_id: str, user: dict = Depends(require_role(["admin"
         raise HTTPException(status_code=404, detail="Data barge tidak ditemukan")
     return {"message": "Data barge berhasil dihapus"}
 
+@api_router.delete("/barges")
+async def delete_all_barges(user: dict = Depends(require_role(["admin"]))):
+    result = await db.barges.delete_many({})
+    return {"message": f"Berhasil menghapus {result.deleted_count} data barge", "count": result.deleted_count}
+
 # ==================== TRUCKING TNY ROUTES ====================
 
 @api_router.post("/trucking", response_model=TruckingTNYResponse)
