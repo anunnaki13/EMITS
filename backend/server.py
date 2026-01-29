@@ -3030,10 +3030,37 @@ async def get_smart_blending_recommendation(
     """Get AI-powered smart blending recommendation using Gemini"""
     
     try:
-        # 1. Fetch latest quality data from Vessel/Barge/Trucking
-        vessels = await db.vessels.find({}, {"_id": 0}).sort("date_received", -1).limit(10).to_list(10)
-        barges = await db.barges.find({}, {"_id": 0}).sort("date_received", -1).limit(10).to_list(10)
-        trucking = await db.trucking.find({}, {"_id": 0}).sort("date_received", -1).limit(10).to_list(10)
+        # Calculate 6 months ago date for filtering suppliers
+        from dateutil.relativedelta import relativedelta
+        six_months_ago = datetime.now(timezone.utc) - relativedelta(months=6)
+        
+        # 1. Fetch quality data from suppliers in the last 6 months
+        # Filter by various date fields that exist in the collections
+        date_filter_vessel = {
+            "$or": [
+                {"time_arrival": {"$gte": six_months_ago.isoformat()}},
+                {"periode_realisasi": {"$gte": six_months_ago.isoformat()}},
+                {"created_at": {"$gte": six_months_ago.isoformat()}}
+            ]
+        }
+        date_filter_barge = {
+            "$or": [
+                {"ta": {"$gte": six_months_ago.isoformat()}},
+                {"periode": {"$gte": six_months_ago.isoformat()}},
+                {"created_at": {"$gte": six_months_ago.isoformat()}}
+            ]
+        }
+        date_filter_trucking = {
+            "$or": [
+                {"ta": {"$gte": six_months_ago.isoformat()}},
+                {"periode_ta": {"$gte": six_months_ago.isoformat()}},
+                {"created_at": {"$gte": six_months_ago.isoformat()}}
+            ]
+        }
+        
+        vessels = await db.vessels.find(date_filter_vessel, {"_id": 0}).sort("time_arrival", -1).limit(50).to_list(50)
+        barges = await db.barges.find(date_filter_barge, {"_id": 0}).sort("ta", -1).limit(50).to_list(50)
+        trucking = await db.trucking.find(date_filter_trucking, {"_id": 0}).sort("ta", -1).limit(50).to_list(50)
         
         # 2. Fetch stock availability from Smart Stock (Sumber Penerimaan)
         latest_stock = await db.smartstock.find_one({}, {"_id": 0}, sort=[("date", -1)])
