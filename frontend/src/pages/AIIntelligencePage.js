@@ -513,11 +513,11 @@ const AIIntelligencePage = () => {
                               {msg.response}
                             </ReactMarkdown>
                           </div>
-                        )}
-                        <p className="text-[10px] mt-2 opacity-50">
-                          {new Date(msg.created_at).toLocaleString('id-ID')}
-                        </p>
-                      </div>
+                          <p className="text-[10px] mt-2 opacity-50">
+                            {new Date(msg.created_at).toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
