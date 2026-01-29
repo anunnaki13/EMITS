@@ -20,7 +20,8 @@ import {
   Award,
   Bot,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Scale
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -202,6 +203,21 @@ const Layout = ({ children }) => {
             <FileText className="w-5 h-5" />
             <span className="text-sm font-medium">Laporan</span>
             {location.pathname === "/laporan" && <ChevronRight className="w-4 h-4 ml-auto" />}
+          </Link>
+
+          {/* COA Reconciliation */}
+          <Link
+            to="/coa-reconciliation"
+            onClick={() => setSidebarOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              location.pathname === "/coa-reconciliation"
+                ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Scale className="w-5 h-5" />
+            <span className="text-sm font-medium">COA Reconciliation</span>
+            {location.pathname === "/coa-reconciliation" && <ChevronRight className="w-4 h-4 ml-auto" />}
           </Link>
 
           {/* AI Intelligence Agent */}
