@@ -18,7 +18,10 @@ import {
   ChevronRight,
   Zap,
   Brain,
-  BarChart3
+  BarChart3,
+  Package,
+  Scale,
+  Warehouse
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -60,6 +63,20 @@ const MODULE_INFO = {
     color: "amber",
     description: "Efisiensi & analisis losses",
     placeholder: "Contoh: Analisis supplier dengan losses tertinggi"
+  },
+  smart_stock: {
+    name: "Smart Stock Management",
+    icon: Warehouse,
+    color: "purple",
+    description: "Analisis stok & pemakaian bahan bakar",
+    placeholder: "Contoh: Berapa estimasi hari stok batubara tersisa?"
+  },
+  coa_reconciliation: {
+    name: "COA Reconciliation",
+    icon: Scale,
+    color: "orange",
+    description: "Rekonsiliasi kualitas & dispute management",
+    placeholder: "Contoh: Supplier mana dengan deviasi GCV tertinggi?"
   }
 };
 
