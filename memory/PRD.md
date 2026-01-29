@@ -19,7 +19,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - Dark Mode SaaS Dashboard UI
 
 ## What's Been Implemented ✅
-*Last Updated: January 28, 2026*
+*Last Updated: January 29, 2026*
 
 ### Backend (FastAPI)
 - ✅ User authentication (JWT)
@@ -31,6 +31,8 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ **AI Quick Analysis Endpoints** - blending, boiler alerts, contract status, logistics losses
 - ✅ **AI Settings API** - Custom API key management
 - ✅ **Smart Stock Management API** - GET, POST, Upload Excel, Delete endpoints
+- ✅ **Sumber Pemakaian API** - GET, POST, Upload Excel, Delete endpoints
+- ✅ **Smart Blending AI API** - /api/smart-blending/recommend (Gemini-powered optimization)
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
