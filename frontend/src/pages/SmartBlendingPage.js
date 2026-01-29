@@ -428,7 +428,7 @@ const SmartBlendingPage = () => {
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-orange-400" />
-                      Cost Analysis
+                      Analisis Biaya
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
