@@ -975,19 +975,29 @@ async def get_po_batubara(
     year: Optional[int] = None,
     month: Optional[int] = None,
     search: Optional[str] = None,
+    supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
     query = {}
+    conditions = []
+    
     if year:
-        query["completed_year"] = year
+        conditions.append({"completed_year": year})
     if month:
-        query["completed_month"] = month
+        conditions.append({"completed_month": month})
     if search:
-        query["$or"] = [
-            {"po_number": {"$regex": search, "$options": "i"}},
-            {"supplier_name": {"$regex": search, "$options": "i"}},
-            {"no_shipment": {"$regex": search, "$options": "i"}}
-        ]
+        conditions.append({
+            "$or": [
+                {"po_number": {"$regex": search, "$options": "i"}},
+                {"supplier_name": {"$regex": search, "$options": "i"}},
+                {"no_shipment": {"$regex": search, "$options": "i"}}
+            ]
+        })
+    if supplier and supplier != "all":
+        conditions.append({"supplier_name": {"$regex": supplier, "$options": "i"}})
+    
+    if conditions:
+        query = {"$and": conditions} if len(conditions) > 1 else conditions[0]
     
     skip = (page - 1) * page_size
     total = await db.po_batubara.count_documents(query)
