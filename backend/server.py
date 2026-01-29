@@ -730,10 +730,10 @@ async def create_barge(data: BargeTNYCreate, user: dict = Depends(require_role([
     barge_doc.pop("_id", None)
     return BargeTNYResponse(**barge_doc)
 
-@api_router.get("/barges", response_model=List[BargeTNYResponse])
+@api_router.get("/barges")
 async def get_barges(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1, le=10000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
@@ -744,8 +744,18 @@ async def get_barges(
             {"name_of_barge": {"$regex": search, "$options": "i"}},
             {"suppliers": {"$regex": search, "$options": "i"}}
         ]
-    barges = await db.barges.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
-    return [BargeTNYResponse(**b) for b in barges]
+    
+    skip = (page - 1) * page_size
+    total = await db.barges.count_documents(query)
+    barges = await db.barges.find(query, {"_id": 0}).sort("ta", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": barges,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
 
 @api_router.get("/barges/{barge_id}", response_model=BargeTNYResponse)
 async def get_barge(barge_id: str, user: dict = Depends(get_current_user)):
