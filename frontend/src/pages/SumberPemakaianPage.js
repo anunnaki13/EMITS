@@ -455,20 +455,7 @@ const SumberPemakaianPage = () => {
         </div>
       </div>
 
-      {/* No Delivery Alert */}
-      {noDeliveryToday && (
-        <Card className="glass-card border-red-500/30 bg-red-500/10">
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <div>
-              <p className="text-red-400 font-semibold">No Delivery</p>
-              <p className="text-slate-400 text-sm">Tidak ada penerimaan batubara hari ini</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Charts */}
+      {/* Charts - Only 2 charts, no zonation */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Area Chart - Stock Awal Trend */}
         <Card className="glass-card border-white/10 lg:col-span-2">
@@ -551,79 +538,6 @@ const SumberPemakaianPage = () => {
                   })}
                 </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Zonation Bar Chart - TODAY ONLY with Gradient */}
-        <Card className="glass-card border-white/10 lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Package className="w-5 h-5 text-amber-400" />
-              Zonasi Penerimaan Harian (Coalyard A, B, C)
-            </CardTitle>
-            <p className="text-xs text-slate-500 mt-1">
-              Total penerimaan dari semua supplier berdasarkan zona peletakan di coalyard - Data terakhir: {new Date(displayDate).toLocaleDateString('id-ID')}
-            </p>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="h-80 flex items-center justify-center">
-                <p className="text-slate-500">Loading...</p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={zonationChartData}>
-                  <defs>
-                    {/* Gradient Zona A - Green to Yellow to Red */}
-                    <linearGradient id="colorA" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
-                      <stop offset="50%" stopColor="#eab308" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
-                    </linearGradient>
-                    {/* Gradient Zona B */}
-                    <linearGradient id="colorB" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
-                      <stop offset="50%" stopColor="#eab308" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
-                    </linearGradient>
-                    {/* Gradient Zona C */}
-                    <linearGradient id="colorC" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
-                      <stop offset="50%" stopColor="#eab308" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis 
-                    dataKey="zone" 
-                    stroke="#94a3b8"
-                    style={{ fontSize: '14px', fontWeight: 600 }}
-                  />
-                  <YAxis 
-                    stroke="#94a3b8"
-                    style={{ fontSize: '12px' }}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}K MT`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #334155',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value) => [`${value.toLocaleString()} MT`, 'Total']}
-                  />
-                  <Bar 
-                    dataKey="value" 
-                    radius={[12, 12, 0, 0]}
-                    maxBarSize={150}
-                  >
-                    {zonationChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
