@@ -131,10 +131,10 @@ def parse_coa_excel(file_contents: bytes, source_type: str) -> List[Dict]:
 
 def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], internal_data: List[Dict]) -> List[Dict]:
     """
-    Merge data from all three sources based on Shipment number
+    Merge data from all three sources based on Shipment ID (string)
     Returns merged records with comparison data
     """
-    # Create dictionaries keyed by shipment
+    # Create dictionaries keyed by shipment (string)
     loading_dict = {r["shipment"]: r for r in loading_data if r["shipment"]}
     unloading_dict = {r["shipment"]: r for r in unloading_data if r["shipment"]}
     internal_dict = {r["shipment"]: r for r in internal_data if r["shipment"]}
@@ -143,7 +143,7 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
     all_shipments = set(loading_dict.keys()) | set(unloading_dict.keys()) | set(internal_dict.keys())
     
     merged_records = []
-    for shipment in sorted(all_shipments):
+    for shipment in all_shipments:
         loading = loading_dict.get(shipment, {})
         unloading = unloading_dict.get(shipment, {})
         internal = internal_dict.get(shipment, {})
@@ -178,12 +178,13 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
         # Build merged record
         record = {
             "id": str(uuid.uuid4()),
-            "shipment": shipment,
+            "shipment": shipment,  # Now string: "555" or "Lot 24"
             "periode": base_data.get("periode", ""),
             "suppliers": base_data.get("suppliers", ""),
             "tb": base_data.get("tb", ""),
             "bg": base_data.get("bg", ""),
             "ds_mt": base_data.get("ds_mt"),
+            "completed_unloading": base_data.get("completed_unloading"),  # For sorting
             # Loading data
             "loading_gcv_arb": loading_gcv,
             "loading_tm_arb": loading.get("tm_arb"),
@@ -204,6 +205,13 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
             "internal_tm_arb": internal.get("tm_arb"),
             "internal_ash_arb": internal.get("ash_arb"),
             "internal_ts_arb": internal.get("ts_arb"),
+            # Umpire data (empty initially, filled later)
+            "umpire_gcv_arb": None,
+            "umpire_tm_arb": None,
+            "umpire_ash_arb": None,
+            "umpire_ts_arb": None,
+            "umpire_lab_name": None,
+            "umpire_result_date": None,
             # Deltas
             "delta_loading_internal": delta_loading_internal,
             "delta_unloading_internal": delta_unloading_internal,
@@ -213,11 +221,15 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
             "umpire_status": "none",  # none, proposed, in_progress, completed
             "umpire_sample_number": None,
             "umpire_proposed_at": None,
+            "umpire_completed_at": None,
             # Timestamps
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
         merged_records.append(record)
+    
+    # Sort by completed_unloading date (newest first)
+    merged_records.sort(key=lambda x: x.get("completed_unloading") or "", reverse=True)
     
     return merged_records
 
