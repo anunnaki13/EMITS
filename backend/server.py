@@ -2526,6 +2526,12 @@ class SmartStockEntry(BaseModel):
     suppliers: dict  # {"RIAU_MITRA": {"A": 100, "B": 200, "C": 0}, ...}
     total_penerimaan: Optional[float] = 0.0
 
+class SumberPemakaianEntry(BaseModel):
+    date: str
+    stock_awal: float
+    suppliers: dict  # {"RIAU_MITRA": {"UNIT1": {"A": 100, "B": 200, "C": 0}, "UNIT2": {...}}, ...}
+    total_pemakaian: Optional[float] = 0.0
+
 @api_router.get("/smart-stock")
 async def get_smart_stock(
     limit: int = Query(100, ge=1, le=500),
