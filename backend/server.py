@@ -1183,19 +1183,29 @@ async def get_merit_orders(
     year: Optional[int] = None,
     month: Optional[int] = None,
     search: Optional[str] = None,
+    supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
     query = {}
+    conditions = []
+    
     if year:
-        query["periode_year"] = year
+        conditions.append({"periode_year": year})
     if month:
-        query["periode_month"] = month
+        conditions.append({"periode_month": month})
     if search:
-        query["$or"] = [
-            {"pemasok": {"$regex": search, "$options": "i"}},
-            {"moda": {"$regex": search, "$options": "i"}},
-            {"jenis_kontrak": {"$regex": search, "$options": "i"}}
-        ]
+        conditions.append({
+            "$or": [
+                {"pemasok": {"$regex": search, "$options": "i"}},
+                {"moda": {"$regex": search, "$options": "i"}},
+                {"jenis_kontrak": {"$regex": search, "$options": "i"}}
+            ]
+        })
+    if supplier and supplier != "all":
+        conditions.append({"pemasok": {"$regex": supplier, "$options": "i"}})
+    
+    if conditions:
+        query = {"$and": conditions} if len(conditions) > 1 else conditions[0]
     
     skip = (page - 1) * page_size
     total = await db.merit_order.count_documents(query)
