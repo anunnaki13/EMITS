@@ -393,25 +393,26 @@ const AIIntelligencePage = () => {
                   chatHistory.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} w-full`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl p-4 ${
+                        className={`rounded-2xl p-4 overflow-hidden ${
                           msg.isUser
-                            ? 'bg-cyan-600 text-white'
-                            : 'bg-slate-800/80 text-slate-200'
+                            ? 'bg-cyan-600 text-white max-w-[80%]'
+                            : 'bg-slate-800/80 text-slate-200 max-w-[95%] w-full'
                         }`}
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                       >
                         {msg.isUser ? (
                           <p className="text-sm">{msg.query}</p>
                         ) : (
-                          <div className="ai-response-content">
+                          <div className="ai-response-content overflow-x-auto">
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
                                 table: ({ children }) => (
-                                  <div className="overflow-x-auto my-4 rounded-lg border border-slate-700">
-                                    <table className="min-w-full text-sm">
+                                  <div className="overflow-x-auto my-4 rounded-lg border border-slate-700 -mx-2">
+                                    <table className="min-w-full text-sm whitespace-nowrap">
                                       {children}
                                     </table>
                                   </div>
