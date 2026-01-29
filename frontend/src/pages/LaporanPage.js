@@ -132,6 +132,26 @@ const LaporanPage = () => {
           { key: "bl_mt", label: "B/L (MT)", type: "number" },
           { key: "gcv_arb", label: "GCV ARB", type: "number" }
         ];
+      case "po_batubara":
+        return [
+          { key: "periode", label: "Periode" },
+          { key: "po_number", label: "No. PO" },
+          { key: "supplier_name", label: "Supplier" },
+          { key: "spec", label: "Spec" },
+          { key: "no_shipment", label: "Shipment" },
+          { key: "tonase_po", label: "Tonase (MT)", type: "number" },
+          { key: "inventory_price", label: "Harga", type: "number" }
+        ];
+      case "merit_order":
+        return [
+          { key: "periode", label: "Periode" },
+          { key: "pemasok", label: "Pemasok" },
+          { key: "moda", label: "Moda" },
+          { key: "tipikal_kcal_kg", label: "Tipikal (kcal/kg)", type: "number" },
+          { key: "jenis_kontrak", label: "Jenis Kontrak" },
+          { key: "harga_cif", label: "Harga CIF", type: "number" },
+          { key: "rp_kcal", label: "Rp/Kcal", type: "number" }
+        ];
       default:
         return [];
     }
