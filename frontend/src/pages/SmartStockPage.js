@@ -538,7 +538,7 @@ const SmartStockPage = () => {
                 </p>
                 <p className="text-slate-400 text-sm">Metric Tons (MT)</p>
                 <p className="text-slate-500 text-xs mt-2">
-                  {new Date().toLocaleDateString('id-ID', { 
+                  {new Date(displayDate).toLocaleDateString('id-ID', { 
                     day: 'numeric', 
                     month: 'long', 
                     year: 'numeric' 
@@ -554,10 +554,10 @@ const SmartStockPage = () => {
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Package className="w-5 h-5 text-amber-400" />
-              Zonasi Penerimaan Harian (Coalyard A, B, C) - Hari Ini
+              Zonasi Penerimaan Harian (Coalyard A, B, C)
             </CardTitle>
             <p className="text-xs text-slate-500 mt-1">
-              Total penerimaan dari semua supplier berdasarkan zona peletakan di coalyard
+              Total penerimaan dari semua supplier berdasarkan zona peletakan di coalyard - Data terakhir: {new Date(displayDate).toLocaleDateString('id-ID')}
             </p>
           </CardHeader>
           <CardContent>
