@@ -228,7 +228,7 @@ const SmartStockPage = () => {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
             </div>
-            Smart Stock Management
+            Sumber Penerimaan
           </h1>
           <p className="text-slate-400 mt-1">Monitoring stock batubara dan penerimaan harian</p>
         </div>
