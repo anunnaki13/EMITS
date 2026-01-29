@@ -877,6 +877,285 @@ const COAReconciliationPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manual Input Dialog */}
+      <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>
+        <DialogContent className="bg-[#0B1221] border-white/10 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-cyan-400" />
+              Input Data COA Manual
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Masukkan data kualitas batubara dari Loading, Unloading, dan Lab Internal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-white border-b border-white/10 pb-2">Informasi Dasar</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nomor Shipment *</Label>
+                  <Input
+                    type="number"
+                    value={manualForm.shipment}
+                    onChange={(e) => setManualForm({ ...manualForm, shipment: e.target.value })}
+                    placeholder="Contoh: 1145"
+                    className="bg-slate-900/50 border-slate-700"
+                    data-testid="manual-shipment"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Supplier *</Label>
+                  <Input
+                    value={manualForm.suppliers}
+                    onChange={(e) => setManualForm({ ...manualForm, suppliers: e.target.value })}
+                    placeholder="Contoh: PT BA"
+                    className="bg-slate-900/50 border-slate-700"
+                    data-testid="manual-supplier"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Periode</Label>
+                  <Input
+                    type="date"
+                    value={manualForm.periode}
+                    onChange={(e) => setManualForm({ ...manualForm, periode: e.target.value })}
+                    className="bg-slate-900/50 border-slate-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tonase (DS MT)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.ds_mt}
+                    onChange={(e) => setManualForm({ ...manualForm, ds_mt: e.target.value })}
+                    placeholder="Contoh: 5000"
+                    className="bg-slate-900/50 border-slate-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tongkang (TB)</Label>
+                  <Input
+                    value={manualForm.tb}
+                    onChange={(e) => setManualForm({ ...manualForm, tb: e.target.value })}
+                    placeholder="Nama Tongkang"
+                    className="bg-slate-900/50 border-slate-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Barge (BG)</Label>
+                  <Input
+                    value={manualForm.bg}
+                    onChange={(e) => setManualForm({ ...manualForm, bg: e.target.value })}
+                    placeholder="Nama Barge"
+                    className="bg-slate-900/50 border-slate-700"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Loading Data */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-green-400 border-b border-green-500/20 pb-2">Data Loading (Surveyor Loading)</h4>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">GCV ARB (kCal/kg)</Label>
+                  <Input
+                    type="number"
+                    value={manualForm.loading_gcv_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, loading_gcv_arb: e.target.value })}
+                    placeholder="4500"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                    data-testid="manual-loading-gcv"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">TM ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.loading_tm_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, loading_tm_arb: e.target.value })}
+                    placeholder="30"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Ash ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.loading_ash_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, loading_ash_arb: e.target.value })}
+                    placeholder="5"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Sulphur ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.loading_ts_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, loading_ts_arb: e.target.value })}
+                    placeholder="0.5"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Unloading Data */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-blue-400 border-b border-blue-500/20 pb-2">Data Unloading (Surveyor Unloading)</h4>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">GCV ARB (kCal/kg)</Label>
+                  <Input
+                    type="number"
+                    value={manualForm.unloading_gcv_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, unloading_gcv_arb: e.target.value })}
+                    placeholder="4400"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                    data-testid="manual-unloading-gcv"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">TM ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.unloading_tm_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, unloading_tm_arb: e.target.value })}
+                    placeholder="32"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Ash ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.unloading_ash_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, unloading_ash_arb: e.target.value })}
+                    placeholder="4.5"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Sulphur ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.unloading_ts_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, unloading_ts_arb: e.target.value })}
+                    placeholder="0.4"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Internal Lab Data */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-amber-400 border-b border-amber-500/20 pb-2">Data Lab Internal</h4>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">GCV ARB (kCal/kg)</Label>
+                  <Input
+                    type="number"
+                    value={manualForm.internal_gcv_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, internal_gcv_arb: e.target.value })}
+                    placeholder="4350"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                    data-testid="manual-internal-gcv"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">TM ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.internal_tm_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, internal_tm_arb: e.target.value })}
+                    placeholder="33"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Ash ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.internal_ash_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, internal_ash_arb: e.target.value })}
+                    placeholder="4.8"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Sulphur ARB (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={manualForm.internal_ts_arb}
+                    onChange={(e) => setManualForm({ ...manualForm, internal_ts_arb: e.target.value })}
+                    placeholder="0.45"
+                    className="bg-slate-900/50 border-slate-700 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-6">
+            <Button variant="ghost" onClick={() => setShowManualDialog(false)}>Batal</Button>
+            <Button onClick={submitManualInput} className="bg-cyan-600 hover:bg-cyan-700" data-testid="submit-manual">
+              <Plus className="w-4 h-4 mr-2" />
+              Simpan Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete All Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="bg-[#0B1221] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              Hapus Semua Data COA
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Tindakan ini akan menghapus semua data rekonsiliasi COA dan tidak dapat dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+            <p className="text-red-300 text-sm">
+              <AlertTriangle className="w-4 h-4 inline mr-2" />
+              Peringatan: Anda akan menghapus <strong>{pagination.total}</strong> data rekonsiliasi COA.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowDeleteDialog(false)} disabled={deleting}>Batal</Button>
+            <Button 
+              onClick={handleDeleteAll} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleting}
+              data-testid="confirm-delete"
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Ya, Hapus Semua
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
