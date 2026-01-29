@@ -82,19 +82,37 @@ const SmartBlendingPage = () => {
       metric: 'GCV',
       Target: targetGCV,
       Predicted: recommendation.ai_recommendation.predicted_quality.gcv,
-      fullMark: 4700  // Max from parameter range
+      fullMark: 4700
     },
     {
       metric: 'Ash',
       Target: maxAsh,
       Predicted: recommendation.ai_recommendation.predicted_quality.ash,
-      fullMark: 6  // Max from parameter range
+      fullMark: 6
     },
     {
       metric: 'Sulphur',
       Target: maxSulphur,
       Predicted: recommendation.ai_recommendation.predicted_quality.sulphur,
-      fullMark: 2.2  // Max from parameter range
+      fullMark: 2.2
+    },
+    {
+      metric: 'TM',
+      Target: maxTotalMoisture,
+      Predicted: recommendation.ai_recommendation.predicted_quality.total_moisture || 0,
+      fullMark: 40
+    },
+    {
+      metric: 'VM',
+      Target: minVolatileMatter,
+      Predicted: recommendation.ai_recommendation.predicted_quality.volatile_matter || 0,
+      fullMark: 40
+    },
+    {
+      metric: 'FC',
+      Target: minFixedCarbon,
+      Predicted: recommendation.ai_recommendation.predicted_quality.fixed_carbon || 0,
+      fullMark: 41
     }
   ] : [];
 
