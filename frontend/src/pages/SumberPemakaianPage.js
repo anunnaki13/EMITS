@@ -146,14 +146,21 @@ const SumberPemakaianPage = () => {
 
     const suppliers = {
       [formSupplier]: {
-        A: parseFloat(formZoneA) || 0,
-        B: parseFloat(formZoneB) || 0,
-        C: parseFloat(formZoneC) || 0
+        UNIT1: {
+          A: parseFloat(formUnit1A) || 0,
+          B: parseFloat(formUnit1B) || 0,
+          C: parseFloat(formUnit1C) || 0
+        },
+        UNIT2: {
+          A: parseFloat(formUnit2A) || 0,
+          B: parseFloat(formUnit2B) || 0,
+          C: parseFloat(formUnit2C) || 0
+        }
       }
     };
 
     try {
-      await axios.post(`${API_URL}/api/smart-stock/entry`, {
+      await axios.post(`${API_URL}/api/sumber-pemakaian/entry`, {
         date: formDate,
         stock_awal: parseFloat(formStockAwal) || 0,
         suppliers
@@ -166,9 +173,12 @@ const SumberPemakaianPage = () => {
       setFormDate(new Date().toISOString().split('T')[0]);
       setFormStockAwal("");
       setFormSupplier("");
-      setFormZoneA("");
-      setFormZoneB("");
-      setFormZoneC("");
+      setFormUnit1A("");
+      setFormUnit1B("");
+      setFormUnit1C("");
+      setFormUnit2A("");
+      setFormUnit2B("");
+      setFormUnit2C("");
       
       fetchData();
     } catch (error) {
@@ -187,7 +197,7 @@ const SumberPemakaianPage = () => {
 
     try {
       const response = await axios.post(
-        `${API_URL}/api/smart-stock/upload`,
+        `${API_URL}/api/sumber-pemakaian/upload`,
         formData,
         {
           headers: {
@@ -208,21 +218,19 @@ const SumberPemakaianPage = () => {
 
   const handleExportPDF = () => {
     toast.info("Fitur Export PDF sedang dalam pengembangan");
-    // TODO: Implement PDF export using jsPDF or backend
   };
 
   const handleDeleteAll = async () => {
-    if (!window.confirm("⚠️ PERINGATAN!\n\nAnda yakin ingin menghapus SEMUA data Smart Stock?\nTindakan ini tidak dapat dibatalkan!")) {
+    if (!window.confirm("⚠️ PERINGATAN!\n\nAnda yakin ingin menghapus SEMUA data Sumber Pemakaian?\nTindakan ini tidak dapat dibatalkan!")) {
       return;
     }
 
-    // Double confirmation
     if (!window.confirm("Konfirmasi sekali lagi: Hapus SEMUA data?")) {
       return;
     }
 
     try {
-      const response = await axios.delete(`${API_URL}/api/smart-stock`, {
+      const response = await axios.delete(`${API_URL}/api/sumber-pemakaian`, {
         headers: getAuthHeader()
       });
 
