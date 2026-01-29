@@ -159,6 +159,50 @@ button {
     transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 
+/* AI Response Content Styles */
+.ai-response-content {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+}
+
+.ai-response-content p {
+    margin-bottom: 0.75rem;
+}
+
+.ai-response-content h1,
+.ai-response-content h2,
+.ai-response-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.ai-response-content ul,
+.ai-response-content ol {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+}
+
+.ai-response-content li {
+    margin-bottom: 0.375rem;
+}
+
+.ai-response-content table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.ai-response-content blockquote {
+    margin: 1rem 0;
+}
+
+.ai-response-content pre {
+    margin: 1rem 0;
+}
+
+.ai-response-content hr {
+    margin: 1.5rem 0;
+}
+
 button:active {
     transform: scale(0.98);
 }
