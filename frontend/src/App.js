@@ -153,6 +153,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/dispute-monitor"
+        element={
+          <ProtectedRoute>
+            <Layout><DisputeMonitorPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/settings"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
