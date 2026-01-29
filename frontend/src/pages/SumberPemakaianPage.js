@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -14,87 +15,56 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell
-} from "recharts";
-import {
   Upload,
   PlusCircle,
   Download,
-  Package,
+  Flame,
   TrendingUp,
   Calendar,
-  AlertCircle,
-  Trash2
+  ChevronDown,
+  ChevronRight,
+  Trash2,
+  Award
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Supplier list based on the NEW Excel file
 const SUPPLIERS = [
-  "BUMI_BERDIKARI_SENTOSA_LRC",
-  "GLOBAL_ENERGI_LESTARI_LRC",
-  "GLOBAL_ENERGI_LESTARI_MRC",
-  "RIAU_MITRA_BINA_ENERGI_TEBO_LRC",
   "RIAU_MITRA_BINA_ENERGI_JPC_LRC",
   "TIGA_DAYA_ENERGI_LRC",
-  "KONS_KARYA_BUMI_BARATAMA_MANDIANGIN",
+  "KONS_KARYA_BUMI_BARATAMA_MANDIANGIN_BARA_ENERGI_LRC",
   "BARA_ENERGI_LRC",
   "KONSORSIUM_ESB_BSL_MRC",
   "KUTAI_ENERGI_LRC",
   "MANDIRI_INTIPERKASA_MRC",
   "BUKIT_ASAM_MRC",
-  "TONGKANG_SUMBER_PANCA_ENERGI_LRC",
-  "TRIDAYA_COAL_RESOURCES_LRC"
+  "TONGKANG_TIGA_DAYA_ENERGI_LRC"
 ];
-
-const SUPPLIER_COLORS = {
-  "BUMI_BERDIKARI_SENTOSA_LRC": "#06b6d4",
-  "GLOBAL_ENERGI_LESTARI_LRC": "#3b82f6",
-  "GLOBAL_ENERGI_LESTARI_MRC": "#8b5cf6",
-  "RIAU_MITRA_BINA_ENERGI_TEBO_LRC": "#ec4899",
-  "RIAU_MITRA_BINA_ENERGI_JPC_LRC": "#f59e0b",
-  "TIGA_DAYA_ENERGI_LRC": "#10b981",
-  "KONS_KARYA_BUMI_BARATAMA_MANDIANGIN": "#ef4444",
-  "BARA_ENERGI_LRC": "#6366f1",
-  "KONSORSIUM_ESB_BSL_MRC": "#14b8a6",
-  "KUTAI_ENERGI_LRC": "#f97316",
-  "MANDIRI_INTIPERKASA_MRC": "#84cc16",
-  "BUKIT_ASAM_MRC": "#a855f7",
-  "TONGKANG_SUMBER_PANCA_ENERGI_LRC": "#eab308",
-  "TRIDAYA_COAL_RESOURCES_LRC": "#22d3ee"
-};
 
 const SumberPemakaianPage = () => {
   const { getAuthHeader } = useAuth();
   const [loading, setLoading] = useState(true);
   const [pemakaianData, setPemakaianData] = useState([]);
-  const [recent30Days, setRecent30Days] = useState([]);
+  const [stats, setStats] = useState({
+    total_burn_today: 0,
+    unit1_load: 0,
+    unit2_load: 0,
+    dominant_source: "N/A"
+  });
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [inputDialogOpen, setInputDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [expandedRows, setExpandedRows] = useState({});
   
-  // Form states for manual input
+  // Form states - 3 step input
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [formStockAwal, setFormStockAwal] = useState("");
+  const [formUnit, setFormUnit] = useState("UNIT1");
   const [formSupplier, setFormSupplier] = useState("");
-  const [formUnit1A, setFormUnit1A] = useState("");
-  const [formUnit1B, setFormUnit1B] = useState("");
-  const [formUnit1C, setFormUnit1C] = useState("");
-  const [formUnit2A, setFormUnit2A] = useState("");
-  const [formUnit2B, setFormUnit2B] = useState("");
-  const [formUnit2C, setFormUnit2C] = useState("");
+  const [formZone, setFormZone] = useState("A");
+  const [formAmount, setFormAmount] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -113,7 +83,7 @@ const SumberPemakaianPage = () => {
       });
 
       setPemakaianData(response.data.data);
-      setRecent30Days(response.data.recent_30_days);
+      setStats(response.data.stats);
     } catch (error) {
       toast.error("Gagal mengambil data pemakaian");
       console.error(error);
@@ -146,15 +116,16 @@ const SumberPemakaianPage = () => {
 
     const suppliers = {
       [formSupplier]: {
-        UNIT1: {
-          A: parseFloat(formUnit1A) || 0,
-          B: parseFloat(formUnit1B) || 0,
-          C: parseFloat(formUnit1C) || 0
+        [formUnit]: {
+          [formZone]: parseFloat(formAmount) || 0,
+          ...(formZone !== "A" && { A: 0 }),
+          ...(formZone !== "B" && { B: 0 }),
+          ...(formZone !== "C" && { C: 0 })
         },
-        UNIT2: {
-          A: parseFloat(formUnit2A) || 0,
-          B: parseFloat(formUnit2B) || 0,
-          C: parseFloat(formUnit2C) || 0
+        [formUnit === "UNIT1" ? "UNIT2" : "UNIT1"]: {
+          A: 0,
+          B: 0,
+          C: 0
         }
       }
     };
@@ -172,13 +143,10 @@ const SumberPemakaianPage = () => {
       // Reset form
       setFormDate(new Date().toISOString().split('T')[0]);
       setFormStockAwal("");
+      setFormUnit("UNIT1");
       setFormSupplier("");
-      setFormUnit1A("");
-      setFormUnit1B("");
-      setFormUnit1C("");
-      setFormUnit2A("");
-      setFormUnit2B("");
-      setFormUnit2C("");
+      setFormZone("A");
+      setFormAmount("");
       
       fetchData();
     } catch (error) {
@@ -241,32 +209,16 @@ const SumberPemakaianPage = () => {
     }
   };
 
-  // Prepare data for Area Chart (Stock Awal trend - last 30 days ONLY)
-  const areaChartData = recent30Days.map(item => ({
-    date: new Date(item.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
-    stock: item.stock_awal
-  }));
+  const toggleRow = (index) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
 
-  // Get today's pemakaian - SINGLE VALUE
-  const todayDate = new Date().toISOString().split('T')[0];
-  let todayData = pemakaianData.find(d => d.date === todayDate);
-  
-  // If today's data doesn't exist or has no pemakaian, find the most recent date with pemakaian
-  if (!todayData || todayData.total_pemakaian === 0) {
-    for (let item of pemakaianData) {
-      if (item.total_pemakaian > 0) {
-        todayData = item;
-        break;
-      }
-    }
-  }
-  
-  if (!todayData) {
-    todayData = pemakaianData[0];
-  }
-  
-  const totalPemakaianToday = todayData ? todayData.total_pemakaian : 0;
-  const displayDate = todayData ? todayData.date : todayDate;
+  const calculateStockAkhir = (stockAwal, totalPemakaian) => {
+    return stockAwal - totalPemakaian;
+  };
 
   return (
     <div className="space-y-6">
@@ -274,12 +226,12 @@ const SumberPemakaianPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-2xl lg:text-3xl text-white flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <Package className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
+              <Flame className="w-6 h-6 text-white" />
             </div>
-            Sumber Pemakaian
+            Total Pemakaian Batubara
           </h1>
-          <p className="text-slate-400 mt-1">Monitoring pemakaian batubara harian per unit</p>
+          <p className="text-slate-400 mt-1">Power Plant Consumption Tracker - Unit 1 & Unit 2</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
@@ -320,12 +272,12 @@ const SumberPemakaianPage = () => {
             <DialogTrigger asChild>
               <Button className="bg-emerald-600 hover:bg-emerald-500">
                 <PlusCircle className="w-4 h-4 mr-2" />
-                Input Harian
+                Tambah Pemakaian
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-slate-900 border-slate-800">
               <DialogHeader>
-                <DialogTitle className="text-white">Input Data Harian</DialogTitle>
+                <DialogTitle className="text-white">Input Pemakaian Baru (3 Langkah)</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleManualInput} className="space-y-4">
                 <div>
@@ -350,12 +302,29 @@ const SumberPemakaianPage = () => {
                     required
                   />
                 </div>
+
+                {/* Step 1: Pilih Unit */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300 font-semibold">Langkah 1: Pilih Unit</Label>
+                  <RadioGroup value={formUnit} onValueChange={setFormUnit}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="UNIT1" id="unit1" className="border-white text-white" />
+                      <Label htmlFor="unit1" className="text-slate-300 cursor-pointer">Unit 1</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="UNIT2" id="unit2" className="border-white text-white" />
+                      <Label htmlFor="unit2" className="text-slate-300 cursor-pointer">Unit 2</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Step 2: Pilih Supplier */}
                 <div>
-                  <Label className="text-slate-300">Pilih Supplier</Label>
+                  <Label className="text-slate-300 font-semibold">Langkah 2: Pilih Sumber</Label>
                   <select
                     value={formSupplier}
                     onChange={(e) => setFormSupplier(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2"
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2 mt-2"
                     required
                   >
                     <option value="">-- Pilih Supplier --</option>
@@ -366,68 +335,41 @@ const SumberPemakaianPage = () => {
                     ))}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-slate-300 mb-2 block">Unit 1</Label>
-                    <div className="space-y-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formUnit1A}
-                        onChange={(e) => setFormUnit1A(e.target.value)}
-                        placeholder="Zone A (MT)"
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formUnit1B}
-                        onChange={(e) => setFormUnit1B(e.target.value)}
-                        placeholder="Zone B (MT)"
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formUnit1C}
-                        onChange={(e) => setFormUnit1C(e.target.value)}
-                        placeholder="Zone C (MT)"
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
+
+                {/* Step 3: Pilih Zonasi & Jumlah */}
+                <div className="space-y-2">
+                  <Label className="text-slate-300 font-semibold">Langkah 3: Zonasi & Jumlah</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-slate-300 text-sm">Zonasi</Label>
+                      <select
+                        value={formZone}
+                        onChange={(e) => setFormZone(e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2 mt-1"
+                        required
+                      >
+                        <option value="A">Zona A</option>
+                        <option value="B">Zona B</option>
+                        <option value="C">Zona C</option>
+                      </select>
                     </div>
-                  </div>
-                  <div>
-                    <Label className="text-slate-300 mb-2 block">Unit 2</Label>
-                    <div className="space-y-2">
+                    <div>
+                      <Label className="text-slate-300 text-sm">Jumlah (MT)</Label>
                       <Input
                         type="number"
                         step="0.01"
-                        value={formUnit2A}
-                        onChange={(e) => setFormUnit2A(e.target.value)}
-                        placeholder="Zone A (MT)"
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formUnit2B}
-                        onChange={(e) => setFormUnit2B(e.target.value)}
-                        placeholder="Zone B (MT)"
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formUnit2C}
-                        onChange={(e) => setFormUnit2C(e.target.value)}
-                        placeholder="Zone C (MT)"
-                        className="bg-slate-800 border-slate-700 text-white"
+                        value={formAmount}
+                        onChange={(e) => setFormAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="bg-slate-800 border-slate-700 text-white mt-1"
+                        required
                       />
                     </div>
                   </div>
                 </div>
+
                 <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500">
-                  Simpan Data
+                  Simpan Pemakaian
                 </Button>
               </form>
             </DialogContent>
@@ -455,101 +397,76 @@ const SumberPemakaianPage = () => {
         </div>
       </div>
 
-      {/* Charts - Only 2 charts, no zonation */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Area Chart - Stock Awal Trend */}
-        <Card className="glass-card border-white/10 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-              Tren Stock Awal (30 Hari Terakhir)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="h-64 flex items-center justify-center">
-                <p className="text-slate-500">Loading...</p>
+      {/* Dashboard Ringkasan - Top Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="glass-card border-red-500/30 bg-gradient-to-br from-red-500/10 to-orange-500/10">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm">Total Burn Today</p>
+                <p className="text-3xl font-bold text-red-400 mt-2">
+                  {(stats.total_burn_today / 1000).toFixed(1)}K
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Metric Tons</p>
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={areaChartData}>
-                  <defs>
-                    <linearGradient id="stockGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#94a3b8"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke="#94a3b8"
-                    style={{ fontSize: '12px' }}
-                    tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #334155',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value) => [`${value.toLocaleString()} MT`, 'Stock Awal']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="stock" 
-                    stroke="#10b981" 
-                    fillOpacity={1} 
-                    fill="url(#stockGradient)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+              <Flame className="w-12 h-12 text-red-400 opacity-50" />
+            </div>
           </CardContent>
         </Card>
 
-        {/* Total Stock Today - Single Value Card */}
-        <Card className="glass-card border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Package className="w-5 h-5 text-red-400" />
-              Total Pemakaian Hari Ini
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="h-64 flex items-center justify-center">
-                <p className="text-slate-500">Loading...</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64">
-                <p className="text-6xl font-bold text-red-400 mb-4">
-                  {(totalPemakaianToday / 1000000).toFixed(2)}M
+        <Card className="glass-card border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm">Unit 1 Load</p>
+                <p className="text-3xl font-bold text-blue-400 mt-2">
+                  {(stats.unit1_load / 1000).toFixed(1)}K
                 </p>
-                <p className="text-slate-400 text-sm">Metric Tons (MT) - Pemakaian</p>
-                <p className="text-slate-500 text-xs mt-2">
-                  {new Date(displayDate).toLocaleDateString('id-ID', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  })}
-                </p>
+                <p className="text-xs text-slate-500 mt-1">Metric Tons</p>
               </div>
-            )}
+              <TrendingUp className="w-12 h-12 text-blue-400 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm">Unit 2 Load</p>
+                <p className="text-3xl font-bold text-purple-400 mt-2">
+                  {(stats.unit2_load / 1000).toFixed(1)}K
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Metric Tons</p>
+              </div>
+              <TrendingUp className="w-12 h-12 text-purple-400 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-sm">Dominant Source</p>
+                <p className="text-lg font-bold text-emerald-400 mt-2 truncate">
+                  {stats.dominant_source}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Top Supplier</p>
+              </div>
+              <Award className="w-12 h-12 text-emerald-400 opacity-50" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Data Table with Freeze Header */}
+      {/* Compact Table with Expandable Rows */}
       <Card className="glass-card border-white/10">
         <CardHeader className="border-b border-slate-800">
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-400" />
-              Data Stock & Penerimaan
+              <Calendar className="w-5 h-5 text-orange-400" />
+              Data Pemakaian Batubara
             </CardTitle>
             <div className="flex gap-2 items-center">
               <Input
@@ -577,21 +494,27 @@ const SumberPemakaianPage = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto max-h-[500px]">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-900/80 sticky top-0 z-10">
                 <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-400 uppercase tracking-wider border-b border-slate-800 w-12">
+                    
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-400 uppercase tracking-wider border-b border-slate-800">
                     Tanggal
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-cyan-400 uppercase tracking-wider border-b border-slate-800">
                     Stock Awal (MT)
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-cyan-400 uppercase tracking-wider border-b border-slate-800" colSpan={3}>
-                    Suppliers (A / B / C)
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-cyan-400 uppercase tracking-wider border-b border-slate-800">
+                    Detail Pemakaian
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-cyan-400 uppercase tracking-wider border-b border-slate-800">
-                    Total Penerimaan
+                    Total Pakai
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-cyan-400 uppercase tracking-wider border-b border-slate-800">
+                    Sisa Akhir
                   </th>
                 </tr>
               </thead>
@@ -609,33 +532,90 @@ const SumberPemakaianPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  pemakaianData.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-800/50">
-                      <td className="px-4 py-3 text-slate-300">
-                        {new Date(item.date).toLocaleDateString('id-ID')}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-300 font-mono">
-                        {item.stock_awal.toLocaleString()}
-                      </td>
-                      <td colSpan={3} className="px-4 py-3">
-                        <div className="space-y-1 text-xs">
-                          {Object.entries(item.suppliers || {}).map(([supplier, zones]) => {
-                            const total = zones.A + zones.B + zones.C;
-                            if (total === 0) return null;
-                            return (
-                              <div key={supplier} className="flex justify-between text-slate-400">
-                                <span className="truncate mr-2">{supplier.replace(/_/g, ' ').substring(0, 25)}</span>
-                                <span className="font-mono">{zones.A} / {zones.B} / {zones.C}</span>
+                  pemakaianData.map((item, idx) => {
+                    const isExpanded = expandedRows[idx];
+                    const stockAkhir = calculateStockAkhir(item.stock_awal, item.total_pemakaian);
+                    
+                    return (
+                      <>
+                        <tr key={idx} className="hover:bg-slate-800/50 cursor-pointer" onClick={() => toggleRow(idx)}>
+                          <td className="px-4 py-3 text-slate-400">
+                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                          </td>
+                          <td className="px-4 py-3 text-slate-300">
+                            {new Date(item.date).toLocaleDateString('id-ID')}
+                          </td>
+                          <td className="px-4 py-3 text-right text-slate-300 font-mono">
+                            {item.stock_awal.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="text-blue-400 text-xs">
+                              {isExpanded ? "Tutup Detail" : "Lihat Detail"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-red-400 font-mono font-semibold">
+                            {item.total_pemakaian.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3 text-right text-emerald-400 font-mono">
+                            {stockAkhir.toLocaleString()}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={6} className="bg-slate-900/50 px-4 py-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                {/* Unit 1 */}
+                                <div className="border border-blue-500/30 rounded-lg p-3 bg-blue-500/5">
+                                  <h4 className="text-blue-400 font-semibold mb-2 flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4" />
+                                    Unit 1 Consumption
+                                  </h4>
+                                  <div className="space-y-1 text-xs">
+                                    {Object.entries(item.suppliers || {}).map(([supplier, units]) => {
+                                      const unit1 = units.UNIT1 || {};
+                                      const total = (unit1.A || 0) + (unit1.B || 0) + (unit1.C || 0);
+                                      if (total === 0) return null;
+                                      return (
+                                        <div key={supplier} className="flex justify-between text-slate-400">
+                                          <span className="truncate mr-2">{supplier.replace(/_/g, ' ').substring(0, 20)}</span>
+                                          <span className="font-mono text-blue-300">
+                                            A:{unit1.A||0} | B:{unit1.B||0} | C:{unit1.C||0}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                
+                                {/* Unit 2 */}
+                                <div className="border border-purple-500/30 rounded-lg p-3 bg-purple-500/5">
+                                  <h4 className="text-purple-400 font-semibold mb-2 flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4" />
+                                    Unit 2 Consumption
+                                  </h4>
+                                  <div className="space-y-1 text-xs">
+                                    {Object.entries(item.suppliers || {}).map(([supplier, units]) => {
+                                      const unit2 = units.UNIT2 || {};
+                                      const total = (unit2.A || 0) + (unit2.B || 0) + (unit2.C || 0);
+                                      if (total === 0) return null;
+                                      return (
+                                        <div key={supplier} className="flex justify-between text-slate-400">
+                                          <span className="truncate mr-2">{supplier.replace(/_/g, ' ').substring(0, 20)}</span>
+                                          <span className="font-mono text-purple-300">
+                                            A:{unit2.A||0} | B:{unit2.B||0} | C:{unit2.C||0}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right text-emerald-400 font-mono font-semibold">
-                        {item.total_penerimaan.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })
                 )}
               </tbody>
             </table>
