@@ -246,14 +246,16 @@ def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None
     """
     total_records = len(merged_data)
     
-    # High Deviation Alert: Count where |delta_loading_internal| > 100
+    # High Deviation Alert: Count where delta_loading_internal > 100 (Loading > Internal = RUGI)
+    # Hanya hitung jika positif (supplier overclaim)
     high_deviation_count = sum(
         1 for r in merged_data 
-        if r.get("delta_loading_internal") and abs(r["delta_loading_internal"]) > 100
+        if r.get("delta_loading_internal") and r["delta_loading_internal"] > 100
     )
     
     # Potential Loss calculation
     # Loss = sum of (delta_gcv * ds_mt * price_per_kcal_per_ton)
+    # Hanya untuk delta positif (Loading > Internal = RUGI)
     potential_loss = 0
     total_tonnage_problem = 0
     
@@ -262,7 +264,7 @@ def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None
         for r in merged_data:
             delta = r.get("delta_loading_internal")
             ds_mt = r.get("ds_mt") or 0
-            if delta and delta > 0:  # Only positive delta (loss)
+            if delta and delta > 0:  # Only positive delta (Loading > Internal = RUGI)
                 potential_loss += delta * ds_mt * price_per_kcal_per_ton
                 total_tonnage_problem += ds_mt
     else:
