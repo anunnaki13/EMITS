@@ -186,7 +186,76 @@ const SumberPemakaianPage = () => {
   };
 
   const handleExportPDF = () => {
-    toast.info("Fitur Export PDF sedang dalam pengembangan");
+    if (pemakaianData.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    try {
+      const jsPDF = require("jspdf");
+      require("jspdf-autotable");
+      
+      const doc = new jsPDF.default("landscape", "mm", "a4");
+      
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("Laporan Sumber Pemakaian Batubara", 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`PLTU Tenayan - Smart Stock Management`, 14, 22);
+      doc.text(`Tanggal Export: ${new Date().toLocaleDateString("id-ID")}`, 14, 28);
+
+      const tableData = pemakaianData.slice(0, 50).map((item, idx) => [
+        idx + 1,
+        new Date(item.date).toLocaleDateString("id-ID"),
+        item.unit1_burn?.toLocaleString("id-ID") || "-",
+        item.unit2_burn?.toLocaleString("id-ID") || "-",
+        ((item.unit1_burn || 0) + (item.unit2_burn || 0)).toLocaleString("id-ID")
+      ]);
+
+      doc.autoTable({
+        head: [["No", "Tanggal", "Unit 1 Burn", "Unit 2 Burn", "Total Burn"]],
+        body: tableData,
+        startY: 35,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [30, 41, 59] }
+      });
+
+      doc.save(`Sumber_Pemakaian_${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("Berhasil export ke PDF");
+    } catch (error) {
+      console.error("PDF Export error:", error);
+      toast.error("Gagal export PDF");
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (pemakaianData.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    try {
+      const XLSX = require("xlsx");
+      
+      const exportData = pemakaianData.map((item, idx) => ({
+        "No": idx + 1,
+        "Tanggal": new Date(item.date).toLocaleDateString("id-ID"),
+        "Unit 1 Burn": item.unit1_burn || 0,
+        "Unit 2 Burn": item.unit2_burn || 0,
+        "Total Burn": (item.unit1_burn || 0) + (item.unit2_burn || 0)
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sumber Pemakaian");
+      XLSX.writeFile(wb, `Sumber_Pemakaian_${new Date().toISOString().split("T")[0]}.xlsx`);
+      toast.success("Berhasil export ke Excel");
+    } catch (error) {
+      console.error("Excel Export error:", error);
+      toast.error("Gagal export Excel");
+    }
   };
 
   const handleDeleteAll = async () => {
