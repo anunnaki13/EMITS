@@ -74,12 +74,11 @@ const SUPPLIER_COLORS = {
   "TRIDAYA_COAL_RESOURCES_LRC": "#22d3ee"
 };
 
-const SmartStockPage = () => {
+const SumberPemakaianPage = () => {
   const { getAuthHeader } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [stockData, setStockData] = useState([]);
+  const [pemakaianData, setPemakaianData] = useState([]);
   const [recent30Days, setRecent30Days] = useState([]);
-  const [supplierTotals, setSupplierTotals] = useState({});
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [inputDialogOpen, setInputDialogOpen] = useState(false);
@@ -90,9 +89,12 @@ const SmartStockPage = () => {
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [formStockAwal, setFormStockAwal] = useState("");
   const [formSupplier, setFormSupplier] = useState("");
-  const [formZoneA, setFormZoneA] = useState("");
-  const [formZoneB, setFormZoneB] = useState("");
-  const [formZoneC, setFormZoneC] = useState("");
+  const [formUnit1A, setFormUnit1A] = useState("");
+  const [formUnit1B, setFormUnit1B] = useState("");
+  const [formUnit1C, setFormUnit1C] = useState("");
+  const [formUnit2A, setFormUnit2A] = useState("");
+  const [formUnit2B, setFormUnit2B] = useState("");
+  const [formUnit2C, setFormUnit2C] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -105,16 +107,15 @@ const SmartStockPage = () => {
       if (filterStartDate) params.start_date = filterStartDate;
       if (filterEndDate) params.end_date = filterEndDate;
 
-      const response = await axios.get(`${API_URL}/api/smart-stock`, {
+      const response = await axios.get(`${API_URL}/api/sumber-pemakaian`, {
         headers: getAuthHeader(),
         params
       });
 
-      setStockData(response.data.data);
+      setPemakaianData(response.data.data);
       setRecent30Days(response.data.recent_30_days);
-      setSupplierTotals(response.data.supplier_totals);
     } catch (error) {
-      toast.error("Gagal mengambil data stock");
+      toast.error("Gagal mengambil data pemakaian");
       console.error(error);
     } finally {
       setLoading(false);
