@@ -117,17 +117,21 @@ const AIIntelligencePage = () => {
 
   const fetchQuickData = async () => {
     try {
-      const [blending, boiler, contract, logistics] = await Promise.all([
+      const [blending, boiler, contract, logistics, smartStock, coa] = await Promise.all([
         axios.get(`${API_URL}/api/ai/quick/blending-suggestion`, { headers: getAuthHeader() }),
         axios.get(`${API_URL}/api/ai/quick/boiler-alerts`, { headers: getAuthHeader() }),
         axios.get(`${API_URL}/api/ai/quick/contract-status`, { headers: getAuthHeader() }),
-        axios.get(`${API_URL}/api/ai/quick/logistics-losses`, { headers: getAuthHeader() })
+        axios.get(`${API_URL}/api/ai/quick/logistics-losses`, { headers: getAuthHeader() }),
+        axios.get(`${API_URL}/api/ai/quick/smart-stock`, { headers: getAuthHeader() }),
+        axios.get(`${API_URL}/api/ai/quick/coa-alerts`, { headers: getAuthHeader() })
       ]);
       setQuickData({
         blending: blending.data,
         boiler: boiler.data,
         contract: contract.data,
-        logistics: logistics.data
+        logistics: logistics.data,
+        smartStock: smartStock.data,
+        coa: coa.data
       });
     } catch (error) {
       console.error("Error fetching quick data:", error);
