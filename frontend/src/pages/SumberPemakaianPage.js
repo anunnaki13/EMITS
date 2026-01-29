@@ -268,32 +268,6 @@ const SumberPemakaianPage = () => {
   const totalPemakaianToday = todayData ? todayData.total_pemakaian : 0;
   const displayDate = todayData ? todayData.date : todayDate;
 
-  // Calculate zonation for the selected date - Sum all suppliers' A, B, C
-  const zonationData = {
-    A: 0,
-    B: 0,
-    C: 0
-  };
-
-  if (todayData && todayData.suppliers) {
-    Object.values(todayData.suppliers).forEach(zones => {
-      zonationData.A += zones.A || 0;
-      zonationData.B += zones.B || 0;
-      zonationData.C += zones.C || 0;
-    });
-  }
-
-  // Prepare data for Zonation Bar Chart with gradient colors
-  const zonationChartData = [
-    { zone: 'Zona A', value: zonationData.A, fill: 'url(#colorA)' },
-    { zone: 'Zona B', value: zonationData.B, fill: 'url(#colorB)' },
-    { zone: 'Zona C', value: zonationData.C, fill: 'url(#colorC)' }
-  ];
-
-  // Check if today has no delivery (using actual today's date)
-  const actualTodayData = stockData.find(d => d.date === todayDate);
-  const noDeliveryToday = actualTodayData && actualTodayData.total_penerimaan === 0;
-
   return (
     <div className="space-y-6">
       {/* Header */}
