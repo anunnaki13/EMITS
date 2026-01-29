@@ -202,7 +202,7 @@ const COAReconciliationPage = () => {
       fetchData(1);
     }, 500);
     return () => clearTimeout(debounceTimer);
-  }, [search, statusFilter, fetchData]);
+  }, [search, statusFilter, dateFrom, dateTo, fetchData]);
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
