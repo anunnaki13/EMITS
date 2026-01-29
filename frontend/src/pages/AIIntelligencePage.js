@@ -394,30 +394,24 @@ const AIIntelligencePage = () => {
                   chatHistory.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
+                      className={`w-full ${msg.isUser ? 'flex justify-end' : ''}`}
                     >
-                      <div
-                        className={`rounded-2xl p-4 ${
-                          msg.isUser
-                            ? 'bg-cyan-600 text-white max-w-[75%]'
-                            : 'bg-slate-800/80 text-slate-200'
-                        }`}
-                        style={{ 
-                          maxWidth: msg.isUser ? '75%' : 'calc(100% - 8px)',
-                          wordWrap: 'break-word',
-                          overflowWrap: 'anywhere'
-                        }}
-                      >
-                        {msg.isUser ? (
-                          <p className="text-sm">{msg.query}</p>
-                        ) : (
-                          <div className="ai-response-content" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                      {msg.isUser ? (
+                        <div className="bg-cyan-600 text-white rounded-2xl p-4 max-w-[70%]">
+                          <p className="text-sm break-words">{msg.query}</p>
+                          <p className="text-[10px] mt-2 opacity-50">
+                            {new Date(msg.created_at).toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-800/80 text-slate-200 rounded-2xl p-4 w-full">
+                          <div className="ai-chat-response">
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
                                 table: ({ children }) => (
-                                  <div className="overflow-x-auto my-4 rounded-lg border border-slate-700 -mx-2">
-                                    <table className="min-w-full text-sm whitespace-nowrap">
+                                  <div className="table-wrapper">
+                                    <table>
                                       {children}
                                     </table>
                                   </div>
