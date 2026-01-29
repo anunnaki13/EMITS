@@ -19,7 +19,8 @@ import {
   ShoppingCart,
   Award,
   Bot,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +61,7 @@ const Layout = ({ children }) => {
   const smartStockItems = [
     { path: "/smart-stock/sumber-penerimaan", label: "Sumber Penerimaan", icon: Package },
     { path: "/smart-stock/sumber-pemakaian", label: "Sumber Pemakaian", icon: TrendingUp },
+    { path: "/smart-stock/smart-blending", label: "Smart Blending AI", icon: Sparkles },
   ];
 
   const isRekapActive = rekapItems.some(item => location.pathname === item.path);
