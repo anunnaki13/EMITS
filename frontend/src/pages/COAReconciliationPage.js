@@ -198,31 +198,61 @@ const COAReconciliationPage = () => {
   }, [search, statusFilter, fetchData]);
 
   const handleFileUpload = async (e) => {
-    const files = e.target.files;
+    const files = Array.from(e.target.files);
     if (files.length !== 3) {
-      toast.error("Harap upload 3 file: Loading.xlsx, Unloading.xlsx, dan Lab Internal.xlsx");
+      toast.error("Harap upload tepat 3 file Excel");
+      e.target.value = "";
       return;
     }
 
-    // Identify files by name
-    let loadingFile = null, unloadingFile = null, internalFile = null;
-    for (let file of files) {
-      const name = file.name.toLowerCase();
-      if (name.includes("loading")) loadingFile = file;
-      else if (name.includes("unloading")) unloadingFile = file;
-      else if (name.includes("internal") || name.includes("lab")) internalFile = file;
+    // Check all files are Excel
+    const validExtensions = ['.xlsx', '.xls'];
+    const invalidFiles = files.filter(f => !validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
+    if (invalidFiles.length > 0) {
+      toast.error("Semua file harus berformat Excel (.xlsx atau .xls)");
+      e.target.value = "";
+      return;
     }
 
-    if (!loadingFile || !unloadingFile || !internalFile) {
-      toast.error("File harus berisi: Loading.xlsx, Unloading.xlsx, dan Lab Internal.xlsx");
+    // Store files and show mapping dialog
+    setUploadedFiles(files);
+    
+    // Try auto-detect based on filename
+    const newMapping = { loading: "", unloading: "", internal: "" };
+    files.forEach((file, index) => {
+      const name = file.name.toLowerCase();
+      if (name.includes("loading") && !newMapping.loading) {
+        newMapping.loading = index.toString();
+      } else if (name.includes("unloading") && !newMapping.unloading) {
+        newMapping.unloading = index.toString();
+      } else if ((name.includes("internal") || name.includes("lab")) && !newMapping.internal) {
+        newMapping.internal = index.toString();
+      }
+    });
+    
+    setFileMapping(newMapping);
+    setShowUploadDialog(true);
+    e.target.value = "";
+  };
+
+  const processUploadedFiles = async () => {
+    // Validate all mappings are set and unique
+    if (!fileMapping.loading || !fileMapping.unloading || !fileMapping.internal) {
+      toast.error("Harap petakan semua file ke kategori yang sesuai");
+      return;
+    }
+
+    const mappingValues = [fileMapping.loading, fileMapping.unloading, fileMapping.internal];
+    if (new Set(mappingValues).size !== 3) {
+      toast.error("Setiap file harus dipetakan ke kategori berbeda");
       return;
     }
 
     setUploading(true);
     const formData = new FormData();
-    formData.append("loading_file", loadingFile);
-    formData.append("unloading_file", unloadingFile);
-    formData.append("internal_file", internalFile);
+    formData.append("loading_file", uploadedFiles[parseInt(fileMapping.loading)]);
+    formData.append("unloading_file", uploadedFiles[parseInt(fileMapping.unloading)]);
+    formData.append("internal_file", uploadedFiles[parseInt(fileMapping.internal)]);
 
     try {
       const response = await axios.post(
@@ -236,6 +266,9 @@ const COAReconciliationPage = () => {
         }
       );
       toast.success(response.data.message);
+      setShowUploadDialog(false);
+      setUploadedFiles([]);
+      setFileMapping({ loading: "", unloading: "", internal: "" });
       fetchData(1);
       fetchKPIs();
       fetchTrendData();
@@ -244,7 +277,6 @@ const COAReconciliationPage = () => {
       toast.error(error.response?.data?.detail || "Gagal upload file");
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   };
 
