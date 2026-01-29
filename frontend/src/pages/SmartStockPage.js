@@ -240,10 +240,28 @@ const SmartStockPage = () => {
 
   // Get today's stock - SINGLE VALUE
   const todayDate = new Date().toISOString().split('T')[0];
-  const todayData = stockData.find(d => d.date === todayDate) || stockData[0];
+  let todayData = stockData.find(d => d.date === todayDate);
+  
+  // If today's data doesn't exist or has no delivery, find the most recent date with delivery
+  if (!todayData || todayData.total_penerimaan === 0) {
+    // Find most recent date with delivery > 0
+    for (let item of stockData) {
+      if (item.total_penerimaan > 0) {
+        todayData = item;
+        break;
+      }
+    }
+  }
+  
+  // Fallback to first item if still no data
+  if (!todayData) {
+    todayData = stockData[0];
+  }
+  
   const totalStockToday = todayData ? todayData.stock_awal : 0;
+  const displayDate = todayData ? todayData.date : todayDate;
 
-  // Calculate zonation for TODAY ONLY - Sum all suppliers' A, B, C
+  // Calculate zonation for the selected date - Sum all suppliers' A, B, C
   const zonationData = {
     A: 0,
     B: 0,
@@ -265,8 +283,9 @@ const SmartStockPage = () => {
     { zone: 'Zona C', value: zonationData.C, fill: 'url(#colorC)' }
   ];
 
-  // Check if today has no delivery
-  const noDeliveryToday = todayData && todayData.total_penerimaan === 0;
+  // Check if today has no delivery (using actual today's date)
+  const actualTodayData = stockData.find(d => d.date === todayDate);
+  const noDeliveryToday = actualTodayData && actualTodayData.total_penerimaan === 0;
 
   return (
     <div className="space-y-6">
