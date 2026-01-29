@@ -40,7 +40,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ Vessel TNY, Barge TNY, Trucking TNY, Biomassa TNY pages
 - ✅ Purchase Order Batubara page
 - ✅ Merit Order page
-- ✅ **Smart Stock Management Page** dengan:
+- ✅ **Smart Stock - Sumber Penerimaan** dengan:
   - Area Chart untuk tren Stock Awal (30 hari terakhir)
   - Stacked Bar Chart untuk Total Penerimaan per Supplier
   - Tabel interaktif dengan freeze header
@@ -49,6 +49,17 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
   - Form Input Harian manual
   - Export PDF button (placeholder)
   - No Delivery alert untuk hari tanpa penerimaan
+- ✅ **Smart Stock - Sumber Pemakaian** dengan:
+  - KPI Dashboard (4 kartu: Total Burn Today, Unit 1, Unit 2, Rata-rata)
+  - Tabel kompak dengan expandable rows
+  - Upload Excel dengan multi-level header parsing
+  - Form Input Harian manual
+- ✅ **Smart Stock - Smart Blending AI** dengan:
+  - Parameter Target sliders (GCV, Ash, Sulphur, Quantity)
+  - AI-powered blending recommendations via Gemini
+  - Recommendation cards dengan detail supplier asli dari database
+  - Radar Chart untuk perbandingan Target vs Predicted
+  - Alasan AI dan Analisis Biaya dalam Bahasa Indonesia
 - ✅ **Tenayan Fuel Intelligence Agent** dengan:
   - Smart Blending Optimizer modul
   - Boiler Risk Warning modul
