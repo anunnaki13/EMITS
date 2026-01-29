@@ -285,6 +285,91 @@ const COAReconciliationPage = () => {
     }
   };
 
+  const resetManualForm = () => {
+    setManualForm({
+      shipment: "",
+      suppliers: "",
+      periode: "",
+      tb: "",
+      bg: "",
+      ds_mt: "",
+      loading_gcv_arb: "",
+      loading_tm_arb: "",
+      loading_ash_arb: "",
+      loading_ts_arb: "",
+      unloading_gcv_arb: "",
+      unloading_tm_arb: "",
+      unloading_ash_arb: "",
+      unloading_ts_arb: "",
+      internal_gcv_arb: "",
+      internal_tm_arb: "",
+      internal_ash_arb: "",
+      internal_ts_arb: ""
+    });
+  };
+
+  const submitManualInput = async () => {
+    if (!manualForm.shipment || !manualForm.suppliers) {
+      toast.error("Shipment dan Supplier wajib diisi");
+      return;
+    }
+
+    try {
+      const payload = {
+        shipment: parseInt(manualForm.shipment),
+        suppliers: manualForm.suppliers,
+        periode: manualForm.periode || null,
+        tb: manualForm.tb || null,
+        bg: manualForm.bg || null,
+        ds_mt: manualForm.ds_mt ? parseFloat(manualForm.ds_mt) : null,
+        loading_gcv_arb: manualForm.loading_gcv_arb ? parseFloat(manualForm.loading_gcv_arb) : null,
+        loading_tm_arb: manualForm.loading_tm_arb ? parseFloat(manualForm.loading_tm_arb) : null,
+        loading_ash_arb: manualForm.loading_ash_arb ? parseFloat(manualForm.loading_ash_arb) : null,
+        loading_ts_arb: manualForm.loading_ts_arb ? parseFloat(manualForm.loading_ts_arb) : null,
+        unloading_gcv_arb: manualForm.unloading_gcv_arb ? parseFloat(manualForm.unloading_gcv_arb) : null,
+        unloading_tm_arb: manualForm.unloading_tm_arb ? parseFloat(manualForm.unloading_tm_arb) : null,
+        unloading_ash_arb: manualForm.unloading_ash_arb ? parseFloat(manualForm.unloading_ash_arb) : null,
+        unloading_ts_arb: manualForm.unloading_ts_arb ? parseFloat(manualForm.unloading_ts_arb) : null,
+        internal_gcv_arb: manualForm.internal_gcv_arb ? parseFloat(manualForm.internal_gcv_arb) : null,
+        internal_tm_arb: manualForm.internal_tm_arb ? parseFloat(manualForm.internal_tm_arb) : null,
+        internal_ash_arb: manualForm.internal_ash_arb ? parseFloat(manualForm.internal_ash_arb) : null,
+        internal_ts_arb: manualForm.internal_ts_arb ? parseFloat(manualForm.internal_ts_arb) : null
+      };
+
+      await axios.post(`${API_URL}/api/coa-reconciliation/manual`, payload, {
+        headers: getAuthHeader()
+      });
+      toast.success(`Berhasil menambahkan data COA Shipment ${manualForm.shipment}`);
+      setShowManualDialog(false);
+      resetManualForm();
+      fetchData(1);
+      fetchKPIs();
+      fetchTrendData();
+      fetchSupplierData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal menambahkan data");
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    try {
+      const response = await axios.delete(`${API_URL}/api/coa-reconciliation`, {
+        headers: getAuthHeader()
+      });
+      toast.success(response.data.message);
+      setShowDeleteDialog(false);
+      fetchData(1);
+      fetchKPIs();
+      fetchTrendData();
+      fetchSupplierData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal menghapus data");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const styles = {
       critical: "bg-red-500/20 text-red-400 border-red-500/30",
