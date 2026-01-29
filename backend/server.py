@@ -3139,6 +3139,10 @@ async def get_smart_blending_recommendation(
 - Target GCV: {request.target_gcv} kcal/kg (As Received)
 - Maksimal Kandungan Abu: {request.max_ash}% (As Received)
 - Maksimal Total Sulphur: {request.max_sulphur}% (As Received)
+- Maksimal Total Moisture: {request.max_total_moisture}% (As Received)
+- Maksimal Inherent Moisture: {request.max_inherent_moisture}% (Air Dried Basis)
+- Minimal Volatile Matter: {request.min_volatile_matter}% (As Received)
+- Minimal Fixed Carbon: {request.min_fixed_carbon}% (As Received)
 - Total Kuantitas yang Dibutuhkan: {request.target_quantity:,.0f} MT
 
 **INVENTORI BATUBARA TERSEDIA:**
@@ -3148,14 +3152,16 @@ async def get_smart_blending_recommendation(
 - LRC (Low Rank Coal): GCV lebih rendah (3000-4500 kcal/kg), moisture tinggi, lebih murah
 - MRC (Medium Rank Coal): GCV lebih tinggi (4500-6000 kcal/kg), moisture rendah, lebih mahal
 - Formula blending: Hasil_GCV = (Batubara1_GCV × Batubara1_%) + (Batubara2_GCV × Batubara2_%)
-- Prioritas: CAPAI TARGET GCV DULU, kemudian pertimbangkan biaya
+- Prioritas: CAPAI TARGET GCV DULU, kemudian pertimbangkan parameter lainnya
 - WAJIB: Gunakan NAMA SUPPLIER ASLI dari data di atas, JANGAN buat nama dummy seperti "Supplier Alpha"
+- tm_ar = Total Moisture (As Received), im_adb = Inherent Moisture (Air Dried Basis)
+- vm_ar = Volatile Matter (As Received), fc_ar = Fixed Carbon (As Received)
 
 **TUGAS ANDA:**
-1. Analisis batubara yang tersedia (pertimbangkan GCV, Abu, Sulphur)
+1. Analisis batubara yang tersedia (pertimbangkan semua parameter: GCV, Abu, Sulphur, Moisture, VM, FC)
 2. Hitung persentase blend yang optimal
 3. Pastikan target GCV tercapai
-4. Jaga Abu dan Sulphur dalam batas
+4. Jaga semua parameter dalam batas yang ditentukan
 5. Rekomendasikan 2-4 batubara untuk blending
 6. GUNAKAN nama supplier SEBENARNYA dari data (contoh: "PT PLN BATUBARA", "PT BUKIT ASAM")
 
@@ -3170,13 +3176,21 @@ async def get_smart_blending_recommendation(
       "tonnage": 6000.0,
       "gcv": 4277,
       "ash": 4.4,
-      "sulphur": 0.21
+      "sulphur": 0.21,
+      "total_moisture": 34.0,
+      "inherent_moisture": 15.3,
+      "volatile_matter": 31.9,
+      "fixed_carbon": 29.7
     }}
   ],
   "predicted_quality": {{
     "gcv": 4050,
-    "ash": 6.8,
-    "sulphur": 0.65
+    "ash": 4.8,
+    "sulphur": 0.25,
+    "total_moisture": 35.0,
+    "inherent_moisture": 16.0,
+    "volatile_matter": 33.0,
+    "fixed_carbon": 27.0
   }},
   "meets_target": true,
   "reasoning": "Jelaskan mengapa blend ini optimal dalam Bahasa Indonesia",
