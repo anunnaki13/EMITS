@@ -3169,8 +3169,17 @@ async def get_smart_blending_recommendation(
 
 Respons HANYA dengan JSON yang valid, tanpa teks tambahan. WAJIB gunakan nama supplier asli dari data."""
 
-        # 6. Call Gemini AI
-        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        # 6. Get API key from user settings or use default
+        user_settings = await db.user_settings.find_one({"user_id": user["id"]}, {"_id": 0})
+        llm_key = None
+        if user_settings and user_settings.get("custom_api_key"):
+            llm_key = user_settings.get("custom_api_key")
+        if not llm_key:
+            llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        
+        if not llm_key:
+            raise HTTPException(status_code=400, detail="API Key tidak ditemukan. Silakan konfigurasi di Pengaturan AI Intelligence.")
+        
         chat = LlmChat(
             api_key=llm_key,
             session_id=f"smart-blending-{uuid.uuid4()}",
