@@ -4106,6 +4106,241 @@ async def add_coa_manual(data: COAManualInput, user: dict = Depends(require_role
     await db.coa_reconciliation.insert_one(record)
     return {"message": f"Berhasil menambahkan data COA Shipment {data.shipment}", "id": record["id"], "status": status}
 
+@api_router.get("/coa-reconciliation/export/excel")
+async def export_coa_to_excel(
+    status_filter: str = Query("all"),
+    user: dict = Depends(get_current_user)
+):
+    """Export COA reconciliation data to Excel"""
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    
+    # Build query
+    query = {}
+    if status_filter == "kritis":
+        query["status"] = "Kritis"
+    elif status_filter == "umpire":
+        query["umpire_status"] = {"$nin": [None, "none", ""]}
+    
+    # Get data
+    data = await db.coa_reconciliation.find(query, {"_id": 0}).sort("completed_unloading", -1).to_list(10000)
+    
+    # Create workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "COA Reconciliation"
+    
+    # Styles
+    header_fill = PatternFill(start_color="1E3A5F", end_color="1E3A5F", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True, size=11)
+    kritis_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = [
+        "No", "Shipment", "Supplier", "Tanggal Unloading", "DS (MT)",
+        "Loading GCV", "Loading TM", "Loading Ash", "Loading S",
+        "Unloading GCV", "Unloading TM", "Unloading Ash", "Unloading S",
+        "Internal GCV", "Internal TM", "Internal Ash", "Internal S",
+        "Delta GCV", "Status", "Umpire Status", "Umpire GCV"
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = border
+    
+    # Data rows
+    for row_idx, record in enumerate(data, 2):
+        row_data = [
+            row_idx - 1,
+            record.get("shipment", ""),
+            record.get("suppliers", ""),
+            record.get("completed_unloading", "")[:10] if record.get("completed_unloading") else "",
+            record.get("ds_mt", 0),
+            record.get("loading_gcv_arb"),
+            record.get("loading_tm_arb"),
+            record.get("loading_ash_arb"),
+            record.get("loading_ts_arb"),
+            record.get("unloading_gcv_arb"),
+            record.get("unloading_tm_arb"),
+            record.get("unloading_ash_arb"),
+            record.get("unloading_ts_arb"),
+            record.get("internal_gcv_arb"),
+            record.get("internal_tm_arb"),
+            record.get("internal_ash_arb"),
+            record.get("internal_ts_arb"),
+            record.get("delta_loading_internal"),
+            record.get("status", "normal").upper(),
+            record.get("umpire_status", "none"),
+            record.get("umpire_result", {}).get("gcv") if record.get("umpire_result") else None
+        ]
+        
+        is_kritis = record.get("status") == "Kritis"
+        
+        for col, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col, value=value)
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center' if col <= 4 else 'right')
+            if is_kritis:
+                cell.fill = kritis_fill
+    
+    # Adjust column widths
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 15
+    ws.column_dimensions['B'].width = 20  # Shipment
+    ws.column_dimensions['C'].width = 30  # Supplier
+    
+    # Save to bytes
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"COA_Reconciliation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    return Response(
+        content=output.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/coa-reconciliation/export/pdf")
+async def export_coa_to_pdf(
+    status_filter: str = Query("all"),
+    user: dict = Depends(get_current_user)
+):
+    """Export COA reconciliation data to PDF"""
+    import io
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch, cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    
+    # Build query
+    query = {}
+    if status_filter == "kritis":
+        query["status"] = "Kritis"
+    elif status_filter == "umpire":
+        query["umpire_status"] = {"$nin": [None, "none", ""]}
+    
+    # Get data
+    data = await db.coa_reconciliation.find(query, {"_id": 0}).sort("completed_unloading", -1).to_list(10000)
+    
+    # Get KPIs
+    all_coa = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    kritis_count = sum(1 for c in all_coa if c.get("status") == "Kritis")
+    umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
+    
+    settings = await db.settings.find_one({"type": "coa"})
+    price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
+    potential_loss = 0
+    for c in all_coa:
+        delta = c.get("delta_loading_internal", 0) or 0
+        tonase = c.get("ds_mt", 0) or 0
+        if delta > 0:
+            potential_loss += delta * tonase * price_per_kcal
+    
+    # Create PDF
+    output = io.BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=landscape(A4), leftMargin=0.5*inch, rightMargin=0.5*inch)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, alignment=TA_CENTER, spaceAfter=20)
+    elements.append(Paragraph("LAPORAN COA RECONCILIATION - PLTU TENAYAN", title_style))
+    elements.append(Paragraph(f"Tanggal: {datetime.now().strftime('%d %B %Y')}", ParagraphStyle('SubTitle', parent=styles['Normal'], alignment=TA_CENTER, spaceAfter=20)))
+    
+    # KPI Summary
+    kpi_data = [
+        ["Total Records", "Status Kritis", "Proses Umpire", "Potential Loss"],
+        [str(len(all_coa)), str(kritis_count), str(umpire_count), f"Rp {potential_loss:,.0f}"]
+    ]
+    kpi_table = Table(kpi_data, colWidths=[2.5*inch, 2.5*inch, 2.5*inch, 2.5*inch])
+    kpi_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E3A5F')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F0F4F8')),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 11),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#CCCCCC')),
+    ]))
+    elements.append(kpi_table)
+    elements.append(Spacer(1, 20))
+    
+    # Main Data Table
+    headers = ["No", "Shipment", "Supplier", "Tanggal", "Loading GCV", "Unloading GCV", "Internal GCV", "Delta", "Status"]
+    table_data = [headers]
+    
+    for idx, record in enumerate(data[:100], 1):  # Limit to 100 rows for PDF
+        status = record.get("status", "normal")
+        row = [
+            str(idx),
+            str(record.get("shipment", ""))[:15],
+            str(record.get("suppliers", ""))[:20],
+            str(record.get("completed_unloading", ""))[:10] if record.get("completed_unloading") else "-",
+            str(record.get("loading_gcv_arb") or "-"),
+            str(record.get("unloading_gcv_arb") or "-"),
+            str(record.get("internal_gcv_arb") or "-"),
+            str(int(record.get("delta_loading_internal") or 0)),
+            status.upper()
+        ]
+        table_data.append(row)
+    
+    main_table = Table(table_data, colWidths=[0.4*inch, 1.2*inch, 1.8*inch, 0.9*inch, 1*inch, 1*inch, 1*inch, 0.8*inch, 0.8*inch])
+    
+    table_style = [
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E3A5F')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F5F5')]),
+    ]
+    
+    # Highlight Kritis rows
+    for idx, record in enumerate(data[:100], 1):
+        if record.get("status") == "Kritis":
+            table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#FFCCCC')))
+    
+    main_table.setStyle(TableStyle(table_style))
+    elements.append(main_table)
+    
+    # Footer
+    elements.append(Spacer(1, 20))
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, alignment=TA_LEFT)
+    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Filter: {status_filter.upper()}", footer_style))
+    
+    doc.build(elements)
+    output.seek(0)
+    
+    filename = f"COA_Reconciliation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+    return Response(
+        content=output.getvalue(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
