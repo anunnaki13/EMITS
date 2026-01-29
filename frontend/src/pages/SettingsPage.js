@@ -39,7 +39,9 @@ import {
   Loader2,
   Bot,
   Key,
-  Save
+  Save,
+  Scale,
+  DollarSign
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
