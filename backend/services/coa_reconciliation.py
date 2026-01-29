@@ -234,9 +234,13 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
     return merged_records
 
 
-def calculate_kpis(merged_data: List[Dict]) -> Dict:
+def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None) -> Dict:
     """
     Calculate KPI metrics for the anomaly dashboard
+    
+    Args:
+        merged_data: List of reconciliation records
+        price_per_kcal_per_ton: Price per kCal per ton from settings (optional)
     """
     total_records = len(merged_data)
     
@@ -246,19 +250,26 @@ def calculate_kpis(merged_data: List[Dict]) -> Dict:
         if r.get("delta_loading_internal") and abs(r["delta_loading_internal"]) > 100
     )
     
-    # Potential Loss calculation (simplified estimation)
-    # Loss = sum of (delta_gcv * ds_mt * price_per_kcal)
-    # Assuming Rp 0.15 per kcal loss per kg
+    # Potential Loss calculation
+    # Loss = sum of (delta_gcv * ds_mt * price_per_kcal_per_ton)
     potential_loss = 0
     total_tonnage_problem = 0
-    price_per_kcal_per_ton = 150  # Rp per kcal per ton
     
-    for r in merged_data:
-        delta = r.get("delta_loading_internal")
-        ds_mt = r.get("ds_mt") or 0
-        if delta and delta > 0:  # Only positive delta (loss)
-            potential_loss += delta * ds_mt * price_per_kcal_per_ton
-            total_tonnage_problem += ds_mt
+    # Use provided price or None (will show as "Harga belum diatur")
+    if price_per_kcal_per_ton is not None and price_per_kcal_per_ton > 0:
+        for r in merged_data:
+            delta = r.get("delta_loading_internal")
+            ds_mt = r.get("ds_mt") or 0
+            if delta and delta > 0:  # Only positive delta (loss)
+                potential_loss += delta * ds_mt * price_per_kcal_per_ton
+                total_tonnage_problem += ds_mt
+    else:
+        # Just calculate tonnage problem without loss
+        for r in merged_data:
+            delta = r.get("delta_loading_internal")
+            ds_mt = r.get("ds_mt") or 0
+            if delta and delta > 0:
+                total_tonnage_problem += ds_mt
     
     # Umpire status counts
     umpire_proposed = sum(1 for r in merged_data if r.get("umpire_status") == "proposed")
