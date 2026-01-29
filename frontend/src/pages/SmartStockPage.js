@@ -208,13 +208,11 @@ const SmartStockPage = () => {
     stock: item.stock_awal
   }));
 
-  // Prepare data for Stacked Bar Chart (Supplier contributions)
-  const barChartData = SUPPLIERS
-    .filter(supplier => supplierTotals[supplier] > 0)
-    .map(supplier => ({
-      name: supplier.replace(/_/g, ' ').substring(0, 20),
-      total: supplierTotals[supplier]
-    }));
+  // Prepare data for Bar Chart - SHOW ALL SUPPLIERS
+  const barChartData = SUPPLIERS.map(supplier => ({
+    name: supplier.replace(/_/g, ' ').substring(0, 20),
+    total: supplierTotals[supplier] || 0
+  }));
 
   // Check if today has no delivery
   const todayDate = new Date().toISOString().split('T')[0];
