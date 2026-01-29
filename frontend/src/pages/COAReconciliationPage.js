@@ -426,7 +426,7 @@ const COAReconciliationPage = () => {
             Rekonsiliasi data kualitas batubara dari Loading, Unloading, dan Lab Internal
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             onClick={() => { fetchData(1); fetchKPIs(); fetchTrendData(); fetchSupplierData(); }}
@@ -435,6 +435,14 @@ const COAReconciliationPage = () => {
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
+          </Button>
+          <Button
+            onClick={() => { resetManualForm(); setShowManualDialog(true); }}
+            className="bg-cyan-600 hover:bg-cyan-700"
+            data-testid="manual-input-btn"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Input Manual
           </Button>
           <label className="cursor-pointer">
             <input
@@ -460,6 +468,17 @@ const COAReconciliationPage = () => {
               </span>
             </Button>
           </label>
+          {user?.role === "admin" && (
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(true)}
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              data-testid="delete-all-btn"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Hapus Semua
+            </Button>
+          )}
         </div>
       </div>
 
