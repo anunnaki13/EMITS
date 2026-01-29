@@ -123,9 +123,9 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 
 ### P2 (Medium Priority)
 - [x] Debug Excel Parser untuk "Sumber Penerimaan" ✅ DONE - Fixed keyword filtering for supplier detection
-- [ ] Refactor backend server.py ke modular structure (IN PROGRESS - created /models, /utils, /services)
+- [x] Refactor backend server.py ke modular structure ✅ DONE - Created /models, /utils, /services, /routers folders
+- [x] AI conversation memory (multi-turn) ✅ DONE - Added /ai/sessions endpoints for conversation history
 - [ ] Advanced filtering & date range
-- [ ] AI conversation memory (multi-turn)
 
 ### P3 (Nice to Have)
 - [ ] Dashboard filter by Periode functionality
