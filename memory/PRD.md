@@ -139,10 +139,12 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - [x] Update AI conversation memory with COA features ✅ DONE (Jan 30, 2026)
 - [x] Add Smart Stock & COA modules to AI Intelligence ✅ DONE (Jan 30, 2026)
 - [x] Export COA Reconciliation to PDF/Excel ✅ DONE (Jan 30, 2026)
+- [x] Filter by Supplier di halaman Laporan ✅ DONE (Jan 30, 2026)
 - [ ] Fix Smart Blending AI Timeout (BadGatewayError) - BLOCKED: LLM budget exhausted
 - [ ] Verify Excel Parser with "total penerimaan.xlsx"
 
 ### P2 (Medium Priority)
+- [ ] Refactoring server.py ke modular routes (Partially done - endpoints updated with supplier filter)
 - [ ] Advanced filtering & date range
 - [ ] AI conversation memory frontend integration
 
