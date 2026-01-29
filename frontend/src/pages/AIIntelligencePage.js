@@ -323,6 +323,20 @@ const AIIntelligencePage = () => {
                     color="blue"
                     onClick={() => handleQuickQuery("logistics", "Analisis supplier dengan losses tertinggi")}
                   />
+                  <QuickInsightCard
+                    title="Days of Supply"
+                    value={quickData.smartStock?.days_of_supply || 0}
+                    subtitle={`Stok: ${((quickData.smartStock?.current_stock || 0) / 1000).toFixed(1)}K MT`}
+                    color="purple"
+                    onClick={() => handleQuickQuery("smart_stock", "Analisis stok batubara saat ini. Berapa hari supply tersisa? Kapan harus order ulang?")}
+                  />
+                  <QuickInsightCard
+                    title="COA Kritis"
+                    value={quickData.coa?.kritis_count || 0}
+                    subtitle={quickData.coa?.top_supplier_deviasi?.name?.substring(0, 20) || "Tidak ada deviasi"}
+                    color="orange"
+                    onClick={() => handleQuickQuery("coa_reconciliation", "Analisis data COA Reconciliation. Supplier mana dengan deviasi GCV tertinggi? Berapa potential loss?")}
+                  />
                 </>
               )}
             </CardContent>
