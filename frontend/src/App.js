@@ -13,6 +13,7 @@ import SumberPemakaianPage from "@/pages/SumberPemakaianPage";
 import SmartBlendingPage from "@/pages/SmartBlendingPage";
 import AIIntelligencePage from "@/pages/AIIntelligencePage";
 import LaporanPage from "@/pages/LaporanPage";
+import COAReconciliationPage from "@/pages/COAReconciliationPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Layout from "@/components/Layout";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -139,6 +140,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><LaporanPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/coa-reconciliation"
+        element={
+          <ProtectedRoute>
+            <Layout><COAReconciliationPage /></Layout>
           </ProtectedRoute>
         }
       />
