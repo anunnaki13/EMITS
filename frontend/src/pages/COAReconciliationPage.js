@@ -54,7 +54,9 @@ import {
   Plus,
   Trash2,
   FileSpreadsheet,
-  ArrowRight
+  ArrowRight,
+  Download,
+  FileText
 } from "lucide-react";
 import {
   LineChart,
