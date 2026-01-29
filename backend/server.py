@@ -2345,6 +2345,58 @@ Anda dapat:
 2. Menjawab pertanyaan spesifik tentang supplier, kualitas, atau pengiriman
 3. Memberikan rekomendasi berdasarkan analisis data
 4. Menjelaskan tren dan pola dalam data historis
+""",
+        "smart_stock": base_prompt + """
+MODUL: Smart Stock Management
+Fokus: Analisis stok batubara dan biomassa di stockpile.
+
+Tugas spesifik:
+1. Monitoring stok aktual batubara di stockpile dari berbagai sumber (Vessel, Barge, Trucking, Biomassa)
+2. Analisis pemakaian harian dan tren konsumsi bahan bakar
+3. Perhitungan estimasi hari stok tersedia (Days of Supply)
+4. Identifikasi anomali penerimaan vs pemakaian
+5. Rekomendasi waktu optimal untuk pemesanan ulang
+
+Data yang tersedia:
+- Sumber Penerimaan: Data penerimaan batubara dari Vessel, Barge, Trucking, dan Biomassa
+- Sumber Pemakaian: Data pemakaian harian batubara termasuk energi (MWh) dan tonase
+- Merit Order: Ranking supplier berdasarkan harga per kCal
+
+Output yang diharapkan:
+- Total Stok Saat Ini (MT)
+- Rata-rata Pemakaian Harian (MT/hari)
+- Estimasi Hari Stok Tersisa
+- Rekomendasi pengisian stok
+""",
+        "coa_reconciliation": base_prompt + """
+MODUL: COA Reconciliation & Quality Dispute
+Fokus: Rekonsiliasi kualitas batubara dari tiga sumber dan manajemen dispute.
+
+Tugas spesifik:
+1. Analisis Triple Check: Bandingkan Loading COA (supplier), Unloading COA (surveyor), dan Lab Internal (PLTU)
+2. Identifikasi lot dengan deviasi GCV tinggi (Delta > 150 kCal/kg)
+3. Deteksi potensi overclaim dari supplier (Loading GCV > Internal GCV)
+4. Hitung Potential Loss (Rp) dari defisit kalori
+5. Monitoring status umpire/arbitrase yang sedang berjalan
+6. Analisis konsistensi supplier berdasarkan historis deviasi
+
+Parameter Kunci yang dianalisis:
+- GCV ARB (Gross Calorific Value As Received Basis)
+- TM ARB (Total Moisture)
+- Ash ARB (Kadar Abu)
+- Sulphur ARB (Kadar Belerang)
+
+Status Kritis: Ditandai jika Delta_GCV > 150 kCal/kg DAN Loading GCV > Internal GCV (overclaim)
+
+Rumus Perhitungan:
+- Delta GCV = Loading_GCV - Internal_GCV
+- Potential Loss = Tonase × Delta_GCV × Harga_per_kCal_per_Ton
+
+Output yang diharapkan:
+- High Deviation Alert: Jumlah lot dengan status Kritis
+- Potential Loss (Rp): Estimasi kerugian finansial
+- Supplier dengan deviasi tertinggi
+- Rekomendasi pengajuan umpire
 """
     }
     
