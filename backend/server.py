@@ -3014,6 +3014,172 @@ async def delete_all_sumber_pemakaian(
         "deleted_count": result.deleted_count
     }
 
+# ==================== SMART BLENDING AI ENDPOINTS ====================
+
+class SmartBlendingRequest(BaseModel):
+    target_gcv: float  # Target GCV in kcal/kg
+    max_ash: float  # Max Ash content in %
+    max_sulphur: float  # Max Sulphur in %
+    target_quantity: float  # Target quantity in MT
+
+@api_router.post("/smart-blending/recommend")
+async def get_smart_blending_recommendation(
+    request: SmartBlendingRequest,
+    user: dict = Depends(get_current_user)
+):
+    """Get AI-powered smart blending recommendation using Gemini"""
+    
+    try:
+        # 1. Fetch latest quality data from Vessel/Barge/Trucking
+        vessels = await db.vessels.find({}, {"_id": 0}).sort("date_received", -1).limit(10).to_list(10)
+        barges = await db.barges.find({}, {"_id": 0}).sort("date_received", -1).limit(10).to_list(10)
+        trucking = await db.trucking.find({}, {"_id": 0}).sort("date_received", -1).limit(10).to_list(10)
+        
+        # 2. Fetch stock availability from Smart Stock (Sumber Penerimaan)
+        latest_stock = await db.smartstock.find_one({}, {"_id": 0}, sort=[("date", -1)])
+        
+        # 3. Fetch pricing from Merit Order
+        merit_order = await db.merit_order.find({}, {"_id": 0}).to_list(100)
+        
+        # 4. Prepare data for AI analysis
+        coal_inventory = []
+        
+        # Process vessels
+        for v in vessels:
+            coal_inventory.append({
+                "source": "Vessel",
+                "supplier": v.get("supplier", "Unknown"),
+                "type": "MRC" if "MRC" in v.get("supplier", "").upper() else "LRC",
+                "gcv_ar": v.get("gcv_ar"),
+                "ash_ar": v.get("ash_ar"),
+                "ts_ar": v.get("ts_ar"),
+                "available_mt": v.get("quantity", 0),
+                "date": v.get("date_received")
+            })
+        
+        # Process barges
+        for b in barges:
+            coal_inventory.append({
+                "source": "Barge",
+                "supplier": b.get("supplier", "Unknown"),
+                "type": "MRC" if "MRC" in b.get("supplier", "").upper() else "LRC",
+                "gcv_ar": b.get("gcv_ar"),
+                "ash_ar": b.get("ash_ar"),
+                "ts_ar": b.get("ts_ar"),
+                "available_mt": b.get("quantity", 0),
+                "date": b.get("date_received")
+            })
+        
+        # Process trucking
+        for t in trucking:
+            coal_inventory.append({
+                "source": "Trucking",
+                "supplier": t.get("supplier", "Unknown"),
+                "type": "MRC" if "MRC" in t.get("supplier", "").upper() else "LRC",
+                "gcv_ar": t.get("gcv_ar"),
+                "ash_ar": t.get("ash_ar"),
+                "ts_ar": t.get("ts_ar"),
+                "available_mt": t.get("quantity", 0),
+                "date": t.get("date_received")
+            })
+        
+        # 5. Create AI prompt for Gemini
+        ai_prompt = f"""You are a Digital Coal Chemist for PLTU Tenayan Power Plant. Your task is to provide an optimal coal blending recommendation.
+
+**BLENDING REQUIREMENTS:**
+- Target GCV: {request.target_gcv} kcal/kg (As Received)
+- Max Ash Content: {request.max_ash}% (As Received)
+- Max Total Sulphur: {request.max_sulphur}% (As Received)
+- Total Quantity Needed: {request.target_quantity:,.0f} MT
+
+**AVAILABLE COAL INVENTORY:**
+{json.dumps(coal_inventory, indent=2)}
+
+**IMPORTANT NOTES:**
+- LRC (Low Rank Coal): Lower GCV (3000-4500 kcal/kg), higher moisture, cheaper
+- MRC (Medium Rank Coal): Higher GCV (4500-6000 kcal/kg), lower moisture, more expensive
+- Blending formula: Result_GCV = (Coal1_GCV × Coal1_%) + (Coal2_GCV × Coal2_%)
+- Priority: MEET GCV TARGET FIRST, then consider cost
+
+**YOUR TASK:**
+1. Analyze available coals (consider GCV, Ash, Sulphur)
+2. Calculate optimal blend percentages
+3. Ensure target GCV is met
+4. Keep Ash and Sulphur within limits
+5. Recommend 2-4 coals for blending
+
+**OUTPUT FORMAT (JSON):**
+{{
+  "recommendation": [
+    {{
+      "supplier": "Supplier Name",
+      "source": "Vessel/Barge/Trucking",
+      "type": "LRC/MRC",
+      "percentage": 60.0,
+      "tonnage": 6000.0,
+      "gcv": 4200,
+      "ash": 6.5,
+      "sulphur": 0.6
+    }}
+  ],
+  "predicted_quality": {{
+    "gcv": 4050,
+    "ash": 6.8,
+    "sulphur": 0.65
+  }},
+  "meets_target": true,
+  "reasoning": "Explain why this blend is optimal",
+  "cost_warning": "Note if using expensive coals"
+}}
+
+Respond ONLY with valid JSON, no additional text."""
+
+        # 6. Call Gemini AI
+        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"smart-blending-{uuid.uuid4()}",
+            system_message="You are an expert coal blending optimization AI for power plants."
+        ).with_model("gemini", "gemini-2.5-flash")
+        
+        user_message = UserMessage(text=ai_prompt)
+        response = await chat.send_message(user_message)
+        
+        # 7. Parse AI response
+        try:
+            # Clean response (remove markdown code blocks if present)
+            clean_response = response.strip()
+            if clean_response.startswith("```json"):
+                clean_response = clean_response[7:]
+            if clean_response.startswith("```"):
+                clean_response = clean_response[3:]
+            if clean_response.endswith("```"):
+                clean_response = clean_response[:-3]
+            clean_response = clean_response.strip()
+            
+            ai_result = json.loads(clean_response)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return raw response
+            ai_result = {
+                "error": "Failed to parse AI response",
+                "raw_response": response
+            }
+        
+        return {
+            "request": request.dict(),
+            "ai_recommendation": ai_result,
+            "data_sources": {
+                "vessels_count": len(vessels),
+                "barges_count": len(barges),
+                "trucking_count": len(trucking),
+                "latest_stock_date": latest_stock.get("date") if latest_stock else None
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"Smart Blending AI error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI recommendation failed: {str(e)}")
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
