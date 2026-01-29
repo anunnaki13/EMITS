@@ -167,12 +167,14 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
         if loading_gcv and unloading_gcv:
             delta_loading_unloading = loading_gcv - unloading_gcv
         
-        # Determine status based on delta
+        # Determine status based on delta (Loading vs Internal)
+        # KRITIS: Loading > Internal (supplier overclaim, Anda RUGI)
+        # NORMAL: Loading <= Internal (supplier underclaim atau sama, Anda UNTUNG/OK)
         status = "normal"
         if delta_loading_internal is not None:
-            if abs(delta_loading_internal) > 150:
+            if delta_loading_internal > 150:  # Hanya positif = Loading > Internal = RUGI
                 status = "critical"
-            elif abs(delta_loading_internal) > 100:
+            elif delta_loading_internal > 100:  # Warning jika selisih > 100 tapi <= 150
                 status = "warning"
         
         # Build merged record
