@@ -3017,9 +3017,13 @@ async def delete_all_sumber_pemakaian(
 # ==================== SMART BLENDING AI ENDPOINTS ====================
 
 class SmartBlendingRequest(BaseModel):
-    target_gcv: float  # Target GCV in kcal/kg
-    max_ash: float  # Max Ash content in %
-    max_sulphur: float  # Max Sulphur in %
+    target_gcv: float  # Target GCV in kcal/kg (3700-4700)
+    max_ash: float  # Max Ash content in % (3.3-6.0)
+    max_sulphur: float  # Max Sulphur in % (0.13-2.2)
+    max_total_moisture: float = 35.0  # Max Total Moisture in % (25-40)
+    max_inherent_moisture: float = 18.0  # Max Inherent Moisture in % (13.8-25)
+    min_volatile_matter: float = 35.0  # Min Volatile Matter in % (27.9-40)
+    min_fixed_carbon: float = 25.0  # Min Fixed Carbon in % (23-41)
     target_quantity: float  # Target quantity in MT
 
 @api_router.post("/smart-blending/recommend")
