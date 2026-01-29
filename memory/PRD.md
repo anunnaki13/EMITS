@@ -81,10 +81,14 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 │   ├── Biomassa TNY
 │   ├── Purchase Order Batubara
 │   └── Merit Order
+├── Smart Stock (Dropdown) ✨ NEW
+│   ├── Sumber Penerimaan
+│   ├── Sumber Pemakaian
+│   └── Smart Blending AI
 ├── Laporan
-├── AI Intelligence ✨ NEW
+├── AI Intelligence
 └── Pengaturan (Admin only)
-    └── Pengaturan AI/LLM ✨ NEW
+    └── Pengaturan AI/LLM
 ```
 
 ## AI Intelligence Agent Modules
