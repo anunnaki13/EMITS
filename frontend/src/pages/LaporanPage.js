@@ -38,7 +38,9 @@ import {
   Truck,
   Leaf,
   FileSpreadsheet,
-  File
+  File,
+  ShoppingCart,
+  ListOrdered
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
