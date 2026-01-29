@@ -196,9 +196,24 @@ const LaporanPage = () => {
   };
 
   const getAvgGCV = () => {
+    if (activeTab === "po_batubara" || activeTab === "merit_order") {
+      // For PO Batubara, use tipikal from merit order or return 0
+      if (activeTab === "merit_order") {
+        const validData = data.filter(item => item.tipikal_kcal_kg);
+        if (validData.length === 0) return 0;
+        return validData.reduce((sum, item) => sum + item.tipikal_kcal_kg, 0) / validData.length;
+      }
+      return 0;
+    }
     const validData = data.filter(item => item.gcv_arb);
     if (validData.length === 0) return 0;
     return validData.reduce((sum, item) => sum + item.gcv_arb, 0) / validData.length;
+  };
+
+  const getGCVLabel = () => {
+    if (activeTab === "merit_order") return "Rata-rata Tipikal";
+    if (activeTab === "po_batubara") return "Rata-rata Harga";
+    return "Rata-rata GCV";
   };
 
   // Export to Excel
