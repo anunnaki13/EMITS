@@ -121,6 +121,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - [ ] Refactor backend server.py ke modular structure
 - [ ] Advanced filtering & date range
 - [ ] AI conversation memory (multi-turn)
+- [ ] Fix Excel parser bug untuk "Sumber Penerimaan" (TOTALPENERIMAAN header issue)
 
 ### P3 (Nice to Have)
 - [ ] Dashboard filter by Periode functionality
