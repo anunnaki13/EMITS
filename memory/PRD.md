@@ -97,6 +97,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 3. **Boiler Risk Warning** - Deteksi risiko slagging/fouling
 4. **Contract Compliance** - Monitoring PO & kontrak
 5. **Logistics Analysis** - Efisiensi & losses pengiriman
+6. **Smart Blending AI** ✨ NEW - Digital Chemist untuk rekomendasi blending optimal berbasis AI
 
 ## Prioritized Backlog
 
@@ -108,6 +109,8 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - [x] All data entry pages
 - [x] **AI Intelligence Agent**
 - [x] **AI Settings in Settings page**
+- [x] **Smart Stock Module (Sumber Penerimaan, Sumber Pemakaian)**
+- [x] **Smart Blending AI** (Gemini-powered optimization)
 
 ### P1 (High Priority)
 - [ ] Real export PDF/Excel implementation di Laporan
