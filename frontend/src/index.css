@@ -230,6 +230,7 @@ button {
     overflow-x: auto;
     margin: 0.5rem 0;
     font-size: 0.75rem;
+    max-width: 100%;
 }
 
 .ai-chat-response .table-wrapper {
@@ -237,6 +238,7 @@ button {
     margin: 0.75rem 0;
     border-radius: 0.5rem;
     border: 1px solid #334155;
+    max-width: 100%;
 }
 
 .ai-chat-response table {
@@ -254,6 +256,7 @@ button {
     font-size: 0.6875rem;
     letter-spacing: 0.05em;
     background: rgba(51, 65, 85, 0.5);
+    white-space: nowrap;
 }
 
 .ai-chat-response td {
@@ -279,17 +282,6 @@ button {
 .ai-chat-response a {
     color: #22d3ee;
     text-decoration: underline;
-}
-
-/* Force container width */
-[data-radix-scroll-area-viewport] {
-    max-width: 100% !important;
-    overflow-x: hidden !important;
-}
-
-[data-radix-scroll-area-viewport] > div {
-    max-width: 100% !important;
-    width: 100% !important;
 }
 
 button:active {
