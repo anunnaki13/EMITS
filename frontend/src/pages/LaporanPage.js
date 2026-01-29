@@ -76,7 +76,9 @@ const LaporanPage = () => {
     try {
       const endpoint = activeTab === "vessel" ? "vessels" : 
                        activeTab === "barge" ? "barges" : 
-                       activeTab === "trucking" ? "trucking" : "biomassa";
+                       activeTab === "trucking" ? "trucking" : 
+                       activeTab === "biomassa" ? "biomassa" :
+                       activeTab === "po_batubara" ? "po-batubara" : "merit-order";
       const params = search ? { search } : {};
       const response = await axios.get(`${API_URL}/api/${endpoint}`, { 
         headers: getAuthHeader(), 
