@@ -2547,6 +2547,7 @@ async def get_smart_stock(
     stocks = await db.smartstock.find(query, {"_id": 0}).sort("date", -1).limit(limit).to_list(limit)
     
     # Get last 30 days for chart
+    from datetime import datetime, timezone, timedelta
     thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
     recent_stocks = await db.smartstock.find(
         {"date": {"$gte": thirty_days_ago}},
