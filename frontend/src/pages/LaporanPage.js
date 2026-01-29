@@ -62,7 +62,9 @@ const LaporanPage = () => {
     { id: "vessel", label: "Vessel", icon: Ship, color: "cyan" },
     { id: "barge", label: "Barge", icon: Anchor, color: "blue" },
     { id: "trucking", label: "Trucking", icon: Truck, color: "amber" },
-    { id: "biomassa", label: "Biomassa", icon: Leaf, color: "green" }
+    { id: "biomassa", label: "Biomassa", icon: Leaf, color: "green" },
+    { id: "po_batubara", label: "PO Batubara", icon: ShoppingCart, color: "purple" },
+    { id: "merit_order", label: "Merit Order", icon: ListOrdered, color: "pink" }
   ];
 
   useEffect(() => {
