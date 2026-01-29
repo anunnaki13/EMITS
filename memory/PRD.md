@@ -28,22 +28,24 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ CRUD endpoints untuk semua kategori
 - ✅ Excel upload & parsing untuk semua kategori
 - ✅ Dashboard statistics API & Advanced Dashboard API
-- ✅ **AI Intelligence API** - /api/ai/query dengan 4 modul
-- ✅ **AI Quick Analysis Endpoints** - blending, boiler alerts, contract status, logistics losses
+- ✅ **AI Intelligence API** - /api/ai/query dengan 7 modul (termasuk Smart Stock & COA)
+- ✅ **AI Quick Analysis Endpoints** - blending, boiler alerts, contract status, logistics losses, smart-stock, coa-alerts
 - ✅ **AI Settings API** - Custom API key management
 - ✅ **Smart Stock Management API** - GET, POST, Upload Excel, Delete endpoints
 - ✅ **Sumber Pemakaian API** - GET, POST, Upload Excel, Delete endpoints
 - ✅ **Smart Blending AI API** - /api/smart-blending/recommend
-- ✅ **COA Reconciliation API** ✨ NEW:
+- ✅ **COA Reconciliation API** ✨ ENHANCED:
   - GET /api/coa-reconciliation - Paginated reconciliation data
   - GET /api/coa-reconciliation/kpis - KPI metrics (deviation alerts, potential loss, umpire status)
   - GET /api/coa-reconciliation/trend - GCV trend data for line chart
   - GET /api/coa-reconciliation/supplier-consistency - Supplier deviation data
   - GET /api/coa-reconciliation/{id} - Detail with radar chart data
   - POST /api/coa-reconciliation/upload - Upload 3 COA files
-  - POST /api/coa-reconciliation/manual - Input data manual ✨ NEW
+  - POST /api/coa-reconciliation/manual - Input data manual
   - POST /api/coa-reconciliation/propose-umpire - Umpire proposal workflow
-  - DELETE /api/coa-reconciliation - Hapus semua data (admin only) ✨ NEW
+  - DELETE /api/coa-reconciliation - Hapus semua data (admin only)
+  - **GET /api/coa-reconciliation/export/excel - Export ke Excel** ✨ NEW
+  - **GET /api/coa-reconciliation/export/pdf - Export ke PDF** ✨ NEW
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
