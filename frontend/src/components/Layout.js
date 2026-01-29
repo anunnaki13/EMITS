@@ -207,20 +207,44 @@ const Layout = ({ children }) => {
             {location.pathname === "/laporan" && <ChevronRight className="w-4 h-4 ml-auto" />}
           </Link>
 
-          {/* COA Reconciliation */}
-          <Link
-            to="/coa-reconciliation"
-            onClick={() => setSidebarOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-              location.pathname === "/coa-reconciliation"
-                ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30"
+          {/* COA Reconciliation Dropdown */}
+          <Collapsible open={coaOpen} onOpenChange={setCoaOpen}>
+            <CollapsibleTrigger className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              location.pathname.includes("/coa-reconciliation") || location.pathname.includes("/dispute-monitor")
+                ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400"
                 : "text-slate-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Scale className="w-5 h-5" />
-            <span className="text-sm font-medium">COA Reconciliation</span>
-            {location.pathname === "/coa-reconciliation" && <ChevronRight className="w-4 h-4 ml-auto" />}
-          </Link>
+            }`}>
+              <Scale className="w-5 h-5" />
+              <span className="text-sm font-medium">COA Reconciliation</span>
+              <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${coaOpen ? "rotate-180" : ""}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pl-4 mt-1 space-y-1">
+              <Link
+                to="/coa-reconciliation"
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                  location.pathname === "/coa-reconciliation"
+                    ? "bg-amber-500/10 text-amber-400"
+                    : "text-slate-500 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Scale className="w-4 h-4" />
+                Triple Check
+              </Link>
+              <Link
+                to="/dispute-monitor"
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                  location.pathname === "/dispute-monitor"
+                    ? "bg-purple-500/10 text-purple-400"
+                    : "text-slate-500 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Gavel className="w-4 h-4" />
+                Dispute Monitor
+              </Link>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* AI Intelligence Agent */}
           <Link
