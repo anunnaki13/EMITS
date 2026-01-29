@@ -20,7 +20,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - Dark Mode SaaS Dashboard UI
 
 ## What's Been Implemented ✅
-*Last Updated: January 29, 2026*
+*Last Updated: January 30, 2026*
 
 ### Backend (FastAPI)
 - ✅ User authentication (JWT)
@@ -134,7 +134,8 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 
 ### P1 (High Priority)
 - [x] Server-side pagination ✅ DONE
-- [ ] Fix Smart Blending AI Timeout (BadGatewayError)
+- [x] Update AI conversation memory with COA features ✅ DONE (Jan 30, 2026)
+- [ ] Fix Smart Blending AI Timeout (BadGatewayError) - BLOCKED: LLM budget exhausted
 - [ ] Verify Excel Parser with "total penerimaan.xlsx"
 
 ### P2 (Medium Priority)
