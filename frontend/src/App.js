@@ -10,6 +10,7 @@ import POBatubaraPage from "@/pages/POBatubaraPage";
 import MeritOrderPage from "@/pages/MeritOrderPage";
 import SmartStockPage from "@/pages/SmartStockPage";
 import SumberPemakaianPage from "@/pages/SumberPemakaianPage";
+import SmartBlendingPage from "@/pages/SmartBlendingPage";
 import AIIntelligencePage from "@/pages/AIIntelligencePage";
 import LaporanPage from "@/pages/LaporanPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -114,6 +115,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><SumberPemakaianPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/smart-stock/smart-blending"
+        element={
+          <ProtectedRoute>
+            <Layout><SmartBlendingPage /></Layout>
           </ProtectedRoute>
         }
       />
