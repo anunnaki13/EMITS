@@ -50,7 +50,9 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  ChevronDown
+  ChevronDown,
+  Plus,
+  Trash2
 } from "lucide-react";
 import {
   LineChart,
