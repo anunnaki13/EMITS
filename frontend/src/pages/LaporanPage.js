@@ -424,7 +424,7 @@ const LaporanPage = () => {
 
       <Card className="glass-card border-white/5 p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-900/50 mb-4">
+          <TabsList className="grid w-full grid-cols-6 bg-slate-900/50 mb-4">
             {categories.map(cat => (
               <TabsTrigger 
                 key={cat.id} 
@@ -432,8 +432,8 @@ const LaporanPage = () => {
                 className={`text-xs data-[state=active]:bg-${cat.color}-500/20`}
                 data-testid={`tab-${cat.id}`}
               >
-                <cat.icon className="w-4 h-4 mr-2" />
-                {cat.label}
+                <cat.icon className="w-4 h-4 mr-1 hidden sm:block" />
+                <span className="truncate">{cat.label}</span>
               </TabsTrigger>
             ))}
           </TabsList>
