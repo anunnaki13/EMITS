@@ -2518,6 +2518,217 @@ async def get_logistics_losses(user: dict = Depends(get_current_user)):
         "lowest_losses": losses_summary[-5:] if len(losses_summary) > 5 else []
     }
 
+# ==================== SMART STOCK ENDPOINTS ====================
+
+class SmartStockEntry(BaseModel):
+    date: str
+    stock_awal: float
+    suppliers: dict  # {"RIAU_MITRA": {"A": 100, "B": 200, "C": 0}, ...}
+    total_penerimaan: Optional[float] = 0.0
+
+@api_router.get("/smart-stock")
+async def get_smart_stock(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    limit: int = Query(100, ge=1, le=500),
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get smart stock data with optional date range filter"""
+    verify_token(credentials.credentials)
+    
+    query = {}
+    if start_date or end_date:
+        date_query = {}
+        if start_date:
+            date_query["$gte"] = start_date
+        if end_date:
+            date_query["$lte"] = end_date
+        query["date"] = date_query
+    
+    stocks = await db.smartstock.find(query, {"_id": 0}).sort("date", -1).limit(limit).to_list(limit)
+    
+    # Get last 30 days for chart
+    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+    recent_stocks = await db.smartstock.find(
+        {"date": {"$gte": thirty_days_ago}},
+        {"_id": 0}
+    ).sort("date", 1).to_list(100)
+    
+    # Calculate supplier totals for stacked bar chart
+    supplier_totals = {}
+    for stock in recent_stocks:
+        suppliers = stock.get("suppliers", {})
+        for supplier_name, zones in suppliers.items():
+            if supplier_name not in supplier_totals:
+                supplier_totals[supplier_name] = 0
+            for zone, value in zones.items():
+                supplier_totals[supplier_name] += value if value else 0
+    
+    return {
+        "data": stocks,
+        "recent_30_days": recent_stocks,
+        "supplier_totals": supplier_totals,
+        "total_count": len(stocks)
+    }
+
+@api_router.post("/smart-stock/entry")
+async def create_smart_stock_entry(
+    entry: SmartStockEntry,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create new manual smart stock entry"""
+    verify_token(credentials.credentials)
+    
+    # Calculate total penerimaan from suppliers
+    total = 0
+    for supplier, zones in entry.suppliers.items():
+        for zone, value in zones.items():
+            total += value if value else 0
+    
+    entry.total_penerimaan = total
+    
+    new_entry = {
+        "id": str(uuid.uuid4()),
+        "date": entry.date,
+        "stock_awal": entry.stock_awal,
+        "suppliers": entry.suppliers,
+        "total_penerimaan": entry.total_penerimaan,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.smartstock.insert_one(new_entry)
+    return {"message": "Entry created successfully", "id": new_entry["id"]}
+
+@api_router.post("/smart-stock/upload")
+async def upload_smart_stock_excel(
+    file: UploadFile = File(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Upload Excel file and parse smart stock data"""
+    verify_token(credentials.credentials)
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="File must be Excel format (.xlsx or .xls)")
+    
+    try:
+        contents = await file.read()
+        df = pd.read_excel(io.BytesIO(contents), header=None)
+        
+        # Parse the complex header structure
+        # Row 0: Main supplier names (merged cells)
+        # Row 1: A, B, C sub-columns
+        
+        # Get supplier names from row 0 (skip first 2 columns: Tanggal, STOCK AWAL)
+        suppliers_row = df.iloc[0, 2:].tolist()
+        
+        # Identify unique suppliers and their column ranges
+        supplier_columns = {}
+        current_supplier = None
+        col_start = 2
+        
+        for i, supplier in enumerate(suppliers_row):
+            if pd.notna(supplier) and supplier != '':
+                if current_supplier:
+                    supplier_columns[current_supplier] = (col_start, i + 2)
+                current_supplier = supplier
+                col_start = i + 2
+        
+        # Add the last supplier
+        if current_supplier:
+            supplier_columns[current_supplier] = (col_start, len(suppliers_row) + 2)
+        
+        # Parse data rows (starting from row 2)
+        inserted_count = 0
+        for idx in range(2, len(df)):
+            row = df.iloc[idx]
+            
+            # Skip if date is empty
+            if pd.isna(row[0]):
+                continue
+            
+            # Parse date (Excel serial date)
+            try:
+                date_value = pd.to_datetime(row[0], origin='1899-12-30', unit='D')
+                date_str = date_value.strftime("%Y-%m-%d")
+            except:
+                # If already a datetime
+                date_str = str(row[0])[:10]
+            
+            stock_awal = float(row[1]) if pd.notna(row[1]) else 0.0
+            
+            # Parse suppliers data
+            suppliers_data = {}
+            for supplier_name, (start_col, end_col) in supplier_columns.items():
+                # Normalize supplier name
+                supplier_key = supplier_name.strip().replace(" ", "_").replace("(", "").replace(")", "").upper()
+                
+                # Get A, B, C values (assuming 3 columns per supplier)
+                zones = {"A": 0.0, "B": 0.0, "C": 0.0}
+                col_idx = 0
+                for col in range(start_col, min(start_col + 3, end_col)):
+                    if col < len(row):
+                        zone_key = ["A", "B", "C"][col_idx]
+                        zones[zone_key] = float(row[col]) if pd.notna(row[col]) else 0.0
+                        col_idx += 1
+                
+                suppliers_data[supplier_key] = zones
+            
+            # Get total penerimaan (last column)
+            total_penerimaan = float(row.iloc[-1]) if pd.notna(row.iloc[-1]) else 0.0
+            
+            # Check if entry already exists for this date
+            existing = await db.smartstock.find_one({"date": date_str})
+            
+            if existing:
+                # Update existing entry
+                await db.smartstock.update_one(
+                    {"date": date_str},
+                    {"$set": {
+                        "stock_awal": stock_awal,
+                        "suppliers": suppliers_data,
+                        "total_penerimaan": total_penerimaan,
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+            else:
+                # Insert new entry
+                new_entry = {
+                    "id": str(uuid.uuid4()),
+                    "date": date_str,
+                    "stock_awal": stock_awal,
+                    "suppliers": suppliers_data,
+                    "total_penerimaan": total_penerimaan,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.smartstock.insert_one(new_entry)
+            
+            inserted_count += 1
+        
+        return {
+            "message": f"Successfully processed {inserted_count} entries",
+            "count": inserted_count
+        }
+    
+    except Exception as e:
+        logger.error(f"Error processing Excel file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
+
+@api_router.delete("/smart-stock/{entry_id}")
+async def delete_smart_stock_entry(
+    entry_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a smart stock entry"""
+    verify_token(credentials.credentials)
+    
+    result = await db.smartstock.delete_one({"id": entry_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    
+    return {"message": "Entry deleted successfully"}
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
