@@ -2528,13 +2528,12 @@ class SmartStockEntry(BaseModel):
 
 @api_router.get("/smart-stock")
 async def get_smart_stock(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
     limit: int = Query(100, ge=1, le=500),
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
+    user: dict = Depends(get_current_user)
 ):
     """Get smart stock data with optional date range filter"""
-    verify_token(credentials.credentials)
     
     query = {}
     if start_date or end_date:
@@ -2574,10 +2573,9 @@ async def get_smart_stock(
 @api_router.post("/smart-stock/entry")
 async def create_smart_stock_entry(
     entry: SmartStockEntry,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    user: dict = Depends(get_current_user)
 ):
     """Create new manual smart stock entry"""
-    verify_token(credentials.credentials)
     
     # Calculate total penerimaan from suppliers
     total = 0
@@ -2603,10 +2601,9 @@ async def create_smart_stock_entry(
 @api_router.post("/smart-stock/upload")
 async def upload_smart_stock_excel(
     file: UploadFile = File(...),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    user: dict = Depends(get_current_user)
 ):
     """Upload Excel file and parse smart stock data"""
-    verify_token(credentials.credentials)
     
     if not file.filename.endswith(('.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail="File must be Excel format (.xlsx or .xls)")
@@ -2718,10 +2715,9 @@ async def upload_smart_stock_excel(
 @api_router.delete("/smart-stock/{entry_id}")
 async def delete_smart_stock_entry(
     entry_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    user: dict = Depends(get_current_user)
 ):
     """Delete a smart stock entry"""
-    verify_token(credentials.credentials)
     
     result = await db.smartstock.delete_one({"id": entry_id})
     if result.deleted_count == 0:
