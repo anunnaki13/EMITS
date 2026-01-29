@@ -742,6 +742,7 @@ const COAReconciliationPage = () => {
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
+                <TableHead className="text-slate-400 text-xs">Tanggal</TableHead>
                 <TableHead className="text-slate-400 text-xs">Shipment</TableHead>
                 <TableHead className="text-slate-400 text-xs">Supplier</TableHead>
                 <TableHead className="text-slate-400 text-xs text-center bg-green-500/10">Loading GCV</TableHead>
@@ -756,27 +757,35 @@ const COAReconciliationPage = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-cyan-400" />
                   </TableCell>
                 </TableRow>
               ) : data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-slate-500">
+                  <TableCell colSpan={10} className="text-center py-8 text-slate-500">
                     Tidak ada data. Upload file COA untuk memulai.
                   </TableCell>
                 </TableRow>
               ) : (
                 data.map((row) => {
-                  const isCritical = row.delta_loading_internal && Math.abs(row.delta_loading_internal) > 150;
+                  // Kritis hanya jika Loading > Internal > 150 (supplier overclaim = RUGI)
+                  const isCritical = row.delta_loading_internal && row.delta_loading_internal > 150;
                   return (
                     <TableRow
                       key={row.id}
                       className={`border-white/5 ${isCritical ? "bg-red-500/10 hover:bg-red-500/15" : "hover:bg-white/5"}`}
                       data-testid={`row-${row.shipment}`}
                     >
+                      <TableCell className="text-slate-400 text-xs whitespace-nowrap">
+                        {row.completed_unloading ? new Date(row.completed_unloading).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric"
+                        }) : "-"}
+                      </TableCell>
                       <TableCell className="font-mono text-white text-sm">{row.shipment}</TableCell>
-                      <TableCell className="text-slate-300 text-sm max-w-[150px] truncate">{row.suppliers}</TableCell>
+                      <TableCell className="text-slate-300 text-sm max-w-[120px] truncate">{row.suppliers}</TableCell>
                       <TableCell className="text-center text-green-400 text-sm font-medium bg-green-500/5">
                         {row.loading_gcv_arb ? formatNumber(row.loading_gcv_arb) : "-"}
                       </TableCell>
