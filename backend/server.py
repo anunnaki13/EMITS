@@ -2582,6 +2582,90 @@ async def get_logistics_losses(user: dict = Depends(get_current_user)):
         "lowest_losses": losses_summary[-5:] if len(losses_summary) > 5 else []
     }
 
+# ==================== AI CONVERSATION SESSIONS ====================
+
+@api_router.get("/ai/sessions")
+async def get_ai_sessions(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=50),
+    user: dict = Depends(get_current_user)
+):
+    """Get list of user's AI conversation sessions"""
+    skip = (page - 1) * page_size
+    
+    # Aggregate to get unique sessions with their last message
+    pipeline = [
+        {"$match": {"user_id": user["id"]}},
+        {"$sort": {"created_at": -1}},
+        {"$group": {
+            "_id": "$session_id",
+            "module": {"$first": "$module"},
+            "last_query": {"$first": "$query"},
+            "last_response": {"$first": "$response"},
+            "message_count": {"$sum": 1},
+            "created_at": {"$min": "$created_at"},
+            "updated_at": {"$max": "$created_at"}
+        }},
+        {"$sort": {"updated_at": -1}},
+        {"$skip": skip},
+        {"$limit": page_size}
+    ]
+    
+    sessions = await ai_chat_collection.aggregate(pipeline).to_list(page_size)
+    
+    # Count total unique sessions
+    total_pipeline = [
+        {"$match": {"user_id": user["id"]}},
+        {"$group": {"_id": "$session_id"}},
+        {"$count": "total"}
+    ]
+    total_result = await ai_chat_collection.aggregate(total_pipeline).to_list(1)
+    total = total_result[0]["total"] if total_result else 0
+    
+    return {
+        "items": sessions,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
+
+@api_router.get("/ai/sessions/{session_id}")
+async def get_session_messages(session_id: str, user: dict = Depends(get_current_user)):
+    """Get all messages in a specific session"""
+    messages = await ai_chat_collection.find(
+        {"session_id": session_id, "user_id": user["id"]},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(100)
+    
+    if not messages:
+        raise HTTPException(status_code=404, detail="Session tidak ditemukan")
+    
+    return {
+        "session_id": session_id,
+        "module": messages[0].get("module") if messages else "general",
+        "messages": messages,
+        "message_count": len(messages)
+    }
+
+@api_router.delete("/ai/sessions/{session_id}")
+async def delete_session(session_id: str, user: dict = Depends(get_current_user)):
+    """Delete a specific conversation session"""
+    result = await ai_chat_collection.delete_many({"session_id": session_id, "user_id": user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Session tidak ditemukan")
+    return {"message": f"Berhasil menghapus {result.deleted_count} pesan dalam sesi"}
+
+@api_router.post("/ai/sessions/new")
+async def create_new_session(module: str = "general", user: dict = Depends(get_current_user)):
+    """Create a new conversation session"""
+    session_id = f"tenayan-ai-{user['id']}-{uuid.uuid4()}"
+    return {
+        "session_id": session_id,
+        "module": module,
+        "message": "Sesi percakapan baru telah dibuat"
+    }
+
 # ==================== SMART STOCK ENDPOINTS ====================
 
 class SmartStockEntry(BaseModel):
