@@ -90,6 +90,29 @@ const COAReconciliationPage = () => {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showUmpireDialog, setShowUmpireDialog] = useState(false);
   const [umpireForm, setUmpireForm] = useState({ sample_number: "", notes: "" });
+  const [showManualDialog, setShowManualDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    shipment: "",
+    suppliers: "",
+    periode: "",
+    tb: "",
+    bg: "",
+    ds_mt: "",
+    loading_gcv_arb: "",
+    loading_tm_arb: "",
+    loading_ash_arb: "",
+    loading_ts_arb: "",
+    unloading_gcv_arb: "",
+    unloading_tm_arb: "",
+    unloading_ash_arb: "",
+    unloading_ts_arb: "",
+    internal_gcv_arb: "",
+    internal_tm_arb: "",
+    internal_ash_arb: "",
+    internal_ts_arb: ""
+  });
   const PAGE_SIZE = 50;
 
   const fetchData = useCallback(async (page = 1) => {
