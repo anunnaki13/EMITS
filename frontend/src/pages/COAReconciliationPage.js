@@ -52,7 +52,9 @@ import {
   Clock,
   ChevronDown,
   Plus,
-  Trash2
+  Trash2,
+  FileSpreadsheet,
+  ArrowRight
 } from "lucide-react";
 import {
   LineChart,
