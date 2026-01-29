@@ -799,10 +799,10 @@ async def create_trucking(data: TruckingTNYCreate, user: dict = Depends(require_
     trucking_doc.pop("_id", None)
     return TruckingTNYResponse(**trucking_doc)
 
-@api_router.get("/trucking", response_model=List[TruckingTNYResponse])
+@api_router.get("/trucking")
 async def get_trucking(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1, le=10000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
@@ -813,8 +813,18 @@ async def get_trucking(
             {"no_truck": {"$regex": search, "$options": "i"}},
             {"suppliers": {"$regex": search, "$options": "i"}}
         ]
-    trucking_list = await db.trucking.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
-    return [TruckingTNYResponse(**t) for t in trucking_list]
+    
+    skip = (page - 1) * page_size
+    total = await db.trucking.count_documents(query)
+    trucking_list = await db.trucking.find(query, {"_id": 0}).sort("ta", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": trucking_list,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
 
 @api_router.get("/trucking/{trucking_id}", response_model=TruckingTNYResponse)
 async def get_trucking_item(trucking_id: str, user: dict = Depends(get_current_user)):
