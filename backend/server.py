@@ -3443,6 +3443,34 @@ Respons HANYA dengan JSON yang valid, tanpa teks tambahan. WAJIB gunakan nama su
         logger.error(f"Smart Blending AI error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI recommendation failed: {str(e)}")
 
+# ==================== COA SETTINGS ====================
+
+class COASettingsUpdate(BaseModel):
+    price_per_kcal_per_ton: float
+
+@api_router.get("/settings/coa")
+async def get_coa_settings(user: dict = Depends(get_current_user)):
+    """Get COA settings including price per kCal"""
+    settings = await db.app_settings.find_one({"type": "coa"}, {"_id": 0})
+    if not settings:
+        return {"price_per_kcal_per_ton": None}
+    return settings
+
+@api_router.put("/settings/coa")
+async def update_coa_settings(data: COASettingsUpdate, user: dict = Depends(require_role(["admin"]))):
+    """Update COA settings"""
+    await db.app_settings.update_one(
+        {"type": "coa"},
+        {"$set": {
+            "type": "coa",
+            "price_per_kcal_per_ton": data.price_per_kcal_per_ton,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_by": user["id"]
+        }},
+        upsert=True
+    )
+    return {"message": "Pengaturan COA berhasil disimpan", "price_per_kcal_per_ton": data.price_per_kcal_per_ton}
+
 # ==================== COA RECONCILIATION & DISPUTE MONITOR ====================
 
 from services.coa_reconciliation import (
