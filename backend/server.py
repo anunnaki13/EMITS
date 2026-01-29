@@ -924,10 +924,10 @@ async def delete_all_biomassa(user: dict = Depends(require_role(["admin"]))):
 
 # ==================== PO BATUBARA ROUTES ====================
 
-@api_router.get("/po-batubara", response_model=List[POBatubaraResponse])
+@api_router.get("/po-batubara")
 async def get_po_batubara(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1, le=10000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     year: Optional[int] = None,
     month: Optional[int] = None,
     search: Optional[str] = None,
@@ -944,8 +944,18 @@ async def get_po_batubara(
             {"supplier_name": {"$regex": search, "$options": "i"}},
             {"no_shipment": {"$regex": search, "$options": "i"}}
         ]
-    po_list = await db.po_batubara.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
-    return [POBatubaraResponse(**p) for p in po_list]
+    
+    skip = (page - 1) * page_size
+    total = await db.po_batubara.count_documents(query)
+    po_list = await db.po_batubara.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": po_list,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
 
 @api_router.get("/po-batubara/years")
 async def get_po_years(user: dict = Depends(get_current_user)):
