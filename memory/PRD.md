@@ -137,6 +137,8 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 ### P1 (High Priority)
 - [x] Server-side pagination ✅ DONE
 - [x] Update AI conversation memory with COA features ✅ DONE (Jan 30, 2026)
+- [x] Add Smart Stock & COA modules to AI Intelligence ✅ DONE (Jan 30, 2026)
+- [x] Export COA Reconciliation to PDF/Excel ✅ DONE (Jan 30, 2026)
 - [ ] Fix Smart Blending AI Timeout (BadGatewayError) - BLOCKED: LLM budget exhausted
 - [ ] Verify Excel Parser with "total penerimaan.xlsx"
 
