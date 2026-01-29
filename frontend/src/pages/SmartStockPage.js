@@ -32,7 +32,8 @@ import {
   Package,
   TrendingUp,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -202,6 +203,28 @@ const SmartStockPage = () => {
     // TODO: Implement PDF export using jsPDF or backend
   };
 
+  const handleDeleteAll = async () => {
+    if (!window.confirm("⚠️ PERINGATAN!\n\nAnda yakin ingin menghapus SEMUA data Smart Stock?\nTindakan ini tidak dapat dibatalkan!")) {
+      return;
+    }
+
+    // Double confirmation
+    if (!window.confirm("Konfirmasi sekali lagi: Hapus SEMUA data?")) {
+      return;
+    }
+
+    try {
+      const response = await axios.delete(`${API_URL}/api/smart-stock`, {
+        headers: getAuthHeader()
+      });
+
+      toast.success(response.data.message);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal menghapus data");
+    }
+  };
+
   // Prepare data for Area Chart (Stock Awal trend)
   const areaChartData = recent30Days.map(item => ({
     date: new Date(item.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
@@ -232,7 +255,7 @@ const SmartStockPage = () => {
           </h1>
           <p className="text-slate-400 mt-1">Monitoring stock batubara dan penerimaan harian</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-cyan-600 hover:bg-cyan-500">
@@ -367,6 +390,17 @@ const SmartStockPage = () => {
             <Download className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
+
+          {stockData.length > 0 && (
+            <Button
+              onClick={handleDeleteAll}
+              variant="outline"
+              className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Hapus Semua
+            </Button>
+          )}
         </div>
       </div>
 
