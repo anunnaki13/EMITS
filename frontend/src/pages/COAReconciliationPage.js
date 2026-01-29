@@ -1197,6 +1197,144 @@ const COAReconciliationPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Upload File Mapping Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={(open) => {
+        if (!open && !uploading) {
+          setShowUploadDialog(false);
+          setUploadedFiles([]);
+          setFileMapping({ loading: "", unloading: "", internal: "" });
+        }
+      }}>
+        <DialogContent className="bg-[#0B1221] border-white/10 text-white max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-amber-400" />
+              Petakan File COA
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Cocokkan setiap file dengan kategori sumber data yang sesuai
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* File List */}
+            <div className="bg-slate-900/50 rounded-lg p-3">
+              <p className="text-xs text-slate-500 mb-2">File yang diupload:</p>
+              <div className="space-y-1">
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm text-slate-300">
+                    <FileSpreadsheet className="w-4 h-4 text-green-400" />
+                    <span className="font-mono">{file.name}</span>
+                    <span className="text-slate-500 text-xs">({(file.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mapping Section */}
+            <div className="space-y-3">
+              <p className="text-sm text-white font-medium">Petakan ke kategori:</p>
+              
+              {/* Loading */}
+              <div className="flex items-center gap-3">
+                <div className="w-32 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm text-green-400 font-medium">Loading</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-600" />
+                <Select value={fileMapping.loading} onValueChange={(val) => setFileMapping({ ...fileMapping, loading: val })}>
+                  <SelectTrigger className="flex-1 bg-slate-900/50 border-slate-700 text-white" data-testid="map-loading">
+                    <SelectValue placeholder="Pilih file Loading..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0B1221] border-slate-700">
+                    {uploadedFiles.map((file, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {file.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Unloading */}
+              <div className="flex items-center gap-3">
+                <div className="w-32 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-sm text-blue-400 font-medium">Unloading</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-600" />
+                <Select value={fileMapping.unloading} onValueChange={(val) => setFileMapping({ ...fileMapping, unloading: val })}>
+                  <SelectTrigger className="flex-1 bg-slate-900/50 border-slate-700 text-white" data-testid="map-unloading">
+                    <SelectValue placeholder="Pilih file Unloading..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0B1221] border-slate-700">
+                    {uploadedFiles.map((file, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {file.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Internal */}
+              <div className="flex items-center gap-3">
+                <div className="w-32 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <span className="text-sm text-amber-400 font-medium">Lab Internal</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-600" />
+                <Select value={fileMapping.internal} onValueChange={(val) => setFileMapping({ ...fileMapping, internal: val })}>
+                  <SelectTrigger className="flex-1 bg-slate-900/50 border-slate-700 text-white" data-testid="map-internal">
+                    <SelectValue placeholder="Pilih file Lab Internal..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0B1221] border-slate-700">
+                    {uploadedFiles.map((file, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {file.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-300">
+              <AlertCircle className="w-4 h-4 inline mr-1" />
+              Data yang ada akan diganti dengan data baru dari file yang diupload.
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setShowUploadDialog(false);
+                setUploadedFiles([]);
+                setFileMapping({ loading: "", unloading: "", internal: "" });
+              }}
+              disabled={uploading}
+            >
+              Batal
+            </Button>
+            <Button 
+              onClick={processUploadedFiles} 
+              className="bg-amber-600 hover:bg-amber-700"
+              disabled={uploading || !fileMapping.loading || !fileMapping.unloading || !fileMapping.internal}
+              data-testid="process-upload"
+            >
+              {uploading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="w-4 h-4 mr-2" />
+              )}
+              Proses & Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
