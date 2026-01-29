@@ -425,7 +425,7 @@ const LaporanPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glass-card border-white/5 p-4">
           <p className="text-slate-400 text-sm">Total Data</p>
-          <p className="text-2xl font-bold text-white mt-1">{data.length}</p>
+          <p className="text-2xl font-bold text-white mt-1">{pagination.total || data.length}</p>
           <p className="text-slate-500 text-xs mt-1">record {currentCategory?.label}</p>
         </Card>
         <Card className="glass-card border-white/5 p-4">
