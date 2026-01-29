@@ -88,7 +88,21 @@ const LaporanPage = () => {
         headers: getAuthHeader(), 
         params 
       });
-      setData(response.data);
+      
+      // Handle paginated response
+      const responseData = response.data;
+      if (responseData.items) {
+        setData(responseData.items);
+        setPagination({
+          page: responseData.page,
+          total: responseData.total,
+          totalPages: responseData.total_pages
+        });
+      } else {
+        // Fallback for old response format
+        setData(Array.isArray(responseData) ? responseData : []);
+        setPagination({ page: 1, total: responseData.length || 0, totalPages: 1 });
+      }
     } catch (error) {
       toast.error("Gagal memuat data laporan");
     } finally {
