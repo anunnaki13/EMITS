@@ -336,6 +336,7 @@ const COAReconciliationPage = () => {
       shipment: "",
       suppliers: "",
       periode: "",
+      completed_unloading: "",
       tb: "",
       bg: "",
       ds_mt: "",
@@ -362,9 +363,10 @@ const COAReconciliationPage = () => {
 
     try {
       const payload = {
-        shipment: parseInt(manualForm.shipment),
+        shipment: manualForm.shipment,  // Now string, supports "Lot XX"
         suppliers: manualForm.suppliers,
         periode: manualForm.periode || null,
+        completed_unloading: manualForm.completed_unloading || null,
         tb: manualForm.tb || null,
         bg: manualForm.bg || null,
         ds_mt: manualForm.ds_mt ? parseFloat(manualForm.ds_mt) : null,
