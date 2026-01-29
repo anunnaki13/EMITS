@@ -53,6 +53,7 @@ const Layout = ({ children }) => {
     { path: "/biomassa", label: "Biomassa TNY", icon: Leaf },
     { path: "/po-batubara", label: "Purchase Order Batubara", icon: ShoppingCart },
     { path: "/merit-order", label: "Merit Order", icon: Award },
+    { path: "/smart-stock", label: "Smart Stock", icon: Package },
   ];
 
   const isRekapActive = rekapItems.some(item => location.pathname === item.path);
