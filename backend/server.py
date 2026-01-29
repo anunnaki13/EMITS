@@ -3086,6 +3086,10 @@ async def get_smart_blending_recommendation(
                     "gcv_ar": v.get("gcv_arb"),
                     "ash_ar": v.get("ash_arb"),
                     "ts_ar": v.get("ts_arb"),
+                    "tm_ar": v.get("tm_arb"),  # Total Moisture
+                    "im_adb": v.get("im_adb"),  # Inherent Moisture
+                    "vm_ar": v.get("vm_arb"),  # Volatile Matter
+                    "fc_ar": v.get("fc_arb"),  # Fixed Carbon
                     "available_mt": v.get("bl_mt", 0),
                     "date": v.get("time_arrival")
                 })
@@ -3101,6 +3105,10 @@ async def get_smart_blending_recommendation(
                     "gcv_ar": b.get("gcv_arb"),
                     "ash_ar": b.get("ash_arb"),
                     "ts_ar": b.get("ts_arb"),
+                    "tm_ar": b.get("tm_arb"),  # Total Moisture
+                    "im_adb": b.get("im_adb"),  # Inherent Moisture
+                    "vm_ar": b.get("vm_arb"),  # Volatile Matter
+                    "fc_ar": b.get("fc_arb"),  # Fixed Carbon
                     "available_mt": b.get("bl_mt", 0),
                     "date": b.get("time_arrival")
                 })
@@ -3116,6 +3124,10 @@ async def get_smart_blending_recommendation(
                     "gcv_ar": t.get("gcv_arb"),
                     "ash_ar": t.get("ash_arb"),
                     "ts_ar": t.get("ts_arb"),
+                    "tm_ar": t.get("tm_arb"),  # Total Moisture
+                    "im_adb": t.get("im_adb"),  # Inherent Moisture
+                    "vm_ar": t.get("vm_arb"),  # Volatile Matter
+                    "fc_ar": t.get("fc_arb"),  # Fixed Carbon
                     "available_mt": t.get("quantity", 0),
                     "date": t.get("date_received")
                 })
