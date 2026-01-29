@@ -868,10 +868,10 @@ async def create_biomassa(data: BiomassaTNYCreate, user: dict = Depends(require_
     biomassa_doc.pop("_id", None)
     return BiomassaTNYResponse(**biomassa_doc)
 
-@api_router.get("/biomassa", response_model=List[BiomassaTNYResponse])
+@api_router.get("/biomassa")
 async def get_biomassa(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1, le=10000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
@@ -882,8 +882,18 @@ async def get_biomassa(
             {"suppliers": {"$regex": search, "$options": "i"}},
             {"biomass_type": {"$regex": search, "$options": "i"}}
         ]
-    biomassa_list = await db.biomassa.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
-    return [BiomassaTNYResponse(**b) for b in biomassa_list]
+    
+    skip = (page - 1) * page_size
+    total = await db.biomassa.count_documents(query)
+    biomassa_list = await db.biomassa.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": biomassa_list,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
 
 @api_router.get("/biomassa/{biomassa_id}", response_model=BiomassaTNYResponse)
 async def get_biomassa_item(biomassa_id: str, user: dict = Depends(get_current_user)):
