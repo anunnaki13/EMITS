@@ -44,6 +44,21 @@ def clean_column_name(col):
     return col
 
 
+def safe_datetime(val):
+    """Safely convert value to ISO datetime string"""
+    if pd.isna(val) or val is None or val == '':
+        return None
+    try:
+        if isinstance(val, pd.Timestamp):
+            return val.isoformat()
+        if isinstance(val, datetime):
+            return val.isoformat()
+        # Try parsing string
+        return pd.to_datetime(val).isoformat()
+    except:
+        return None
+
+
 def parse_coa_excel(file_contents: bytes, source_type: str) -> List[Dict]:
     """
     Parse COA Excel file (Loading, Unloading, or Lab Internal)
@@ -56,20 +71,23 @@ def parse_coa_excel(file_contents: bytes, source_type: str) -> List[Dict]:
     
     records = []
     for _, row in df.iterrows():
-        # Extract Shipment as the unique identifier
-        shipment = safe_int(row.get("Shipment"))
-        if shipment is None:
+        # Extract Shipment as STRING to preserve "Lot XX" format
+        shipment_raw = row.get("Shipment")
+        if pd.isna(shipment_raw) or shipment_raw is None or shipment_raw == '':
+            continue
+        shipment = safe_str(shipment_raw)  # Keep as string!
+        if not shipment:
             continue
             
         record = {
-            "shipment": shipment,
+            "shipment": shipment,  # Now stored as string
             "periode": safe_str(row.get("Periode")),
             "suppliers": safe_str(row.get("Suppliers")),
             "tb": safe_str(row.get("TB")),
             "bg": safe_str(row.get("BG")),
             "ds_mt": safe_float(row.get("DS (MT)")),
-            "commenced_unloading": safe_str(row.get("Commenced Unloading")),
-            "completed_unloading": safe_str(row.get("Completed Unloading")),
+            "commenced_unloading": safe_datetime(row.get("Commenced Unloading")),
+            "completed_unloading": safe_datetime(row.get("Completed Unloading")),
             # GCV values
             "gcv_arb": safe_float(row.get("GCV (Kcal/Kg) ARB", row.get("GCV (Kcal/Kg)\nARB"))),
             "gcv_adb": safe_float(row.get("GCV (Kcal/Kg) ADB", row.get("GCV (Kcal/Kg)\nADB"))),
