@@ -97,6 +97,8 @@ const COAReconciliationPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [fileMapping, setFileMapping] = useState({
     loading: "",
     unloading: "",
@@ -106,6 +108,7 @@ const COAReconciliationPage = () => {
     shipment: "",
     suppliers: "",
     periode: "",
+    completed_unloading: "",
     tb: "",
     bg: "",
     ds_mt: "",
@@ -130,6 +133,8 @@ const COAReconciliationPage = () => {
       const params = { page, page_size: PAGE_SIZE };
       if (search) params.search = search;
       if (statusFilter !== "all") params.status = statusFilter;
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
 
       const response = await axios.get(`${API_URL}/api/coa-reconciliation`, {
         headers: getAuthHeader(),
@@ -147,7 +152,7 @@ const COAReconciliationPage = () => {
     } catch (error) {
       toast.error("Gagal memuat data rekonsiliasi");
     } finally {
-      setLoading(false);
+      setLoading(false));
     }
   }, [getAuthHeader, search, statusFilter]);
 
