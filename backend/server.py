@@ -3713,12 +3713,13 @@ async def delete_all_coa_reconciliation(user: dict = Depends(require_role(["admi
     return {"message": f"Berhasil menghapus {result.deleted_count} data rekonsiliasi COA", "count": result.deleted_count}
 
 class COAManualInput(BaseModel):
-    shipment: int
+    shipment: str  # Changed to string to support "Lot XX" format
     suppliers: str
     periode: Optional[str] = None
     tb: Optional[str] = None
     bg: Optional[str] = None
     ds_mt: Optional[float] = None
+    completed_unloading: Optional[str] = None
     loading_gcv_arb: Optional[float] = None
     loading_tm_arb: Optional[float] = None
     loading_ash_arb: Optional[float] = None
@@ -3764,12 +3765,13 @@ async def add_coa_manual(data: COAManualInput, user: dict = Depends(require_role
     
     record = {
         "id": str(uuid.uuid4()),
-        "shipment": data.shipment,
+        "shipment": data.shipment,  # Now string
         "suppliers": data.suppliers,
         "periode": data.periode or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "tb": data.tb or "",
         "bg": data.bg or "",
         "ds_mt": data.ds_mt,
+        "completed_unloading": data.completed_unloading,
         "loading_gcv_arb": data.loading_gcv_arb,
         "loading_tm_arb": data.loading_tm_arb,
         "loading_ash_arb": data.loading_ash_arb,
