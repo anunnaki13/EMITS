@@ -159,90 +159,137 @@ button {
     transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 
-/* AI Response Content Styles */
-.ai-response-content {
+/* AI Chat Response Styles - FIXED */
+.ai-chat-response {
     font-size: 0.875rem;
-    line-height: 1.65;
-    word-wrap: break-word;
-    overflow-wrap: anywhere;
-    hyphens: auto;
+    line-height: 1.6;
+    width: 100%;
     max-width: 100%;
     overflow: hidden;
-}
-
-.ai-response-content * {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    word-wrap: break-word;
-}
-
-.ai-response-content p {
-    margin-bottom: 0.625rem;
-    white-space: normal;
     word-break: break-word;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 
-.ai-response-content h1,
-.ai-response-content h2,
-.ai-response-content h3 {
-    margin-top: 1.25rem;
+.ai-chat-response p {
     margin-bottom: 0.5rem;
     word-break: break-word;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    white-space: normal;
 }
 
-.ai-response-content ul,
-.ai-response-content ol {
-    margin: 0.625rem 0;
+.ai-chat-response h1,
+.ai-chat-response h2,
+.ai-chat-response h3,
+.ai-chat-response h4 {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.ai-chat-response h1 { font-size: 1.125rem; font-weight: 700; color: white; }
+.ai-chat-response h2 { font-size: 1rem; font-weight: 700; color: white; }
+.ai-chat-response h3 { font-size: 0.9375rem; font-weight: 600; color: #22d3ee; }
+.ai-chat-response h4 { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; }
+
+.ai-chat-response ul,
+.ai-chat-response ol {
+    margin: 0.5rem 0;
     padding-left: 1.25rem;
 }
 
-.ai-response-content li {
+.ai-chat-response li {
     margin-bottom: 0.25rem;
     word-break: break-word;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 
-.ai-response-content table {
-    border-collapse: collapse;
+.ai-chat-response strong {
+    color: #22d3ee;
+    font-weight: 600;
+}
+
+.ai-chat-response em {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.ai-chat-response code {
+    background: #0f172a;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    color: #22d3ee;
+    word-break: break-all;
+}
+
+.ai-chat-response pre {
+    background: #0f172a;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+    font-size: 0.75rem;
+}
+
+.ai-chat-response .table-wrapper {
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border-radius: 0.5rem;
+    border: 1px solid #334155;
+}
+
+.ai-chat-response table {
     width: 100%;
-    display: block;
-    overflow-x: auto;
-    max-width: 100%;
     font-size: 0.75rem;
+    border-collapse: collapse;
 }
 
-.ai-response-content blockquote {
+.ai-chat-response th {
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #22d3ee;
+    text-transform: uppercase;
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+    background: rgba(51, 65, 85, 0.5);
+}
+
+.ai-chat-response td {
+    padding: 0.5rem;
+    color: #cbd5e1;
+    border-top: 1px solid #334155;
+}
+
+.ai-chat-response blockquote {
+    border-left: 3px solid #22d3ee;
+    padding-left: 0.75rem;
     margin: 0.75rem 0;
+    color: #94a3b8;
+    font-style: italic;
 }
 
-.ai-response-content pre {
-    margin: 0.75rem 0;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-all;
-    max-width: 100%;
-    font-size: 0.75rem;
-}
-
-.ai-response-content code {
-    word-break: break-all;
-    overflow-wrap: anywhere;
-    font-size: 0.75rem;
-}
-
-.ai-response-content hr {
+.ai-chat-response hr {
+    border: none;
+    border-top: 1px solid #334155;
     margin: 1rem 0;
 }
 
-/* Chat container fix */
+.ai-chat-response a {
+    color: #22d3ee;
+    text-decoration: underline;
+}
+
+/* Force container width */
 [data-radix-scroll-area-viewport] {
     max-width: 100% !important;
+    overflow-x: hidden !important;
 }
 
 [data-radix-scroll-area-viewport] > div {
     max-width: 100% !important;
+    width: 100% !important;
 }
 
 button:active {
