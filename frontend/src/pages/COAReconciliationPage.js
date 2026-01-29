@@ -152,9 +152,9 @@ const COAReconciliationPage = () => {
     } catch (error) {
       toast.error("Gagal memuat data rekonsiliasi");
     } finally {
-      setLoading(false));
+      setLoading(false);
     }
-  }, [getAuthHeader, search, statusFilter]);
+  }, [getAuthHeader, search, statusFilter, dateFrom, dateTo]);
 
   const fetchKPIs = useCallback(async () => {
     try {
