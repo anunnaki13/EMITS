@@ -93,6 +93,13 @@ const COAReconciliationPage = () => {
   const [showManualDialog, setShowManualDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [fileMapping, setFileMapping] = useState({
+    loading: "",
+    unloading: "",
+    internal: ""
+  });
   const [manualForm, setManualForm] = useState({
     shipment: "",
     suppliers: "",
