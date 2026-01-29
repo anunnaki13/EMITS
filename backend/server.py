@@ -2612,28 +2612,36 @@ async def upload_smart_stock_excel(
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents), header=None)
         
-        # Parse the complex header structure
-        # Row 0: Main supplier names (merged cells)
-        # Row 1: A, B, C sub-columns
+        # NEW STRUCTURE:
+        # Row 0: Headers with merged cells
+        # Col 0: TANGGAL
+        # Col 1: STOCK AWAL (MT)
+        # Col 2: SUMBER PENERIMAAN (MT) - skip this
+        # Col 3: TOTAL PENERIMAAN (MT) - we'll use this
+        # Col 4+: Supplier names (merged across A, B, C columns)
         
-        # Get supplier names from row 0 (skip first 2 columns: Tanggal, STOCK AWAL)
-        suppliers_row = df.iloc[0, 2:].tolist()
+        # Get supplier names from row 0 (starting from column 4)
+        suppliers_row = df.iloc[0, 4:].tolist()
         
         # Identify unique suppliers and their column ranges
         supplier_columns = {}
         current_supplier = None
-        col_start = 2
+        col_start = 4
         
-        for i, supplier in enumerate(suppliers_row):
-            if pd.notna(supplier) and supplier != '':
+        for i, cell_value in enumerate(suppliers_row):
+            actual_col = i + 4
+            if pd.notna(cell_value) and str(cell_value).strip() != '':
                 if current_supplier:
-                    supplier_columns[current_supplier] = (col_start, i + 2)
-                current_supplier = supplier
-                col_start = i + 2
+                    # Save the previous supplier's range
+                    supplier_columns[current_supplier] = (col_start, actual_col)
+                current_supplier = str(cell_value).strip()
+                col_start = actual_col
         
         # Add the last supplier
         if current_supplier:
-            supplier_columns[current_supplier] = (col_start, len(suppliers_row) + 2)
+            supplier_columns[current_supplier] = (col_start, len(df.columns))
+        
+        logger.info(f"Found suppliers: {list(supplier_columns.keys())}")
         
         # Parse data rows (starting from row 2)
         inserted_count = 0
@@ -2644,35 +2652,42 @@ async def upload_smart_stock_excel(
             if pd.isna(row[0]):
                 continue
             
-            # Parse date (Excel serial date)
+            # Parse date (Excel serial date or datetime)
             try:
-                date_value = pd.to_datetime(row[0], origin='1899-12-30', unit='D')
+                if isinstance(row[0], (int, float)):
+                    date_value = pd.to_datetime(row[0], origin='1899-12-30', unit='D')
+                else:
+                    date_value = pd.to_datetime(row[0])
                 date_str = date_value.strftime("%Y-%m-%d")
-            except:
-                # If already a datetime
-                date_str = str(row[0])[:10]
+            except Exception as e:
+                logger.warning(f"Date parsing error at row {idx}: {e}")
+                continue
             
-            stock_awal = float(row[1]) if pd.notna(row[1]) else 0.0
+            # Get stock awal from column 1
+            stock_awal = float(row[1]) if pd.notna(row[1]) and row[1] != '' else 0.0
+            
+            # Get total penerimaan from column 3
+            total_penerimaan = float(row[3]) if pd.notna(row[3]) and row[3] != '' else 0.0
             
             # Parse suppliers data
             suppliers_data = {}
             for supplier_name, (start_col, end_col) in supplier_columns.items():
                 # Normalize supplier name
-                supplier_key = supplier_name.strip().replace(" ", "_").replace("(", "").replace(")", "").upper()
+                supplier_key = supplier_name.strip().replace(" ", "_").replace("(", "").replace(")", "").replace("&", "").upper()
                 
-                # Get A, B, C values (assuming 3 columns per supplier)
+                # Get A, B, C values (exactly 3 columns per supplier)
                 zones = {"A": 0.0, "B": 0.0, "C": 0.0}
-                col_idx = 0
-                for col in range(start_col, min(start_col + 3, end_col)):
-                    if col < len(row):
-                        zone_key = ["A", "B", "C"][col_idx]
-                        zones[zone_key] = float(row[col]) if pd.notna(row[col]) else 0.0
-                        col_idx += 1
+                zone_keys = ["A", "B", "C"]
+                
+                for i, col in enumerate(range(start_col, min(start_col + 3, end_col))):
+                    if col < len(row) and i < 3:
+                        zone_key = zone_keys[i]
+                        try:
+                            zones[zone_key] = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
+                        except:
+                            zones[zone_key] = 0.0
                 
                 suppliers_data[supplier_key] = zones
-            
-            # Get total penerimaan (last column)
-            total_penerimaan = float(row.iloc[-1]) if pd.notna(row.iloc[-1]) else 0.0
             
             # Check if entry already exists for this date
             existing = await db.smartstock.find_one({"date": date_str})
