@@ -21,7 +21,8 @@ import {
   Bot,
   TrendingUp,
   Sparkles,
-  Scale
+  Scale,
+  Gavel
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,7 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rekapOpen, setRekapOpen] = useState(true);
   const [smartStockOpen, setSmartStockOpen] = useState(true);
+  const [coaOpen, setCoaOpen] = useState(true);
 
   const handleLogout = () => {
     logout();
