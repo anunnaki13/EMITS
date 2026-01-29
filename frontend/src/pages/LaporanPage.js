@@ -57,6 +57,8 @@ const LaporanPage = () => {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [filterPeriode, setFilterPeriode] = useState("all");
+  const [filterSupplier, setFilterSupplier] = useState("all");
+  const [suppliersList, setSuppliersList] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
   const PAGE_SIZE = 50;
 
