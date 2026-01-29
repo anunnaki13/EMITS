@@ -101,7 +101,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/smart-stock"
+        path="/smart-stock/sumber-penerimaan"
         element={
           <ProtectedRoute>
             <Layout><SmartStockPage /></Layout>
