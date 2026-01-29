@@ -405,57 +405,108 @@ const AIIntelligencePage = () => {
                         {msg.isUser ? (
                           <p className="text-sm">{msg.query}</p>
                         ) : (
-                          <div className="prose prose-sm prose-invert max-w-none">
+                          <div className="ai-response-content">
                             <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
                               components={{
                                 table: ({ children }) => (
-                                  <div className="overflow-x-auto my-2">
-                                    <table className="min-w-full text-xs border-collapse">
+                                  <div className="overflow-x-auto my-4 rounded-lg border border-slate-700">
+                                    <table className="min-w-full text-sm">
                                       {children}
                                     </table>
                                   </div>
                                 ),
+                                thead: ({ children }) => (
+                                  <thead className="bg-slate-700/50">
+                                    {children}
+                                  </thead>
+                                ),
+                                tbody: ({ children }) => (
+                                  <tbody className="divide-y divide-slate-700">
+                                    {children}
+                                  </tbody>
+                                ),
+                                tr: ({ children }) => (
+                                  <tr className="hover:bg-slate-800/50">
+                                    {children}
+                                  </tr>
+                                ),
                                 th: ({ children }) => (
-                                  <th className="border border-slate-600 px-2 py-1 bg-slate-700 text-left font-medium">
+                                  <th className="px-3 py-2 text-left text-xs font-semibold text-cyan-400 uppercase tracking-wider">
                                     {children}
                                   </th>
                                 ),
                                 td: ({ children }) => (
-                                  <td className="border border-slate-700 px-2 py-1">
+                                  <td className="px-3 py-2 text-sm text-slate-300 whitespace-nowrap">
                                     {children}
                                   </td>
                                 ),
-                                code: ({ children }) => (
-                                  <code className="bg-slate-900 px-1 py-0.5 rounded text-cyan-400 text-xs">
-                                    {children}
-                                  </code>
+                                code: ({ inline, children }) => (
+                                  inline ? (
+                                    <code className="bg-slate-900 px-1.5 py-0.5 rounded text-cyan-400 text-xs font-mono">
+                                      {children}
+                                    </code>
+                                  ) : (
+                                    <code className="text-cyan-400 text-xs font-mono">
+                                      {children}
+                                    </code>
+                                  )
                                 ),
                                 pre: ({ children }) => (
-                                  <pre className="bg-slate-900 p-3 rounded-lg overflow-x-auto text-xs">
+                                  <pre className="bg-slate-900 p-4 rounded-lg overflow-x-auto text-sm my-3 border border-slate-700">
                                     {children}
                                   </pre>
                                 ),
                                 ul: ({ children }) => (
-                                  <ul className="list-disc list-inside space-y-1 my-2">
+                                  <ul className="list-disc list-outside ml-5 space-y-1 my-3 text-slate-300">
                                     {children}
                                   </ul>
                                 ),
                                 ol: ({ children }) => (
-                                  <ol className="list-decimal list-inside space-y-1 my-2">
+                                  <ol className="list-decimal list-outside ml-5 space-y-1 my-3 text-slate-300">
                                     {children}
                                   </ol>
                                 ),
+                                li: ({ children }) => (
+                                  <li className="text-sm leading-relaxed">
+                                    {children}
+                                  </li>
+                                ),
+                                p: ({ children }) => (
+                                  <p className="text-sm leading-relaxed my-2 text-slate-200">
+                                    {children}
+                                  </p>
+                                ),
                                 h1: ({ children }) => (
-                                  <h1 className="text-lg font-bold text-white mt-4 mb-2">{children}</h1>
+                                  <h1 className="text-xl font-bold text-white mt-6 mb-3 pb-2 border-b border-slate-700">{children}</h1>
                                 ),
                                 h2: ({ children }) => (
-                                  <h2 className="text-base font-bold text-white mt-3 mb-2">{children}</h2>
+                                  <h2 className="text-lg font-bold text-white mt-5 mb-2">{children}</h2>
                                 ),
                                 h3: ({ children }) => (
-                                  <h3 className="text-sm font-bold text-white mt-2 mb-1">{children}</h3>
+                                  <h3 className="text-base font-semibold text-cyan-400 mt-4 mb-2">{children}</h3>
+                                ),
+                                h4: ({ children }) => (
+                                  <h4 className="text-sm font-semibold text-slate-200 mt-3 mb-1">{children}</h4>
                                 ),
                                 strong: ({ children }) => (
                                   <strong className="text-cyan-400 font-semibold">{children}</strong>
+                                ),
+                                em: ({ children }) => (
+                                  <em className="text-slate-400 italic">{children}</em>
+                                ),
+                                blockquote: ({ children }) => (
+                                  <blockquote className="border-l-4 border-cyan-500 pl-4 my-3 text-slate-400 italic">
+                                    {children}
+                                  </blockquote>
+                                ),
+                                hr: () => (
+                                  <hr className="my-4 border-slate-700" />
+                                ),
+                                a: ({ href, children }) => (
+                                  <a href={href} className="text-cyan-400 hover:text-cyan-300 underline" target="_blank" rel="noopener noreferrer">
+                                    {children}
+                                  </a>
                                 ),
                               }}
                             >
