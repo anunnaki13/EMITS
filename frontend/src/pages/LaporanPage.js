@@ -73,7 +73,22 @@ const LaporanPage = () => {
 
   useEffect(() => {
     fetchData(1);
-  }, [activeTab, search]);
+  }, [activeTab, search, filterSupplier]);
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/suppliers`, {
+        headers: getAuthHeader()
+      });
+      setSuppliersList(response.data.suppliers || []);
+    } catch (error) {
+      console.error("Error fetching suppliers:", error);
+    }
+  };
 
   const fetchData = async (page = 1) => {
     setLoading(true);
