@@ -536,19 +536,20 @@ const AIIntelligencePage = () => {
                   </div>
                 )}
                 <div ref={chatEndRef} />
-              </div>
-            </ScrollArea>
+                </div>
+              </ScrollArea>
+            </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-slate-800">
+            <div className="p-4 border-t border-slate-800 flex-shrink-0">
               <form onSubmit={handleSubmit} className="flex gap-3">
-                <div className="flex-1 relative">
+                <div className="flex-1 relative min-w-0">
                   <Textarea
                     ref={inputRef}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={MODULE_INFO[activeModule].placeholder}
-                    className="bg-slate-900/50 border-slate-700 text-white min-h-[50px] max-h-[120px] pr-12 resize-none"
+                    className="bg-slate-900/50 border-slate-700 text-white min-h-[50px] max-h-[120px] resize-none w-full"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -561,7 +562,7 @@ const AIIntelligencePage = () => {
                 <Button
                   type="submit"
                   disabled={loading || !query.trim()}
-                  className="bg-cyan-600 hover:bg-cyan-500 h-auto px-6"
+                  className="bg-cyan-600 hover:bg-cyan-500 h-auto px-6 flex-shrink-0"
                   data-testid="ai-submit-btn"
                 >
                   {loading ? (
