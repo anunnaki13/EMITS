@@ -3630,6 +3630,96 @@ async def delete_all_coa_reconciliation(user: dict = Depends(require_role(["admi
     result = await db.coa_reconciliation.delete_many({})
     return {"message": f"Berhasil menghapus {result.deleted_count} data rekonsiliasi COA", "count": result.deleted_count}
 
+class COAManualInput(BaseModel):
+    shipment: int
+    suppliers: str
+    periode: Optional[str] = None
+    tb: Optional[str] = None
+    bg: Optional[str] = None
+    ds_mt: Optional[float] = None
+    loading_gcv_arb: Optional[float] = None
+    loading_tm_arb: Optional[float] = None
+    loading_ash_arb: Optional[float] = None
+    loading_ts_arb: Optional[float] = None
+    unloading_gcv_arb: Optional[float] = None
+    unloading_tm_arb: Optional[float] = None
+    unloading_ash_arb: Optional[float] = None
+    unloading_ts_arb: Optional[float] = None
+    internal_gcv_arb: Optional[float] = None
+    internal_tm_arb: Optional[float] = None
+    internal_ash_arb: Optional[float] = None
+    internal_ts_arb: Optional[float] = None
+
+@api_router.post("/coa-reconciliation/manual")
+async def add_coa_manual(data: COAManualInput, user: dict = Depends(require_role(["admin", "operator"]))):
+    """Add COA reconciliation data manually"""
+    import uuid
+    
+    # Check if shipment already exists
+    existing = await db.coa_reconciliation.find_one({"shipment": data.shipment})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Shipment {data.shipment} sudah ada. Gunakan fitur edit atau hapus terlebih dahulu.")
+    
+    # Calculate deltas
+    delta_loading_internal = None
+    delta_unloading_internal = None
+    delta_loading_unloading = None
+    
+    if data.loading_gcv_arb and data.internal_gcv_arb:
+        delta_loading_internal = data.loading_gcv_arb - data.internal_gcv_arb
+    if data.unloading_gcv_arb and data.internal_gcv_arb:
+        delta_unloading_internal = data.unloading_gcv_arb - data.internal_gcv_arb
+    if data.loading_gcv_arb and data.unloading_gcv_arb:
+        delta_loading_unloading = data.loading_gcv_arb - data.unloading_gcv_arb
+    
+    # Determine status
+    status = "normal"
+    if delta_loading_internal is not None:
+        if abs(delta_loading_internal) > 150:
+            status = "critical"
+        elif abs(delta_loading_internal) > 100:
+            status = "warning"
+    
+    record = {
+        "id": str(uuid.uuid4()),
+        "shipment": data.shipment,
+        "suppliers": data.suppliers,
+        "periode": data.periode or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "tb": data.tb or "",
+        "bg": data.bg or "",
+        "ds_mt": data.ds_mt,
+        "loading_gcv_arb": data.loading_gcv_arb,
+        "loading_tm_arb": data.loading_tm_arb,
+        "loading_ash_arb": data.loading_ash_arb,
+        "loading_ts_arb": data.loading_ts_arb,
+        "loading_surveyor": None,
+        "loading_no_coa": None,
+        "unloading_gcv_arb": data.unloading_gcv_arb,
+        "unloading_tm_arb": data.unloading_tm_arb,
+        "unloading_ash_arb": data.unloading_ash_arb,
+        "unloading_ts_arb": data.unloading_ts_arb,
+        "unloading_surveyor": None,
+        "unloading_slagging": None,
+        "unloading_fouling": None,
+        "internal_gcv_arb": data.internal_gcv_arb,
+        "internal_tm_arb": data.internal_tm_arb,
+        "internal_ash_arb": data.internal_ash_arb,
+        "internal_ts_arb": data.internal_ts_arb,
+        "delta_loading_internal": delta_loading_internal,
+        "delta_unloading_internal": delta_unloading_internal,
+        "delta_loading_unloading": delta_loading_unloading,
+        "status": status,
+        "umpire_status": "none",
+        "umpire_sample_number": None,
+        "umpire_proposed_at": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user["id"],
+        "input_method": "manual"
+    }
+    
+    await db.coa_reconciliation.insert_one(record)
+    return {"message": f"Berhasil menambahkan data COA Shipment {data.shipment}", "id": record["id"], "status": status}
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
