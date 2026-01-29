@@ -3443,6 +3443,193 @@ Respons HANYA dengan JSON yang valid, tanpa teks tambahan. WAJIB gunakan nama su
         logger.error(f"Smart Blending AI error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI recommendation failed: {str(e)}")
 
+# ==================== COA RECONCILIATION & DISPUTE MONITOR ====================
+
+from services.coa_reconciliation import (
+    parse_coa_excel, 
+    merge_coa_data, 
+    calculate_kpis, 
+    get_gcv_trend_data,
+    get_radar_chart_data
+)
+
+class UmpireProposal(BaseModel):
+    reconciliation_id: str
+    sample_number: str
+    notes: Optional[str] = None
+
+@api_router.get("/coa-reconciliation")
+async def get_coa_reconciliation(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get COA reconciliation data with pagination"""
+    query = {}
+    if status and status != "all":
+        query["status"] = status
+    if search:
+        query["$or"] = [
+            {"shipment": {"$regex": search, "$options": "i"}},
+            {"suppliers": {"$regex": search, "$options": "i"}}
+        ]
+    
+    skip = (page - 1) * page_size
+    total = await db.coa_reconciliation.count_documents(query)
+    items = await db.coa_reconciliation.find(query, {"_id": 0}).sort("shipment", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
+
+@api_router.get("/coa-reconciliation/kpis")
+async def get_coa_kpis(user: dict = Depends(get_current_user)):
+    """Get KPIs for COA Reconciliation dashboard"""
+    all_data = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    if not all_data:
+        return {
+            "total_records": 0,
+            "high_deviation_count": 0,
+            "potential_loss_rp": 0,
+            "total_tonnage_problem": 0,
+            "umpire_status": {"proposed": 0, "in_progress": 0, "completed": 0, "total": 0},
+            "supplier_deviations": [],
+            "worst_supplier": None,
+            "avg_accuracy": 100,
+            "critical_count": 0,
+            "warning_count": 0,
+            "normal_count": 0
+        }
+    return calculate_kpis(all_data)
+
+@api_router.get("/coa-reconciliation/trend")
+async def get_coa_trend(months: int = Query(3, ge=1, le=12), user: dict = Depends(get_current_user)):
+    """Get GCV trend data for line chart"""
+    all_data = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    return get_gcv_trend_data(all_data, months)
+
+@api_router.get("/coa-reconciliation/supplier-consistency")
+async def get_supplier_consistency(user: dict = Depends(get_current_user)):
+    """Get supplier consistency data for bar chart"""
+    all_data = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    kpis = calculate_kpis(all_data)
+    return kpis.get("supplier_deviations", [])
+
+@api_router.get("/coa-reconciliation/{record_id}")
+async def get_coa_reconciliation_detail(record_id: str, user: dict = Depends(get_current_user)):
+    """Get single COA reconciliation record with radar chart data"""
+    record = await db.coa_reconciliation.find_one({"id": record_id}, {"_id": 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+    
+    radar_data = get_radar_chart_data(record)
+    return {
+        "record": record,
+        "radar_chart": radar_data
+    }
+
+@api_router.get("/coa-reconciliation/shipment/{shipment}")
+async def get_coa_by_shipment(shipment: int, user: dict = Depends(get_current_user)):
+    """Get COA reconciliation record by shipment number"""
+    record = await db.coa_reconciliation.find_one({"shipment": shipment}, {"_id": 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+    
+    radar_data = get_radar_chart_data(record)
+    return {
+        "record": record,
+        "radar_chart": radar_data
+    }
+
+@api_router.post("/coa-reconciliation/propose-umpire")
+async def propose_umpire(data: UmpireProposal, user: dict = Depends(require_role(["admin", "operator"]))):
+    """Propose umpire testing for a reconciliation record"""
+    result = await db.coa_reconciliation.update_one(
+        {"id": data.reconciliation_id},
+        {"$set": {
+            "umpire_status": "proposed",
+            "umpire_sample_number": data.sample_number,
+            "umpire_notes": data.notes,
+            "umpire_proposed_at": datetime.now(timezone.utc).isoformat(),
+            "umpire_proposed_by": user["id"]
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+    return {"message": "Umpire testing berhasil diajukan", "sample_number": data.sample_number}
+
+@api_router.post("/coa-reconciliation/update-umpire-status/{record_id}")
+async def update_umpire_status(
+    record_id: str, 
+    status: str = Query(..., regex="^(none|proposed|in_progress|completed)$"),
+    user: dict = Depends(require_role(["admin", "operator"]))
+):
+    """Update umpire testing status"""
+    update_data = {"umpire_status": status}
+    if status == "completed":
+        update_data["umpire_completed_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.coa_reconciliation.update_one({"id": record_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+    return {"message": f"Status umpire berhasil diubah ke {status}"}
+
+@api_router.post("/coa-reconciliation/upload")
+async def upload_coa_files(
+    loading_file: UploadFile = File(..., description="Loading.xlsx"),
+    unloading_file: UploadFile = File(..., description="Unloading.xlsx"),
+    internal_file: UploadFile = File(..., description="Lab Internal.xlsx"),
+    user: dict = Depends(require_role(["admin", "operator"]))
+):
+    """Upload and process COA files (Loading, Unloading, Lab Internal)"""
+    try:
+        # Parse all three files
+        loading_contents = await loading_file.read()
+        unloading_contents = await unloading_file.read()
+        internal_contents = await internal_file.read()
+        
+        loading_data = parse_coa_excel(loading_contents, "loading")
+        unloading_data = parse_coa_excel(unloading_contents, "unloading")
+        internal_data = parse_coa_excel(internal_contents, "internal")
+        
+        # Merge data
+        merged_data = merge_coa_data(loading_data, unloading_data, internal_data)
+        
+        # Save to database (replace existing data)
+        if merged_data:
+            # Clear existing data
+            await db.coa_reconciliation.delete_many({})
+            # Insert new data
+            for record in merged_data:
+                record["uploaded_by"] = user["id"]
+                record["uploaded_at"] = datetime.now(timezone.utc).isoformat()
+            await db.coa_reconciliation.insert_many(merged_data)
+        
+        return {
+            "message": f"Berhasil memproses dan menyimpan {len(merged_data)} data rekonsiliasi COA",
+            "count": len(merged_data),
+            "sources": {
+                "loading": len(loading_data),
+                "unloading": len(unloading_data),
+                "internal": len(internal_data)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error processing COA files: {e}")
+        raise HTTPException(status_code=400, detail=f"Gagal memproses file: {str(e)}")
+
+@api_router.delete("/coa-reconciliation")
+async def delete_all_coa_reconciliation(user: dict = Depends(require_role(["admin"]))):
+    """Delete all COA reconciliation data"""
+    result = await db.coa_reconciliation.delete_many({})
+    return {"message": f"Berhasil menghapus {result.deleted_count} data rekonsiliasi COA", "count": result.deleted_count}
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
