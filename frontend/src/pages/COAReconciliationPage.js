@@ -518,6 +518,35 @@ const COAReconciliationPage = () => {
               </span>
             </Button>
           </label>
+          
+          {/* Export Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const url = `${API_URL}/api/coa-reconciliation/export/excel?status_filter=${statusFilter}`;
+                window.open(url, '_blank');
+              }}
+              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+              data-testid="export-excel-btn"
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Export Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const url = `${API_URL}/api/coa-reconciliation/export/pdf?status_filter=${statusFilter}`;
+                window.open(url, '_blank');
+              }}
+              className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
+              data-testid="export-pdf-btn"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Export PDF
+            </Button>
+          </div>
+          
           {user?.role === "admin" && (
             <Button
               variant="outline"
