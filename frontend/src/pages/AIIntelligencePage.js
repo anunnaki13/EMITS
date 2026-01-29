@@ -425,7 +425,7 @@ const AIIntelligencePage = () => {
                                   </th>
                                 ),
                                 td: ({ children }) => (
-                                  <td className="px-3 py-2 text-sm text-slate-300 whitespace-nowrap">
+                                  <td className="px-3 py-2 text-sm text-slate-300">
                                     {children}
                                   </td>
                                 ),

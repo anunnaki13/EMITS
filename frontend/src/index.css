@@ -245,6 +245,7 @@ button {
     width: 100%;
     font-size: 0.75rem;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .ai-chat-response th {
@@ -256,13 +257,17 @@ button {
     font-size: 0.6875rem;
     letter-spacing: 0.05em;
     background: rgba(51, 65, 85, 0.5);
-    white-space: nowrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .ai-chat-response td {
     padding: 0.5rem;
     color: #cbd5e1;
     border-top: 1px solid #334155;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .ai-chat-response blockquote {
