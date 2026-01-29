@@ -22,6 +22,12 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   FileText,
   Search,
   Download,
@@ -30,8 +36,14 @@ import {
   Ship,
   Anchor,
   Truck,
-  Leaf
+  Leaf,
+  FileSpreadsheet,
+  File
 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -39,6 +51,7 @@ const LaporanPage = () => {
   const { getAuthHeader } = useAuth();
   const [activeTab, setActiveTab] = useState("vessel");
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [filterPeriode, setFilterPeriode] = useState("all");
@@ -87,7 +100,7 @@ const LaporanPage = () => {
         ];
       case "barge":
         return [
-          { key: "periode_realisasi", label: "Periode" },
+          { key: "periode", label: "Periode" },
           { key: "shipment_code", label: "Shipment" },
           { key: "suppliers", label: "Supplier" },
           { key: "tb", label: "TB" },
@@ -100,9 +113,8 @@ const LaporanPage = () => {
           { key: "periode_realisasi", label: "Periode" },
           { key: "shipment_code", label: "Shipment" },
           { key: "suppliers", label: "Supplier" },
-          { key: "lokasi_tambang", label: "Lokasi" },
-          { key: "total_ritase", label: "Total Ritase", type: "number" },
-          { key: "total_tonase_mt", label: "Total Tonase (MT)", type: "number" },
+          { key: "coal_from", label: "Lokasi" },
+          { key: "ds_mt", label: "Total Tonase (MT)", type: "number" },
           { key: "gcv_arb", label: "GCV ARB", type: "number" }
         ];
       case "biomassa":
@@ -110,7 +122,7 @@ const LaporanPage = () => {
           { key: "periode", label: "Periode" },
           { key: "shipment_code", label: "Shipment" },
           { key: "suppliers", label: "Supplier" },
-          { key: "biomass_type", label: "Jenis" },
+          { key: "coal_from", label: "Asal" },
           { key: "bl_mt", label: "B/L (MT)", type: "number" },
           { key: "gcv_arb", label: "GCV ARB", type: "number" }
         ];
@@ -125,8 +137,18 @@ const LaporanPage = () => {
     return value;
   };
 
+  const formatDateForExport = (value) => {
+    if (!value) return "-";
+    try {
+      const date = new Date(value);
+      return date.toLocaleDateString("id-ID", { year: "numeric", month: "short", day: "numeric" });
+    } catch {
+      return value;
+    }
+  };
+
   const getTotalTonase = () => {
-    const field = activeTab === "trucking" ? "total_tonase_mt" : "bl_mt";
+    const field = activeTab === "trucking" ? "ds_mt" : "bl_mt";
     return data.reduce((sum, item) => sum + (item[field] || 0), 0);
   };
 
@@ -134,6 +156,143 @@ const LaporanPage = () => {
     const validData = data.filter(item => item.gcv_arb);
     if (validData.length === 0) return 0;
     return validData.reduce((sum, item) => sum + item.gcv_arb, 0) / validData.length;
+  };
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    if (data.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    setExporting(true);
+    try {
+      const columns = getTableColumns();
+      const currentCategory = categories.find(c => c.id === activeTab);
+      
+      // Prepare data for export
+      const exportData = data.map((item, index) => {
+        const row = { "No": index + 1 };
+        columns.forEach(col => {
+          let value = item[col.key];
+          if (col.key.includes("periode") || col.key.includes("ta") || col.key.includes("time")) {
+            value = formatDateForExport(value);
+          } else if (col.type === "number" && value !== null && value !== undefined) {
+            value = Number(value);
+          }
+          row[col.label] = value ?? "-";
+        });
+        return row;
+      });
+
+      // Add summary row
+      exportData.push({});
+      exportData.push({
+        "No": "",
+        [columns[0].label]: "TOTAL",
+        [columns.find(c => c.type === "number")?.label || "Total"]: getTotalTonase(),
+      });
+      exportData.push({
+        "No": "",
+        [columns[0].label]: "Rata-rata GCV",
+        [columns.find(c => c.key === "gcv_arb")?.label || "GCV"]: getAvgGCV().toFixed(2),
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, currentCategory?.label || "Data");
+      
+      // Auto-size columns
+      const colWidths = columns.map(col => ({ wch: Math.max(col.label.length + 2, 15) }));
+      colWidths.unshift({ wch: 5 }); // No column
+      ws["!cols"] = colWidths;
+
+      const fileName = `Laporan_${currentCategory?.label}_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success(`Berhasil export ke ${fileName}`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Gagal export ke Excel");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Export to PDF
+  const handleExportPDF = () => {
+    if (data.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const columns = getTableColumns();
+      const currentCategory = categories.find(c => c.id === activeTab);
+      
+      const doc = new jsPDF("landscape", "mm", "a4");
+      
+      // Header
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Laporan Data ${currentCategory?.label}`, 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`PLTU Tenayan - Sistem Manajemen Bahan Bakar Digital`, 14, 22);
+      doc.text(`Tanggal Export: ${new Date().toLocaleDateString("id-ID", { 
+        weekday: "long", year: "numeric", month: "long", day: "numeric" 
+      })}`, 14, 28);
+
+      // Summary
+      doc.setFontSize(10);
+      doc.text(`Total Data: ${data.length} record`, 14, 36);
+      doc.text(`Total Tonase: ${getTotalTonase().toLocaleString("id-ID")} MT`, 80, 36);
+      doc.text(`Rata-rata GCV: ${getAvgGCV().toLocaleString("id-ID", { maximumFractionDigits: 2 })} Kcal/Kg`, 160, 36);
+
+      // Table
+      const tableColumns = ["No", ...columns.map(c => c.label)];
+      const tableData = data.map((item, index) => {
+        const row = [index + 1];
+        columns.forEach(col => {
+          let value = item[col.key];
+          if (col.key.includes("periode") || col.key.includes("ta") || col.key.includes("time")) {
+            value = formatDateForExport(value);
+          } else if (col.type === "number" && value !== null && value !== undefined) {
+            value = Number(value).toLocaleString("id-ID");
+          }
+          row.push(value ?? "-");
+        });
+        return row;
+      });
+
+      doc.autoTable({
+        head: [tableColumns],
+        body: tableData,
+        startY: 42,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+        alternateRowStyles: { fillColor: [241, 245, 249] },
+        margin: { left: 14, right: 14 }
+      });
+
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
+      }
+
+      const fileName = `Laporan_${currentCategory?.label}_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(fileName);
+      toast.success(`Berhasil export ke ${fileName}`);
+    } catch (error) {
+      console.error("PDF Export error:", error);
+      toast.error("Gagal export ke PDF");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const columns = getTableColumns();
@@ -149,9 +308,42 @@ const LaporanPage = () => {
           </h1>
           <p className="text-slate-400 mt-1">Rekapitulasi data penerimaan bahan bakar</p>
         </div>
-        <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800" data-testid="export-btn">
-          <Download className="w-4 h-4 mr-2" />Export Excel
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="border-slate-700 text-slate-300 hover:bg-slate-800" 
+              data-testid="export-btn"
+              disabled={exporting || data.length === 0}
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-slate-900 border-slate-700">
+            <DropdownMenuItem 
+              onClick={handleExportExcel}
+              className="text-slate-300 hover:bg-slate-800 cursor-pointer"
+              data-testid="export-excel-btn"
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2 text-green-400" />
+              Export ke Excel (.xlsx)
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleExportPDF}
+              className="text-slate-300 hover:bg-slate-800 cursor-pointer"
+              data-testid="export-pdf-btn"
+            >
+              <File className="w-4 h-4 mr-2 text-red-400" />
+              Export ke PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -206,6 +398,7 @@ const LaporanPage = () => {
               </SelectTrigger>
               <SelectContent className="bg-[#0B1221] border-slate-800">
                 <SelectItem value="all" className="text-white">Semua Periode</SelectItem>
+                <SelectItem value="2026" className="text-white">2026</SelectItem>
                 <SelectItem value="2025" className="text-white">2025</SelectItem>
                 <SelectItem value="2024" className="text-white">2024</SelectItem>
               </SelectContent>
