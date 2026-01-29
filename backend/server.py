@@ -1122,10 +1122,10 @@ async def upload_po_batubara_excel(file: UploadFile = File(...), user: dict = De
 
 # ==================== MERIT ORDER ROUTES ====================
 
-@api_router.get("/merit-order", response_model=List[MeritOrderResponse])
+@api_router.get("/merit-order")
 async def get_merit_orders(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1, le=10000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     year: Optional[int] = None,
     month: Optional[int] = None,
     search: Optional[str] = None,
@@ -1142,8 +1142,18 @@ async def get_merit_orders(
             {"moda": {"$regex": search, "$options": "i"}},
             {"jenis_kontrak": {"$regex": search, "$options": "i"}}
         ]
-    mo_list = await db.merit_order.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(limit).to_list(limit)
-    return [MeritOrderResponse(**m) for m in mo_list]
+    
+    skip = (page - 1) * page_size
+    total = await db.merit_order.count_documents(query)
+    mo_list = await db.merit_order.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": mo_list,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
 
 @api_router.get("/merit-order/periods")
 async def get_merit_order_periods(user: dict = Depends(get_current_user)):
