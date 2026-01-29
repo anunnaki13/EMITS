@@ -114,9 +114,10 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - [x] **AI Settings in Settings page**
 - [x] **Smart Stock Module (Sumber Penerimaan, Sumber Pemakaian)**
 - [x] **Smart Blending AI** (Gemini-powered optimization)
+- [x] **Export PDF/Excel** di halaman Laporan, Sumber Penerimaan, Sumber Pemakaian
 
 ### P1 (High Priority)
-- [ ] Real export PDF/Excel implementation di Laporan
+- [x] Real export PDF/Excel implementation di Laporan ✅ DONE
 - [ ] Server-side pagination
 - [ ] Add PO Batubara dan Merit Order ke halaman Laporan
 
