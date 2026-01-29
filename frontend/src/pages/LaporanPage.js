@@ -411,12 +411,12 @@ const LaporanPage = () => {
           <p className="text-slate-500 text-xs mt-1">record {currentCategory?.label}</p>
         </Card>
         <Card className="glass-card border-white/5 p-4">
-          <p className="text-slate-400 text-sm">Total Tonase</p>
+          <p className="text-slate-400 text-sm">{getTonaseLabel()}</p>
           <p className="text-2xl font-bold text-cyan-400 mt-1">{getTotalTonase().toLocaleString("id-ID")}</p>
-          <p className="text-slate-500 text-xs mt-1">MT (Metric Ton)</p>
+          <p className="text-slate-500 text-xs mt-1">{getTonaseUnit()}</p>
         </Card>
         <Card className="glass-card border-white/5 p-4">
-          <p className="text-slate-400 text-sm">Rata-rata GCV</p>
+          <p className="text-slate-400 text-sm">{getGCVLabel()}</p>
           <p className="text-2xl font-bold text-green-400 mt-1">{getAvgGCV().toLocaleString("id-ID", { maximumFractionDigits: 2 })}</p>
           <p className="text-slate-500 text-xs mt-1">Kcal/Kg (ARB)</p>
         </Card>
