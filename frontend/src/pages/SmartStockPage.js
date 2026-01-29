@@ -206,8 +206,79 @@ const SmartStockPage = () => {
   };
 
   const handleExportPDF = () => {
-    toast.info("Fitur Export PDF sedang dalam pengembangan");
-    // TODO: Implement PDF export using jsPDF or backend
+    if (stockData.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    try {
+      const jsPDF = require("jspdf");
+      require("jspdf-autotable");
+      
+      const doc = new jsPDF.default("landscape", "mm", "a4");
+      
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("Laporan Sumber Penerimaan Batubara", 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`PLTU Tenayan - Smart Stock Management`, 14, 22);
+      doc.text(`Tanggal Export: ${new Date().toLocaleDateString("id-ID")}`, 14, 28);
+
+      const tableData = stockData.slice(0, 50).map((item, idx) => [
+        idx + 1,
+        new Date(item.date).toLocaleDateString("id-ID"),
+        item.stock_awal?.toLocaleString("id-ID") || "-",
+        item.total_penerimaan?.toLocaleString("id-ID") || "-",
+        item.stock_akhir?.toLocaleString("id-ID") || "-"
+      ]);
+
+      doc.autoTable({
+        head: [["No", "Tanggal", "Stock Awal", "Total Penerimaan", "Stock Akhir"]],
+        body: tableData,
+        startY: 35,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [30, 41, 59] }
+      });
+
+      doc.save(`Sumber_Penerimaan_${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("Berhasil export ke PDF");
+    } catch (error) {
+      console.error("PDF Export error:", error);
+      toast.error("Gagal export PDF");
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (stockData.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    try {
+      const XLSX = require("xlsx");
+      
+      const exportData = stockData.map((item, idx) => ({
+        "No": idx + 1,
+        "Tanggal": new Date(item.date).toLocaleDateString("id-ID"),
+        "Stock Awal": item.stock_awal || 0,
+        "Total Penerimaan": item.total_penerimaan || 0,
+        "Stock Akhir": item.stock_akhir || 0,
+        ...Object.fromEntries(
+          Object.entries(item.suppliers || {}).map(([k, v]) => [k, v || 0])
+        )
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sumber Penerimaan");
+      XLSX.writeFile(wb, `Sumber_Penerimaan_${new Date().toISOString().split("T")[0]}.xlsx`);
+      toast.success("Berhasil export ke Excel");
+    } catch (error) {
+      console.error("Excel Export error:", error);
+      toast.error("Gagal export Excel");
+    }
   };
 
   const handleDeleteAll = async () => {
