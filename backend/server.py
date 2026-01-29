@@ -660,10 +660,10 @@ async def create_vessel(data: VesselTNYCreate, user: dict = Depends(require_role
     vessel_doc.pop("_id", None)
     return VesselTNYResponse(**vessel_doc)
 
-@api_router.get("/vessels", response_model=List[VesselTNYResponse])
+@api_router.get("/vessels")
 async def get_vessels(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1, le=10000),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
@@ -674,8 +674,19 @@ async def get_vessels(
             {"name_of_vessel": {"$regex": search, "$options": "i"}},
             {"suppliers": {"$regex": search, "$options": "i"}}
         ]
-    vessels = await db.vessels.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
-    return [VesselTNYResponse(**v) for v in vessels]
+    
+    # Server-side pagination
+    skip = (page - 1) * page_size
+    total = await db.vessels.count_documents(query)
+    vessels = await db.vessels.find(query, {"_id": 0}).sort("time_arrival", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": vessels,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
 
 @api_router.get("/vessels/{vessel_id}", response_model=VesselTNYResponse)
 async def get_vessel(vessel_id: str, user: dict = Depends(get_current_user)):
