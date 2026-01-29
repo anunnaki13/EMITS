@@ -499,6 +499,15 @@ const SmartStockPage = () => {
           </Dialog>
 
           <Button
+            onClick={handleExportExcel}
+            variant="outline"
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export Excel
+          </Button>
+
+          <Button
             onClick={handleExportPDF}
             variant="outline"
             className="border-slate-700 text-slate-300 hover:bg-slate-800"
