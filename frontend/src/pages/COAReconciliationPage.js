@@ -669,7 +669,7 @@ const COAReconciliationPage = () => {
 
       {/* Filter & Search */}
       <Card className="bg-[#0B1221] border-white/5 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
             <Input
@@ -679,6 +679,34 @@ const COAReconciliationPage = () => {
               className="pl-10 bg-slate-900/50 border-slate-700 text-white"
               data-testid="search-input"
             />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-500">Tanggal:</span>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-[140px] bg-slate-900/50 border-slate-700 text-white text-sm"
+              data-testid="date-from"
+            />
+            <span className="text-slate-500">-</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-[140px] bg-slate-900/50 border-slate-700 text-white text-sm"
+              data-testid="date-to"
+            />
+            {(dateFrom || dateTo) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setDateFrom(""); setDateTo(""); }}
+                className="text-slate-400 hover:text-white h-8 px-2"
+              >
+                <XCircle className="w-4 h-4" />
+              </Button>
+            )}
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px] bg-slate-900/50 border-slate-700 text-white" data-testid="status-filter">
