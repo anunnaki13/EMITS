@@ -101,7 +101,7 @@ const SmartBlendingPage = () => {
             </div>
             Smart Blending AI
           </h1>
-          <p className="text-slate-400 mt-1">Digital Coal Chemist - AI-Powered Optimization</p>
+          <p className="text-slate-400 mt-1">Ahli Kimia Batubara Digital - Optimalisasi Berbasis AI</p>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ const SmartBlendingPage = () => {
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-400" />
-              Target Parameters
+              Parameter Target
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -138,7 +138,7 @@ const SmartBlendingPage = () => {
             {/* Max Ash Slider */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label className="text-slate-300">Max Ash Content (%)</Label>
+                <Label className="text-slate-300">Maksimal Kandungan Abu (%)</Label>
                 <span className="text-yellow-400 font-mono font-semibold">{maxAsh.toFixed(1)}</span>
               </div>
               <Slider
@@ -158,7 +158,7 @@ const SmartBlendingPage = () => {
             {/* Max Sulphur Slider */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label className="text-slate-300">Max Sulphur (%)</Label>
+                <Label className="text-slate-300">Maksimal Sulphur (%)</Label>
                 <span className="text-red-400 font-mono font-semibold">{maxSulphur.toFixed(2)}</span>
               </div>
               <Slider
@@ -177,7 +177,7 @@ const SmartBlendingPage = () => {
 
             {/* Target Quantity Input */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Target Quantity (MT)</Label>
+              <Label className="text-slate-300">Kuantitas Target (MT)</Label>
               <Input
                 type="number"
                 value={targetQuantity}
@@ -195,12 +195,12 @@ const SmartBlendingPage = () => {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  AI Analyzing...
+                  AI Sedang Menganalisis...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Get AI Recommendation
+                  Dapatkan Rekomendasi AI
                 </>
               )}
             </Button>
@@ -210,15 +210,15 @@ const SmartBlendingPage = () => {
               <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
                 <div className="flex items-center gap-2 mb-2">
                   <Database className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs font-semibold text-slate-300">Data Sources</span>
+                  <span className="text-xs font-semibold text-slate-300">Sumber Data</span>
                 </div>
                 <div className="space-y-1 text-xs text-slate-400">
-                  <div>• Vessels: {recommendation.data_sources.vessels_count}</div>
-                  <div>• Barges: {recommendation.data_sources.barges_count}</div>
+                  <div>• Vessel: {recommendation.data_sources.vessels_count}</div>
+                  <div>• Barge: {recommendation.data_sources.barges_count}</div>
                   <div>• Trucking: {recommendation.data_sources.trucking_count}</div>
                   {recommendation.data_sources.latest_stock_date && (
                     <div className="text-cyan-400 mt-2">
-                      Latest Stock: {new Date(recommendation.data_sources.latest_stock_date).toLocaleDateString('id-ID')}
+                      Stock Terakhir: {new Date(recommendation.data_sources.latest_stock_date).toLocaleDateString('id-ID')}
                     </div>
                   )}
                 </div>
@@ -234,10 +234,10 @@ const SmartBlendingPage = () => {
               <CardContent className="p-12 text-center">
                 <Sparkles className="w-16 h-16 text-purple-400 mx-auto mb-4 opacity-50" />
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  AI Blending Optimization Ready
+                  Optimalisasi Blending AI Siap
                 </h3>
                 <p className="text-slate-400 max-w-md mx-auto">
-                  Set your target parameters and click "Get AI Recommendation" to receive an optimized coal blending formula from our Digital Chemist.
+                  Atur parameter target Anda dan klik "Dapatkan Rekomendasi AI" untuk menerima formula blending batubara yang optimal dari Ahli Kimia Digital kami.
                 </p>
               </CardContent>
             </Card>
@@ -248,10 +248,10 @@ const SmartBlendingPage = () => {
               <CardContent className="p-12 text-center">
                 <Loader2 className="w-16 h-16 text-purple-400 mx-auto mb-4 animate-spin" />
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  AI Analyzing Coal Inventory...
+                  AI Sedang Menganalisis Inventori Batubara...
                 </h3>
                 <p className="text-slate-400">
-                  Processing quality data and calculating optimal blend
+                  Memproses data kualitas dan menghitung blend optimal
                 </p>
               </CardContent>
             </Card>
@@ -266,16 +266,16 @@ const SmartBlendingPage = () => {
                     <>
                       <CheckCircle className="w-6 h-6 text-emerald-400" />
                       <div>
-                        <p className="text-emerald-400 font-semibold">Target Achieved!</p>
-                        <p className="text-slate-400 text-sm">The recommended blend meets all specifications</p>
+                        <p className="text-emerald-400 font-semibold">Target Tercapai!</p>
+                        <p className="text-slate-400 text-sm">Blend yang direkomendasikan memenuhi semua spesifikasi</p>
                       </div>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="w-6 h-6 text-yellow-400" />
                       <div>
-                        <p className="text-yellow-400 font-semibold">Partial Match</p>
-                        <p className="text-slate-400 text-sm">Some constraints may be relaxed</p>
+                        <p className="text-yellow-400 font-semibold">Sebagian Sesuai</p>
+                        <p className="text-slate-400 text-sm">Beberapa batasan mungkin perlu disesuaikan</p>
                       </div>
                     </>
                   )}
@@ -287,7 +287,7 @@ const SmartBlendingPage = () => {
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-cyan-400" />
-                    Recommended Blend
+                    Blend yang Direkomendasikan
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -347,7 +347,7 @@ const SmartBlendingPage = () => {
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Flame className="w-5 h-5 text-orange-400" />
-                    Quality Comparison
+                    Perbandingan Kualitas
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -383,21 +383,21 @@ const SmartBlendingPage = () => {
 
                   <div className="mt-4 grid grid-cols-3 gap-4">
                     <div className="text-center p-3 bg-slate-800/50 rounded-lg">
-                      <p className="text-xs text-slate-400 mb-1">Predicted GCV</p>
+                      <p className="text-xs text-slate-400 mb-1">Prediksi GCV</p>
                       <p className="text-lg font-bold text-cyan-400">
                         {recommendation.ai_recommendation.predicted_quality.gcv}
                       </p>
                       <p className="text-xs text-slate-500">kcal/kg</p>
                     </div>
                     <div className="text-center p-3 bg-slate-800/50 rounded-lg">
-                      <p className="text-xs text-slate-400 mb-1">Predicted Ash</p>
+                      <p className="text-xs text-slate-400 mb-1">Prediksi Abu</p>
                       <p className="text-lg font-bold text-yellow-400">
                         {recommendation.ai_recommendation.predicted_quality.ash}
                       </p>
                       <p className="text-xs text-slate-500">%</p>
                     </div>
                     <div className="text-center p-3 bg-slate-800/50 rounded-lg">
-                      <p className="text-xs text-slate-400 mb-1">Predicted Sulphur</p>
+                      <p className="text-xs text-slate-400 mb-1">Prediksi Sulphur</p>
                       <p className="text-lg font-bold text-red-400">
                         {recommendation.ai_recommendation.predicted_quality.sulphur}
                       </p>
@@ -412,7 +412,7 @@ const SmartBlendingPage = () => {
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Lightbulb className="w-5 h-5 text-yellow-400" />
-                    AI Reasoning
+                    Alasan AI
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -446,7 +446,7 @@ const SmartBlendingPage = () => {
               <CardContent className="p-8 text-center">
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-red-400 mb-2">
-                  AI Processing Error
+                  Error Pemrosesan AI
                 </h3>
                 <p className="text-slate-400 text-sm">
                   {recommendation.ai_recommendation.error}
