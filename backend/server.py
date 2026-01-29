@@ -3533,6 +3533,11 @@ async def get_coa_reconciliation(
 async def get_coa_kpis(user: dict = Depends(get_current_user)):
     """Get KPIs for COA Reconciliation dashboard"""
     all_data = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    
+    # Get price setting from database
+    coa_settings = await db.app_settings.find_one({"type": "coa"}, {"_id": 0})
+    price_per_kcal = coa_settings.get("price_per_kcal_per_ton") if coa_settings else None
+    
     if not all_data:
         return {
             "total_records": 0,
@@ -3545,9 +3550,15 @@ async def get_coa_kpis(user: dict = Depends(get_current_user)):
             "avg_accuracy": 100,
             "critical_count": 0,
             "warning_count": 0,
-            "normal_count": 0
+            "normal_count": 0,
+            "price_per_kcal_per_ton": price_per_kcal,
+            "price_not_set": price_per_kcal is None
         }
-    return calculate_kpis(all_data)
+    
+    kpis = calculate_kpis(all_data, price_per_kcal)
+    kpis["price_per_kcal_per_ton"] = price_per_kcal
+    kpis["price_not_set"] = price_per_kcal is None
+    return kpis
 
 @api_router.get("/coa-reconciliation/trend")
 async def get_coa_trend(months: int = Query(3, ge=1, le=12), user: dict = Depends(get_current_user)):
