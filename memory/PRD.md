@@ -32,7 +32,10 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ **AI Settings API** - Custom API key management
 - ✅ **Smart Stock Management API** - GET, POST, Upload Excel, Delete endpoints
 - ✅ **Sumber Pemakaian API** - GET, POST, Upload Excel, Delete endpoints
-- ✅ **Smart Blending AI API** - /api/smart-blending/recommend (Gemini-powered optimization)
+- ✅ **Smart Blending AI API** - /api/smart-blending/recommend dengan:
+  - Filter data supplier 6 bulan terakhir
+  - Menggunakan API key dari Pengaturan AI Intelligence
+  - Parameter constraint sesuai spesifikasi batubara (GCV 3700-4700, Ash 3.3-6%, Sulphur 0.13-2.2%)
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
