@@ -3587,11 +3587,80 @@ async def update_umpire_status(
     update_data = {"umpire_status": status}
     if status == "completed":
         update_data["umpire_completed_at"] = datetime.now(timezone.utc).isoformat()
+    if status == "in_progress":
+        update_data["umpire_started_at"] = datetime.now(timezone.utc).isoformat()
     
     result = await db.coa_reconciliation.update_one({"id": record_id}, {"$set": update_data})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Data tidak ditemukan")
     return {"message": f"Status umpire berhasil diubah ke {status}"}
+
+# Dispute Monitor endpoints
+@api_router.get("/coa-reconciliation/dispute-monitor")
+async def get_dispute_monitor(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
+    umpire_status: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get all records that have umpire activity (proposed, in_progress, or completed)"""
+    query = {"umpire_status": {"$ne": "none"}}
+    if umpire_status and umpire_status != "all":
+        query["umpire_status"] = umpire_status
+    
+    skip = (page - 1) * page_size
+    total = await db.coa_reconciliation.count_documents(query)
+    items = await db.coa_reconciliation.find(query, {"_id": 0}).sort("umpire_proposed_at", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    # Calculate summary stats
+    all_disputes = await db.coa_reconciliation.find({"umpire_status": {"$ne": "none"}}, {"_id": 0, "umpire_status": 1}).to_list(10000)
+    summary = {
+        "proposed": sum(1 for d in all_disputes if d.get("umpire_status") == "proposed"),
+        "in_progress": sum(1 for d in all_disputes if d.get("umpire_status") == "in_progress"),
+        "completed": sum(1 for d in all_disputes if d.get("umpire_status") == "completed"),
+        "total": len(all_disputes)
+    }
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size,
+        "summary": summary
+    }
+
+class UmpireResultInput(BaseModel):
+    reconciliation_id: str
+    umpire_gcv_arb: float
+    umpire_tm_arb: Optional[float] = None
+    umpire_ash_arb: Optional[float] = None
+    umpire_ts_arb: Optional[float] = None
+    umpire_lab_name: str
+    umpire_result_date: str
+    notes: Optional[str] = None
+
+@api_router.post("/coa-reconciliation/submit-umpire-result")
+async def submit_umpire_result(data: UmpireResultInput, user: dict = Depends(require_role(["admin", "operator"]))):
+    """Submit umpire test results for a reconciliation record"""
+    result = await db.coa_reconciliation.update_one(
+        {"id": data.reconciliation_id},
+        {"$set": {
+            "umpire_status": "completed",
+            "umpire_gcv_arb": data.umpire_gcv_arb,
+            "umpire_tm_arb": data.umpire_tm_arb,
+            "umpire_ash_arb": data.umpire_ash_arb,
+            "umpire_ts_arb": data.umpire_ts_arb,
+            "umpire_lab_name": data.umpire_lab_name,
+            "umpire_result_date": data.umpire_result_date,
+            "umpire_result_notes": data.notes,
+            "umpire_completed_at": datetime.now(timezone.utc).isoformat(),
+            "umpire_completed_by": user["id"]
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+    return {"message": "Hasil umpire berhasil disimpan", "reconciliation_id": data.reconciliation_id}
 
 @api_router.post("/coa-reconciliation/upload")
 async def upload_coa_files(
