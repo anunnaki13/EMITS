@@ -516,32 +516,52 @@ const SmartBlendingPage = () => {
 
               {/* AI Reasoning */}
               <Card className="glass-card border-blue-500/30 bg-blue-500/5">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white flex items-center gap-2 text-lg">
                     <Lightbulb className="w-5 h-5 text-yellow-400" />
                     Alasan AI
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-slate-300 leading-relaxed">
-                    {recommendation.ai_recommendation.reasoning}
-                  </p>
+                  <div className="prose prose-sm prose-invert max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        p: ({children}) => <p className="text-slate-300 leading-relaxed mb-3 text-sm">{children}</p>,
+                        strong: ({children}) => <strong className="text-cyan-400 font-semibold">{children}</strong>,
+                        ul: ({children}) => <ul className="list-disc list-inside space-y-1 text-slate-300 text-sm mb-3">{children}</ul>,
+                        ol: ({children}) => <ol className="list-decimal list-inside space-y-1 text-slate-300 text-sm mb-3">{children}</ol>,
+                        li: ({children}) => <li className="text-slate-300">{children}</li>,
+                      }}
+                    >
+                      {recommendation.ai_recommendation.reasoning}
+                    </ReactMarkdown>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Cost Warning */}
               {recommendation.ai_recommendation.cost_warning && (
                 <Card className="glass-card border-orange-500/30 bg-orange-500/5">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white flex items-center gap-2 text-lg">
                       <DollarSign className="w-5 h-5 text-orange-400" />
                       Analisis Biaya
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-orange-300 leading-relaxed">
-                      {recommendation.ai_recommendation.cost_warning}
-                    </p>
+                    <div className="prose prose-sm prose-invert max-w-none">
+                      <ReactMarkdown
+                        components={{
+                          p: ({children}) => <p className="text-orange-200 leading-relaxed mb-3 text-sm">{children}</p>,
+                          strong: ({children}) => <strong className="text-orange-400 font-semibold">{children}</strong>,
+                          ul: ({children}) => <ul className="list-disc list-inside space-y-1 text-orange-200 text-sm mb-3">{children}</ul>,
+                          ol: ({children}) => <ol className="list-decimal list-inside space-y-1 text-orange-200 text-sm mb-3">{children}</ol>,
+                          li: ({children}) => <li className="text-orange-200">{children}</li>,
+                        }}
+                      >
+                        {recommendation.ai_recommendation.cost_warning}
+                      </ReactMarkdown>
+                    </div>
                   </CardContent>
                 </Card>
               )}
