@@ -3794,12 +3794,13 @@ async def add_coa_manual(data: COAManualInput, user: dict = Depends(require_role
     if data.loading_gcv_arb and data.unloading_gcv_arb:
         delta_loading_unloading = data.loading_gcv_arb - data.unloading_gcv_arb
     
-    # Determine status
+    # Determine status (Loading vs Internal)
+    # KRITIS: Loading > Internal (supplier overclaim, Anda RUGI)
     status = "normal"
     if delta_loading_internal is not None:
-        if abs(delta_loading_internal) > 150:
+        if delta_loading_internal > 150:  # Hanya positif = RUGI
             status = "critical"
-        elif abs(delta_loading_internal) > 100:
+        elif delta_loading_internal > 100:
             status = "warning"
     
     record = {
