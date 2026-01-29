@@ -550,8 +550,17 @@ const COAReconciliationPage = () => {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider">Potential Loss</p>
-                <p className="text-3xl font-bold text-amber-400 mt-1">{formatCurrency(kpis.potential_loss_rp)}</p>
-                <p className="text-xs text-slate-500 mt-1">{formatNumber(kpis.total_tonnage_problem)} MT bermasalah</p>
+                {kpis.price_not_set ? (
+                  <>
+                    <p className="text-xl font-bold text-amber-400/50 mt-1">Belum dihitung</p>
+                    <p className="text-xs text-amber-400 mt-1">Atur harga di Pengaturan</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-amber-400 mt-1">{formatCurrency(kpis.potential_loss_rp)}</p>
+                    <p className="text-xs text-slate-500 mt-1">{formatNumber(kpis.total_tonnage_problem)} MT bermasalah</p>
+                  </>
+                )}
               </div>
               <div className="p-2 bg-amber-500/10 rounded-lg">
                 <DollarSign className="w-6 h-6 text-amber-400" />
