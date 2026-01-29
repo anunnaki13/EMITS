@@ -3630,41 +3630,6 @@ async def update_umpire_status(
         raise HTTPException(status_code=404, detail="Data tidak ditemukan")
     return {"message": f"Status umpire berhasil diubah ke {status}"}
 
-# Dispute Monitor endpoints
-@api_router.get("/coa-reconciliation/dispute-monitor")
-async def get_dispute_monitor(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
-    umpire_status: Optional[str] = None,
-    user: dict = Depends(get_current_user)
-):
-    """Get all records that have umpire activity (proposed, in_progress, or completed)"""
-    query = {"umpire_status": {"$ne": "none"}}
-    if umpire_status and umpire_status != "all":
-        query["umpire_status"] = umpire_status
-    
-    skip = (page - 1) * page_size
-    total = await db.coa_reconciliation.count_documents(query)
-    items = await db.coa_reconciliation.find(query, {"_id": 0}).sort("umpire_proposed_at", -1).skip(skip).limit(page_size).to_list(page_size)
-    
-    # Calculate summary stats
-    all_disputes = await db.coa_reconciliation.find({"umpire_status": {"$ne": "none"}}, {"_id": 0, "umpire_status": 1}).to_list(10000)
-    summary = {
-        "proposed": sum(1 for d in all_disputes if d.get("umpire_status") == "proposed"),
-        "in_progress": sum(1 for d in all_disputes if d.get("umpire_status") == "in_progress"),
-        "completed": sum(1 for d in all_disputes if d.get("umpire_status") == "completed"),
-        "total": len(all_disputes)
-    }
-    
-    return {
-        "items": items,
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-        "total_pages": (total + page_size - 1) // page_size,
-        "summary": summary
-    }
-
 class UmpireResultInput(BaseModel):
     reconciliation_id: str
     umpire_gcv_arb: float
