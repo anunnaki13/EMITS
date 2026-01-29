@@ -247,27 +247,25 @@ const SumberPemakaianPage = () => {
     stock: item.stock_awal
   }));
 
-  // Get today's stock - SINGLE VALUE
+  // Get today's pemakaian - SINGLE VALUE
   const todayDate = new Date().toISOString().split('T')[0];
-  let todayData = stockData.find(d => d.date === todayDate);
+  let todayData = pemakaianData.find(d => d.date === todayDate);
   
-  // If today's data doesn't exist or has no delivery, find the most recent date with delivery
-  if (!todayData || todayData.total_penerimaan === 0) {
-    // Find most recent date with delivery > 0
-    for (let item of stockData) {
-      if (item.total_penerimaan > 0) {
+  // If today's data doesn't exist or has no pemakaian, find the most recent date with pemakaian
+  if (!todayData || todayData.total_pemakaian === 0) {
+    for (let item of pemakaianData) {
+      if (item.total_pemakaian > 0) {
         todayData = item;
         break;
       }
     }
   }
   
-  // Fallback to first item if still no data
   if (!todayData) {
-    todayData = stockData[0];
+    todayData = pemakaianData[0];
   }
   
-  const totalStockToday = todayData ? todayData.stock_awal : 0;
+  const totalPemakaianToday = todayData ? todayData.total_pemakaian : 0;
   const displayDate = todayData ? todayData.date : todayDate;
 
   // Calculate zonation for the selected date - Sum all suppliers' A, B, C
@@ -305,9 +303,9 @@ const SumberPemakaianPage = () => {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
               <Package className="w-6 h-6 text-white" />
             </div>
-            Sumber Penerimaan
+            Sumber Pemakaian
           </h1>
-          <p className="text-slate-400 mt-1">Monitoring stock batubara dan penerimaan harian</p>
+          <p className="text-slate-400 mt-1">Monitoring pemakaian batubara harian per unit</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
@@ -331,7 +329,7 @@ const SumberPemakaianPage = () => {
                     className="bg-slate-800 border-slate-700 text-white mt-2"
                   />
                   <p className="text-xs text-slate-500 mt-1">
-                    Format: total_penerimaan.xlsx
+                    Format: Sumber Pemakaian.xlsx
                   </p>
                 </div>
                 <Button
@@ -394,39 +392,64 @@ const SumberPemakaianPage = () => {
                     ))}
                   </select>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-slate-300">Zone A (MT)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formZoneA}
-                      onChange={(e) => setFormZoneA(e.target.value)}
-                      placeholder="0.00"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
+                    <Label className="text-slate-300 mb-2 block">Unit 1</Label>
+                    <div className="space-y-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formUnit1A}
+                        onChange={(e) => setFormUnit1A(e.target.value)}
+                        placeholder="Zone A (MT)"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formUnit1B}
+                        onChange={(e) => setFormUnit1B(e.target.value)}
+                        placeholder="Zone B (MT)"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formUnit1C}
+                        onChange={(e) => setFormUnit1C(e.target.value)}
+                        placeholder="Zone C (MT)"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <Label className="text-slate-300">Zone B (MT)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formZoneB}
-                      onChange={(e) => setFormZoneB(e.target.value)}
-                      placeholder="0.00"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-slate-300">Zone C (MT)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formZoneC}
-                      onChange={(e) => setFormZoneC(e.target.value)}
-                      placeholder="0.00"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
+                    <Label className="text-slate-300 mb-2 block">Unit 2</Label>
+                    <div className="space-y-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formUnit2A}
+                        onChange={(e) => setFormUnit2A(e.target.value)}
+                        placeholder="Zone A (MT)"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formUnit2B}
+                        onChange={(e) => setFormUnit2B(e.target.value)}
+                        placeholder="Zone B (MT)"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formUnit2C}
+                        onChange={(e) => setFormUnit2C(e.target.value)}
+                        placeholder="Zone C (MT)"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
                   </div>
                 </div>
                 <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500">
@@ -445,7 +468,7 @@ const SumberPemakaianPage = () => {
             Export PDF
           </Button>
 
-          {stockData.length > 0 && (
+          {pemakaianData.length > 0 && (
             <Button
               onClick={handleDeleteAll}
               variant="outline"
@@ -531,8 +554,8 @@ const SumberPemakaianPage = () => {
         <Card className="glass-card border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Package className="w-5 h-5 text-cyan-400" />
-              Total Stock Hari Ini
+              <Package className="w-5 h-5 text-red-400" />
+              Total Pemakaian Hari Ini
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -542,10 +565,10 @@ const SumberPemakaianPage = () => {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
-                <p className="text-6xl font-bold text-cyan-400 mb-4">
-                  {(totalStockToday / 1000000).toFixed(2)}M
+                <p className="text-6xl font-bold text-red-400 mb-4">
+                  {(totalPemakaianToday / 1000000).toFixed(2)}M
                 </p>
-                <p className="text-slate-400 text-sm">Metric Tons (MT)</p>
+                <p className="text-slate-400 text-sm">Metric Tons (MT) - Pemakaian</p>
                 <p className="text-slate-500 text-xs mt-2">
                   {new Date(displayDate).toLocaleDateString('id-ID', { 
                     day: 'numeric', 
@@ -691,14 +714,14 @@ const SumberPemakaianPage = () => {
                       Loading data...
                     </td>
                   </tr>
-                ) : stockData.length === 0 ? (
+                ) : pemakaianData.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
                       Tidak ada data
                     </td>
                   </tr>
                 ) : (
-                  stockData.map((item, idx) => (
+                  pemakaianData.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-800/50">
                       <td className="px-4 py-3 text-slate-300">
                         {new Date(item.date).toLocaleDateString('id-ID')}
@@ -735,4 +758,4 @@ const SumberPemakaianPage = () => {
   );
 };
 
-export default SmartStockPage;
+export default SumberPemakaianPage;
