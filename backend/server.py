@@ -906,15 +906,26 @@ async def get_biomassa(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
+    supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
     query = {}
+    conditions = []
+    
     if search:
-        query["$or"] = [
-            {"shipment_code": {"$regex": search, "$options": "i"}},
-            {"suppliers": {"$regex": search, "$options": "i"}},
-            {"biomass_type": {"$regex": search, "$options": "i"}}
-        ]
+        conditions.append({
+            "$or": [
+                {"shipment_code": {"$regex": search, "$options": "i"}},
+                {"suppliers": {"$regex": search, "$options": "i"}},
+                {"biomass_type": {"$regex": search, "$options": "i"}}
+            ]
+        })
+    
+    if supplier and supplier != "all":
+        conditions.append({"suppliers": {"$regex": supplier, "$options": "i"}})
+    
+    if conditions:
+        query = {"$and": conditions} if len(conditions) > 1 else conditions[0]
     
     skip = (page - 1) * page_size
     total = await db.biomassa.count_documents(query)
