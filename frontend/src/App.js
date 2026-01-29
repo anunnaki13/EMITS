@@ -9,6 +9,7 @@ import BiomassaPage from "@/pages/BiomassaPage";
 import POBatubaraPage from "@/pages/POBatubaraPage";
 import MeritOrderPage from "@/pages/MeritOrderPage";
 import SmartStockPage from "@/pages/SmartStockPage";
+import SumberPemakaianPage from "@/pages/SumberPemakaianPage";
 import AIIntelligencePage from "@/pages/AIIntelligencePage";
 import LaporanPage from "@/pages/LaporanPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -105,6 +106,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><SmartStockPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/smart-stock/sumber-pemakaian"
+        element={
+          <ProtectedRoute>
+            <Layout><SumberPemakaianPage /></Layout>
           </ProtectedRoute>
         }
       />
