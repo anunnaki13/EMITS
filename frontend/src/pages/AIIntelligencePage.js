@@ -529,8 +529,7 @@ const AIIntelligencePage = () => {
                   </div>
                 )}
                 <div ref={chatEndRef} />
-                </div>
-              </ScrollArea>
+              </div>
             </div>
 
             {/* Input Area */}
