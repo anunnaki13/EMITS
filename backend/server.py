@@ -2741,6 +2741,109 @@ async def get_logistics_losses(user: dict = Depends(get_current_user)):
         "lowest_losses": losses_summary[-5:] if len(losses_summary) > 5 else []
     }
 
+@api_router.get("/ai/quick/smart-stock")
+async def get_smart_stock_summary(user: dict = Depends(get_current_user)):
+    """Get quick smart stock summary"""
+    # Get total penerimaan
+    total_penerimaan = await db.smart_stock.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$tonase"}}}
+    ]).to_list(1)
+    
+    # Get total pemakaian
+    total_pemakaian = await db.sumber_pemakaian.aggregate([
+        {"$group": {
+            "_id": None, 
+            "total_batubara": {"$sum": "$batubara_mt"},
+            "total_biomassa": {"$sum": "$biomassa_mt"}
+        }}
+    ]).to_list(1)
+    
+    # Get average daily usage (last 30 days)
+    avg_usage = await db.sumber_pemakaian.aggregate([
+        {"$sort": {"tanggal": -1}},
+        {"$limit": 30},
+        {"$group": {
+            "_id": None,
+            "avg_batubara": {"$avg": "$batubara_mt"},
+            "avg_energy": {"$avg": "$energy_mwh"}
+        }}
+    ]).to_list(1)
+    
+    penerimaan = total_penerimaan[0].get("total", 0) if total_penerimaan else 0
+    batubara_pakai = total_pemakaian[0].get("total_batubara", 0) if total_pemakaian else 0
+    biomassa_pakai = total_pemakaian[0].get("total_biomassa", 0) if total_pemakaian else 0
+    avg_daily = avg_usage[0].get("avg_batubara", 0) if avg_usage else 0
+    
+    current_stock = penerimaan - batubara_pakai - biomassa_pakai
+    days_of_supply = int(current_stock / avg_daily) if avg_daily > 0 else 0
+    
+    return {
+        "total_penerimaan": penerimaan,
+        "total_pemakaian": batubara_pakai + biomassa_pakai,
+        "current_stock": current_stock,
+        "avg_daily_usage": avg_daily,
+        "days_of_supply": days_of_supply,
+        "status": "CRITICAL" if days_of_supply < 7 else "WARNING" if days_of_supply < 14 else "OK"
+    }
+
+@api_router.get("/ai/quick/coa-alerts")
+async def get_coa_alerts(user: dict = Depends(get_current_user)):
+    """Get quick COA reconciliation alerts"""
+    # Get all COA data
+    all_coa = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    
+    if not all_coa:
+        return {
+            "total_records": 0,
+            "kritis_count": 0,
+            "umpire_count": 0,
+            "potential_loss": 0,
+            "top_supplier_deviasi": None
+        }
+    
+    # Count kritis status
+    kritis_count = sum(1 for c in all_coa if c.get("status") == "Kritis")
+    
+    # Count umpire in progress
+    umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
+    
+    # Calculate potential loss
+    settings = await db.settings.find_one({"type": "coa"})
+    price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
+    
+    potential_loss = 0
+    supplier_deviasi = {}
+    
+    for c in all_coa:
+        delta = c.get("delta_loading_internal", 0) or 0
+        tonase = c.get("tonase", 0) or c.get("internal_tonase", 0) or 0
+        supplier = c.get("supplier", "Unknown")
+        
+        if delta > 0:
+            potential_loss += delta * tonase * price_per_kcal
+        
+        if supplier not in supplier_deviasi:
+            supplier_deviasi[supplier] = []
+        supplier_deviasi[supplier].append(abs(delta))
+    
+    # Find supplier with highest average deviation
+    top_supplier = None
+    max_avg_deviasi = 0
+    for supplier, deviasi_list in supplier_deviasi.items():
+        if deviasi_list:
+            avg = sum(deviasi_list) / len(deviasi_list)
+            if avg > max_avg_deviasi:
+                max_avg_deviasi = avg
+                top_supplier = {"name": supplier, "avg_deviasi": avg}
+    
+    return {
+        "total_records": len(all_coa),
+        "kritis_count": kritis_count,
+        "umpire_count": umpire_count,
+        "potential_loss": potential_loss,
+        "top_supplier_deviasi": top_supplier
+    }
+
 # ==================== AI CONVERSATION SESSIONS ====================
 
 @api_router.get("/ai/sessions")
