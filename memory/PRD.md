@@ -87,29 +87,34 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
     └── Pengaturan AI/LLM
 ```
 
-## COA Reconciliation Features ✨ NEW
+## COA Reconciliation Features ✨
 1. **Anomaly Dashboard (KPIs)**
    - High Deviation Alert: Jumlah Lot dengan selisih GCV > 100 kCal/kg
    - Potential Loss (Rp): Estimasi kerugian finansial akibat penurunan kalori
    - Umpire Status: Jumlah kargo dalam proses uji pihak ketiga
    - Rata-rata Akurasi: Persentase akurasi supplier
 
-2. **Triple Check Table**
-   - Kolom: Shipment, Supplier, Loading GCV, Unloading GCV, Internal GCV, Delta, Status, Umpire, Aksi
+2. **Triple Check Table** ✨ UPDATED
+   - Kolom: Shipment (termasuk format "LOT XXX"), Supplier, Loading GCV, Unloading GCV, Internal GCV, Delta, Status, Umpire, Aksi
    - Conditional Formatting: Baris merah jika delta > 150 kCal/kg
+   - Urutan berdasarkan tanggal completed_unloading (terbaru di atas)
+   - **Filter Tanggal**: Date range picker untuk filter periode
 
 3. **Data Science Charts**
-   - Radar/Spider Chart: Perbandingan profil kualitas dari 3 tes
+   - Radar/Spider Chart: Perbandingan profil kualitas dari 3 atau 4 tes (Quad Check jika umpire selesai)
    - Supplier Consistency Chart: Bar chart supplier dengan data tidak sinkron
    - Trend Chart: Line chart tren GCV dari 3 sumber
 
-4. **Dispute Management Workflow**
+4. **Dispute Management Workflow** ✨ ENHANCED
    - Automatic Umpire Trigger: Tombol "Propose Umpire" untuk anomali tinggi
    - Audit Trail: Menyimpan nomor sampel dan catatan
+   - **Sub-menu Dispute Monitor**: Halaman terpisah untuk monitoring umpire
+   - **Input Hasil Umpire**: Form untuk memasukkan hasil tes umpire (GCV, TM, Ash, S, Lab Name, Tanggal)
+   - **Quad Check Radar**: Setelah hasil umpire diinput, Radar Chart menampilkan 4 sumber
 
-5. **Input & Manajemen Data** ✨ NEW
-   - Input Manual: Form untuk menambah data COA secara manual
-   - Upload Batch: Upload 3 file Excel (Loading, Unloading, Internal)
+5. **Input & Manajemen Data**
+   - Input Manual: Form untuk menambah data COA secara manual (mendukung format "LOT XXX")
+   - Upload Batch: Upload 3 file Excel dengan dialog pemetaan file
    - Hapus Semua: Fitur admin untuk menghapus seluruh data (dengan konfirmasi)
 
 ## Prioritized Backlog
