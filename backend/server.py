@@ -2865,7 +2865,7 @@ async def upload_sumber_pemakaian_excel(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user)
 ):
-    """Upload Excel file and parse sumber pemakaian data"""
+    """Upload Excel file and parse sumber pemakaian data with correct column mapping"""
     
     if not file.filename.endswith(('.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail="File must be Excel format (.xlsx or .xls)")
@@ -2873,6 +2873,12 @@ async def upload_sumber_pemakaian_excel(
     try:
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents), header=None)
+        
+        # Column mapping based on Sumber Pemakaian.xlsx structure:
+        # Col 0: TANGGAL
+        # Col 1: STOCK AWAL (MT)
+        # Col 2-13: Unit 1 (all suppliers, A/B/C zones)
+        # Col 14-25: Unit 2 (all suppliers, A/B/C zones)
         
         # Get supplier names from row 0 (starting from column 2)
         suppliers_row = df.iloc[0, 2:].tolist()
@@ -2940,12 +2946,23 @@ async def upload_sumber_pemakaian_excel(
                 
                 suppliers_data[supplier_key] = units_data
             
-            # Calculate total pemakaian
+            # Calculate total pemakaian: SUM of ALL Unit1 + Unit2 columns (col 2-25)
             total_pemakaian = 0
-            for units in suppliers_data.values():
-                for zones in units.values():
-                    for value in zones.values():
-                        total_pemakaian += value
+            # Unit 1: columns 2-13 (12 columns)
+            for col in range(2, min(14, len(row))):
+                try:
+                    val = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
+                    total_pemakaian += val
+                except:
+                    pass
+            
+            # Unit 2: columns 14-25 (12 columns)  
+            for col in range(14, min(26, len(row))):
+                try:
+                    val = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
+                    total_pemakaian += val
+                except:
+                    pass
             
             # Check if entry already exists
             existing = await db.sumberpemakaian.find_one({"date": date_str})
