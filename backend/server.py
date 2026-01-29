@@ -7,13 +7,16 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 import pandas as pd
 import io
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+import json
+import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
