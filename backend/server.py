@@ -3548,8 +3548,8 @@ async def get_coa_reconciliation_detail(record_id: str, user: dict = Depends(get
     }
 
 @api_router.get("/coa-reconciliation/shipment/{shipment}")
-async def get_coa_by_shipment(shipment: int, user: dict = Depends(get_current_user)):
-    """Get COA reconciliation record by shipment number"""
+async def get_coa_by_shipment(shipment: str, user: dict = Depends(get_current_user)):
+    """Get COA reconciliation record by shipment ID (string)"""
     record = await db.coa_reconciliation.find_one({"shipment": shipment}, {"_id": 0})
     if not record:
         raise HTTPException(status_code=404, detail="Data tidak ditemukan")
