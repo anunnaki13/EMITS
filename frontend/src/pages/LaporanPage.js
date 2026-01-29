@@ -100,6 +100,7 @@ const LaporanPage = () => {
                        activeTab === "po_batubara" ? "po-batubara" : "merit-order";
       const params = { page, page_size: PAGE_SIZE };
       if (search) params.search = search;
+      if (filterSupplier && filterSupplier !== "all") params.supplier = filterSupplier;
       
       const response = await axios.get(`${API_URL}/api/${endpoint}`, { 
         headers: getAuthHeader(), 
