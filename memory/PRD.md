@@ -15,6 +15,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - Role-based access control
 - Export laporan PDF/Excel
 - **AI Intelligence Agent** dengan 4 modul analisis
+- **COA Reconciliation & Dispute Monitor** - Rekonsiliasi kualitas batubara dari 3 sumber
 - Interface Bahasa Indonesia
 - Dark Mode SaaS Dashboard UI
 
@@ -32,10 +33,15 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ **AI Settings API** - Custom API key management
 - ✅ **Smart Stock Management API** - GET, POST, Upload Excel, Delete endpoints
 - ✅ **Sumber Pemakaian API** - GET, POST, Upload Excel, Delete endpoints
-- ✅ **Smart Blending AI API** - /api/smart-blending/recommend dengan:
-  - Filter data supplier 6 bulan terakhir
-  - Menggunakan API key dari Pengaturan AI Intelligence
-  - Parameter constraint sesuai spesifikasi batubara (GCV 3700-4700, Ash 3.3-6%, Sulphur 0.13-2.2%)
+- ✅ **Smart Blending AI API** - /api/smart-blending/recommend
+- ✅ **COA Reconciliation API** ✨ NEW:
+  - GET /api/coa-reconciliation - Paginated reconciliation data
+  - GET /api/coa-reconciliation/kpis - KPI metrics (deviation alerts, potential loss, umpire status)
+  - GET /api/coa-reconciliation/trend - GCV trend data for line chart
+  - GET /api/coa-reconciliation/supplier-consistency - Supplier deviation data
+  - GET /api/coa-reconciliation/{id} - Detail with radar chart data
+  - POST /api/coa-reconciliation/upload - Upload 3 COA files
+  - POST /api/coa-reconciliation/propose-umpire - Umpire proposal workflow
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
@@ -43,36 +49,20 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ Vessel TNY, Barge TNY, Trucking TNY, Biomassa TNY pages
 - ✅ Purchase Order Batubara page
 - ✅ Merit Order page
-- ✅ **Smart Stock - Sumber Penerimaan** dengan:
-  - Area Chart untuk tren Stock Awal (30 hari terakhir)
-  - Stacked Bar Chart untuk Total Penerimaan per Supplier
-  - Tabel interaktif dengan freeze header
-  - Filter tanggal (rentang tanggal)
-  - Upload Excel untuk bulk import
-  - Form Input Harian manual
-  - Export PDF button (placeholder)
-  - No Delivery alert untuk hari tanpa penerimaan
-- ✅ **Smart Stock - Sumber Pemakaian** dengan:
-  - KPI Dashboard (4 kartu: Total Burn Today, Unit 1, Unit 2, Rata-rata)
-  - Tabel kompak dengan expandable rows
-  - Upload Excel dengan multi-level header parsing
-  - Form Input Harian manual
-- ✅ **Smart Stock - Smart Blending AI** dengan:
-  - Parameter Target sliders (GCV, Ash, Sulphur, Quantity)
-  - AI-powered blending recommendations via Gemini
-  - Recommendation cards dengan detail supplier asli dari database
-  - Radar Chart untuk perbandingan Target vs Predicted
-  - Alasan AI dan Analisis Biaya dalam Bahasa Indonesia
-- ✅ **Tenayan Fuel Intelligence Agent** dengan:
-  - Smart Blending Optimizer modul
-  - Boiler Risk Warning modul
-  - Contract Compliance & PO Tracker modul
-  - Logistic Efficiency & Loss Analysis modul
-  - Chat interface dengan markdown rendering
-  - Quick Insights panel
-  - Suggested queries
-- ✅ Laporan page
+- ✅ **Smart Stock - Sumber Penerimaan** dengan charts dan tabel
+- ✅ **Smart Stock - Sumber Pemakaian** dengan KPI dan tabel
+- ✅ **Smart Stock - Smart Blending AI** dengan Radar Chart
+- ✅ **Tenayan Fuel Intelligence Agent** dengan chat interface
+- ✅ Laporan page dengan export PDF/Excel
 - ✅ **Settings page** dengan pengaturan AI/LLM API key
+- ✅ **COA Reconciliation & Dispute Monitor** ✨ NEW:
+  - KPI Dashboard: High Deviation Alert, Potential Loss, Umpire Status, Rata-rata Akurasi
+  - Insight Card untuk supplier dengan deviasi tertinggi
+  - Line Chart: Tren GCV Triple Comparison (Loading, Unloading, Internal)
+  - Bar Chart: Supplier dengan Deviasi Tertinggi
+  - Tabel "Triple Check" dengan conditional formatting merah
+  - Dialog detail dengan Radar/Spider Chart
+  - Umpire Proposal workflow dengan audit trail
 
 ### Navigation Structure
 ```
@@ -84,23 +74,36 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 │   ├── Biomassa TNY
 │   ├── Purchase Order Batubara
 │   └── Merit Order
-├── Smart Stock (Dropdown) ✨ NEW
+├── Smart Stock (Dropdown)
 │   ├── Sumber Penerimaan
 │   ├── Sumber Pemakaian
 │   └── Smart Blending AI
 ├── Laporan
+├── COA Reconciliation ✨ NEW
 ├── AI Intelligence
 └── Pengaturan (Admin only)
     └── Pengaturan AI/LLM
 ```
 
-## AI Intelligence Agent Modules
-1. **General Intelligence** - Pertanyaan umum tentang data
-2. **Smart Blending Optimizer** - Optimasi campuran batubara & biomassa
-3. **Boiler Risk Warning** - Deteksi risiko slagging/fouling
-4. **Contract Compliance** - Monitoring PO & kontrak
-5. **Logistics Analysis** - Efisiensi & losses pengiriman
-6. **Smart Blending AI** ✨ NEW - Digital Chemist untuk rekomendasi blending optimal berbasis AI
+## COA Reconciliation Features ✨ NEW
+1. **Anomaly Dashboard (KPIs)**
+   - High Deviation Alert: Jumlah Lot dengan selisih GCV > 100 kCal/kg
+   - Potential Loss (Rp): Estimasi kerugian finansial akibat penurunan kalori
+   - Umpire Status: Jumlah kargo dalam proses uji pihak ketiga
+   - Rata-rata Akurasi: Persentase akurasi supplier
+
+2. **Triple Check Table**
+   - Kolom: Shipment, Supplier, Loading GCV, Unloading GCV, Internal GCV, Delta, Status, Umpire, Aksi
+   - Conditional Formatting: Baris merah jika delta > 150 kCal/kg
+
+3. **Data Science Charts**
+   - Radar/Spider Chart: Perbandingan profil kualitas dari 3 tes
+   - Supplier Consistency Chart: Bar chart supplier dengan data tidak sinkron
+   - Trend Chart: Line chart tren GCV dari 3 sumber
+
+4. **Dispute Management Workflow**
+   - Automatic Umpire Trigger: Tombol "Propose Umpire" untuk anomali tinggi
+   - Audit Trail: Menyimpan nomor sampel dan catatan
 
 ## Prioritized Backlog
 
@@ -112,31 +115,25 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - [x] All data entry pages
 - [x] **AI Intelligence Agent**
 - [x] **AI Settings in Settings page**
-- [x] **Smart Stock Module (Sumber Penerimaan, Sumber Pemakaian)**
-- [x] **Smart Blending AI** (Gemini-powered optimization)
-- [x] **Export PDF/Excel** di halaman Laporan, Sumber Penerimaan, Sumber Pemakaian
+- [x] **Smart Stock Module**
+- [x] **Smart Blending AI**
+- [x] **Export PDF/Excel**
+- [x] **COA Reconciliation & Dispute Monitor** ✅ NEW (Jan 29, 2026)
 
 ### P1 (High Priority)
-- [x] Real export PDF/Excel implementation di Laporan ✅ DONE
-- [x] Add PO Batubara dan Merit Order ke halaman Laporan ✅ DONE
-- [x] Server-side pagination ✅ DONE - All endpoints now return paginated response with total, page, total_pages
+- [x] Server-side pagination ✅ DONE
+- [ ] Fix Smart Blending AI Timeout (BadGatewayError)
+- [ ] Verify Excel Parser with "total penerimaan.xlsx"
 
 ### P2 (Medium Priority)
-- [x] Debug Excel Parser untuk "Sumber Penerimaan" ✅ DONE - Fixed keyword filtering for supplier detection
-- [x] Refactor backend server.py ke modular structure ✅ DONE - Created /models, /utils, /services, /routers folders
-- [x] AI conversation memory (multi-turn) ✅ DONE - Added /ai/sessions endpoints for conversation history
 - [ ] Advanced filtering & date range
+- [ ] AI conversation memory frontend integration
 
 ### P3 (Nice to Have)
 - [ ] Dashboard filter by Periode functionality
 - [ ] Dark/Light mode toggle
 - [ ] Data backup & restore
 - [ ] Audit trail / activity log
-
-## Next Tasks
-1. Implement real PDF/Excel export di halaman Laporan
-2. Add PO Batubara dan Merit Order ke tab di halaman Laporan
-3. Refactor backend server.py ke modular structure
 
 ## Tech Stack
 - **Frontend**: React 19, Tailwind CSS, Shadcn/UI, Recharts, Lucide-React, react-markdown
