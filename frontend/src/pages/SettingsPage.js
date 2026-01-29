@@ -76,7 +76,38 @@ const SettingsPage = () => {
   useEffect(() => {
     fetchUsers();
     fetchAISettings();
+    fetchCOASettings();
   }, []);
+
+  const fetchCOASettings = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/settings/coa`, { headers: getAuthHeader() });
+      setCoaSettings({
+        price_per_kcal_per_ton: response.data.price_per_kcal_per_ton?.toString() || ""
+      });
+    } catch (error) {
+      console.log("COA settings not available");
+    }
+  };
+
+  const handleSaveCOASettings = async () => {
+    if (!coaSettings.price_per_kcal_per_ton) {
+      toast.error("Harga per kCal per Ton wajib diisi");
+      return;
+    }
+    setSavingCOA(true);
+    try {
+      await axios.put(`${API_URL}/api/settings/coa`, {
+        price_per_kcal_per_ton: parseFloat(coaSettings.price_per_kcal_per_ton)
+      }, { headers: getAuthHeader() });
+      toast.success("Pengaturan COA berhasil disimpan");
+      fetchCOASettings();
+    } catch (error) {
+      toast.error("Gagal menyimpan pengaturan COA");
+    } finally {
+      setSavingCOA(false);
+    }
+  };
 
   const fetchAISettings = async () => {
     try {
