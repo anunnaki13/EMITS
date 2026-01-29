@@ -40,6 +40,10 @@ const SmartBlendingPage = () => {
   const [targetGCV, setTargetGCV] = useState(4000);  // Typical: 4000 kcal/kg
   const [maxAsh, setMaxAsh] = useState(5.0);         // Typical: 5%
   const [maxSulphur, setMaxSulphur] = useState(1.8); // Typical: 1.8%
+  const [maxTotalMoisture, setMaxTotalMoisture] = useState(35.0);  // Typical: 35%
+  const [maxInherentMoisture, setMaxInherentMoisture] = useState(18.0);  // Typical: 18%
+  const [minVolatileMatter, setMinVolatileMatter] = useState(35.0);  // Typical: 35%
+  const [minFixedCarbon, setMinFixedCarbon] = useState(25.0);  // Typical: 25%
   const [targetQuantity, setTargetQuantity] = useState(10000);
 
   const handleGetRecommendation = async () => {
