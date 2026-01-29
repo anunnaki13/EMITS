@@ -152,6 +152,39 @@ const Layout = ({ children }) => {
             </CollapsibleContent>
           </Collapsible>
 
+          {/* Smart Stock Dropdown */}
+          <Collapsible open={smartStockOpen} onOpenChange={setSmartStockOpen}>
+            <CollapsibleTrigger className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              isSmartStockActive 
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}>
+              <Package className="w-5 h-5" />
+              <span className="text-sm font-medium flex-1 text-left">Smart Stock</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${smartStockOpen ? "rotate-180" : ""}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pl-4 mt-1 space-y-1">
+              {smartStockItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                      isActive
+                        ? "bg-emerald-500/10 text-emerald-400"
+                        : "text-slate-500 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    <item.icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : ""}`} />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </CollapsibleContent>
+          </Collapsible>
+
           {/* Laporan */}
           <Link
             to="/laporan"
