@@ -2725,6 +2725,19 @@ async def delete_smart_stock_entry(
     
     return {"message": "Entry deleted successfully"}
 
+@api_router.delete("/smart-stock")
+async def delete_all_smart_stock(
+    user: dict = Depends(get_current_user)
+):
+    """Delete all smart stock entries"""
+    
+    result = await db.smartstock.delete_many({})
+    
+    return {
+        "message": f"Successfully deleted {result.deleted_count} entries",
+        "deleted_count": result.deleted_count
+    }
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
