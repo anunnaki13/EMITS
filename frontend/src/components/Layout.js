@@ -40,6 +40,7 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rekapOpen, setRekapOpen] = useState(true);
+  const [smartStockOpen, setSmartStockOpen] = useState(true);
 
   const handleLogout = () => {
     logout();
