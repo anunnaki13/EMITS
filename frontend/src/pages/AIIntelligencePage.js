@@ -320,10 +320,10 @@ const AIIntelligencePage = () => {
         </div>
 
         {/* Main Chat Area */}
-        <div className="lg:col-span-3">
-          <Card className="glass-card border-white/10 h-[calc(100vh-220px)] flex flex-col">
+        <div className="lg:col-span-3 min-w-0">
+          <Card className="glass-card border-white/10 h-[calc(100vh-220px)] flex flex-col overflow-hidden">
             {/* Module Header */}
-            <CardHeader className="pb-3 border-b border-slate-800">
+            <CardHeader className="pb-3 border-b border-slate-800 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {(() => {
@@ -349,15 +349,16 @@ const AIIntelligencePage = () => {
             </CardHeader>
 
             {/* Chat Messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4 pr-2">
-                {chatHistory.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Bot className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                    <p className="text-slate-400 mb-2">Selamat datang di Tenayan Fuel Intelligence Agent</p>
-                    <p className="text-slate-500 text-sm mb-6">Pilih modul di samping, lalu ajukan pertanyaan Anda</p>
-                    
-                    {/* Suggested Queries */}
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="p-4 space-y-4">
+                  {chatHistory.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Bot className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                      <p className="text-slate-400 mb-2">Selamat datang di Tenayan Fuel Intelligence Agent</p>
+                      <p className="text-slate-500 text-sm mb-6">Pilih modul di samping, lalu ajukan pertanyaan Anda</p>
+                      
+                      {/* Suggested Queries */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                       <button
                         onClick={() => handleQuickQuery("blending", "Carikan kombinasi optimal untuk target GCV 4000 Kcal/kg dengan ash content minimal")}
