@@ -57,6 +57,10 @@ const SmartBlendingPage = () => {
           target_gcv: targetGCV,
           max_ash: maxAsh,
           max_sulphur: maxSulphur,
+          max_total_moisture: maxTotalMoisture,
+          max_inherent_moisture: maxInherentMoisture,
+          min_volatile_matter: minVolatileMatter,
+          min_fixed_carbon: minFixedCarbon,
           target_quantity: targetQuantity
         },
         { headers: getAuthHeader() }
