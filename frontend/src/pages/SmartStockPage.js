@@ -237,15 +237,34 @@ const SmartStockPage = () => {
     stock: item.stock_awal
   }));
 
-  // Prepare data for Bar Chart - SHOW ALL SUPPLIERS
-  const barChartData = SUPPLIERS.map(supplier => ({
-    name: supplier.replace(/_/g, ' ').substring(0, 20),
-    total: supplierTotals[supplier] || 0
-  }));
+  // Get today's stock - SINGLE VALUE
+  const todayDate = new Date().toISOString().split('T')[0];
+  const todayData = stockData.find(d => d.date === todayDate) || stockData[0];
+  const totalStockToday = todayData ? todayData.stock_awal : 0;
+
+  // Calculate zonation for TODAY ONLY - Sum all suppliers' A, B, C
+  const zonationData = {
+    A: 0,
+    B: 0,
+    C: 0
+  };
+
+  if (todayData && todayData.suppliers) {
+    Object.values(todayData.suppliers).forEach(zones => {
+      zonationData.A += zones.A || 0;
+      zonationData.B += zones.B || 0;
+      zonationData.C += zones.C || 0;
+    });
+  }
+
+  // Prepare data for Zonation Bar Chart with gradient colors
+  const zonationChartData = [
+    { zone: 'Zona A', value: zonationData.A, fill: 'url(#colorA)' },
+    { zone: 'Zona B', value: zonationData.B, fill: 'url(#colorB)' },
+    { zone: 'Zona C', value: zonationData.C, fill: 'url(#colorC)' }
+  ];
 
   // Check if today has no delivery
-  const todayDate = new Date().toISOString().split('T')[0];
-  const todayData = stockData.find(d => d.date === todayDate);
   const noDeliveryToday = todayData && todayData.total_penerimaan === 0;
 
   return (
