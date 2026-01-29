@@ -350,7 +350,7 @@ const AIIntelligencePage = () => {
 
             {/* Chat Messages */}
             <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
+              <div className="space-y-4 pr-2">
                 {chatHistory.length === 0 ? (
                   <div className="text-center py-12">
                     <Bot className="w-16 h-16 text-slate-700 mx-auto mb-4" />
@@ -393,20 +393,24 @@ const AIIntelligencePage = () => {
                   chatHistory.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} w-full`}
+                      className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`rounded-2xl p-4 overflow-hidden ${
+                        className={`rounded-2xl p-4 ${
                           msg.isUser
-                            ? 'bg-cyan-600 text-white max-w-[80%]'
-                            : 'bg-slate-800/80 text-slate-200 max-w-[95%] w-full'
+                            ? 'bg-cyan-600 text-white max-w-[75%]'
+                            : 'bg-slate-800/80 text-slate-200'
                         }`}
-                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                        style={{ 
+                          maxWidth: msg.isUser ? '75%' : 'calc(100% - 8px)',
+                          wordWrap: 'break-word',
+                          overflowWrap: 'anywhere'
+                        }}
                       >
                         {msg.isUser ? (
                           <p className="text-sm">{msg.query}</p>
                         ) : (
-                          <div className="ai-response-content overflow-x-auto">
+                          <div className="ai-response-content" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
