@@ -2622,36 +2622,52 @@ async def upload_smart_stock_excel(
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents), header=None)
         
-        # NEW STRUCTURE:
-        # Row 0: Headers with merged cells
-        # Col 0: TANGGAL
-        # Col 1: STOCK AWAL (MT)
-        # Col 2: SUMBER PENERIMAAN (MT) - skip this
-        # Col 3: TOTAL PENERIMAAN (MT) - we'll use this
-        # Col 4+: Supplier names (merged across A, B, C columns)
+        # Get header rows for smart parsing
+        header_row_0 = df.iloc[0].tolist()
+        header_row_1 = df.iloc[1].tolist() if len(df) > 1 else []
         
-        # Get supplier names from row 0 (starting from column 4)
-        suppliers_row = df.iloc[0, 4:].tolist()
+        logger.info(f"Header row 0 (first 15): {header_row_0[:15]}")
         
-        # Identify unique suppliers and their column ranges
+        # Keywords to SKIP - these are not supplier names
+        skip_keywords = [
+            'TANGGAL', 'STOCK', 'AWAL', 'SUMBER', 'PENERIMAAN', 'TOTAL', 
+            'TOTALPENERIMAAN', 'TOTAL_PENERIMAAN', 'AKHIR', 'MT'
+        ]
+        
+        # Find supplier columns - start scanning from column 4
         supplier_columns = {}
         current_supplier = None
-        col_start = 4
+        col_start = None
         
-        for i, cell_value in enumerate(suppliers_row):
-            actual_col = i + 4
+        for col_idx in range(4, len(header_row_0)):
+            cell_value = header_row_0[col_idx]
+            
             if pd.notna(cell_value) and str(cell_value).strip() != '':
-                if current_supplier:
-                    # Save the previous supplier's range
-                    supplier_columns[current_supplier] = (col_start, actual_col)
+                cell_str = str(cell_value).strip().upper().replace(" ", "")
+                
+                # Check if this is a skip keyword
+                is_skip = any(kw in cell_str for kw in skip_keywords)
+                
+                if is_skip:
+                    # End current supplier if we hit a skip keyword
+                    if current_supplier and col_start is not None:
+                        supplier_columns[current_supplier] = (col_start, col_idx)
+                        current_supplier = None
+                        col_start = None
+                    continue
+                
+                # This is likely a supplier name
+                if current_supplier and col_start is not None:
+                    supplier_columns[current_supplier] = (col_start, col_idx)
+                
                 current_supplier = str(cell_value).strip()
-                col_start = actual_col
+                col_start = col_idx
         
-        # Add the last supplier
-        if current_supplier:
+        # Add last supplier
+        if current_supplier and col_start is not None:
             supplier_columns[current_supplier] = (col_start, len(df.columns))
         
-        logger.info(f"Found suppliers: {list(supplier_columns.keys())}")
+        logger.info(f"Found {len(supplier_columns)} suppliers: {list(supplier_columns.keys())}")
         
         # Parse data rows (starting from row 2)
         inserted_count = 0
@@ -2659,31 +2675,48 @@ async def upload_smart_stock_excel(
             row = df.iloc[idx]
             
             # Skip if date is empty
-            if pd.isna(row[0]):
+            if pd.isna(row.iloc[0]):
                 continue
             
             # Parse date (Excel serial date or datetime)
             try:
-                if isinstance(row[0], (int, float)):
-                    date_value = pd.to_datetime(row[0], origin='1899-12-30', unit='D')
+                date_val = row.iloc[0]
+                if isinstance(date_val, (int, float)):
+                    date_value = pd.to_datetime(date_val, origin='1899-12-30', unit='D')
                 else:
-                    date_value = pd.to_datetime(row[0])
+                    date_value = pd.to_datetime(date_val)
                 date_str = date_value.strftime("%Y-%m-%d")
             except Exception as e:
                 logger.warning(f"Date parsing error at row {idx}: {e}")
                 continue
             
             # Get stock awal from column 1
-            stock_awal = float(row[1]) if pd.notna(row[1]) and row[1] != '' else 0.0
+            stock_awal = _safe_float(row.iloc[1])
             
-            # Get total penerimaan from column 3
-            total_penerimaan = float(row[3]) if pd.notna(row[3]) and row[3] != '' else 0.0
+            # Get total penerimaan - look for the TOTAL PENERIMAAN column
+            total_penerimaan = 0.0
+            for col_idx, header in enumerate(header_row_0):
+                if pd.notna(header):
+                    header_str = str(header).upper().replace(" ", "")
+                    if 'TOTALPENERIMAAN' in header_str or header_str == 'TOTAL':
+                        total_penerimaan = _safe_float(row.iloc[col_idx])
+                        break
+            
+            # Fallback to column 3 if not found
+            if total_penerimaan == 0.0:
+                total_penerimaan = _safe_float(row.iloc[3]) if len(row) > 3 else 0.0
             
             # Parse suppliers data
             suppliers_data = {}
             for supplier_name, (start_col, end_col) in supplier_columns.items():
                 # Normalize supplier name
-                supplier_key = supplier_name.strip().replace(" ", "_").replace("(", "").replace(")", "").replace("&", "").upper()
+                supplier_key = (supplier_name.strip()
+                    .replace(" ", "_")
+                    .replace("(", "")
+                    .replace(")", "")
+                    .replace("&", "")
+                    .replace("-", "_")
+                    .upper())
                 
                 # Get A, B, C values (exactly 3 columns per supplier)
                 zones = {"A": 0.0, "B": 0.0, "C": 0.0}
@@ -2691,13 +2724,12 @@ async def upload_smart_stock_excel(
                 
                 for i, col in enumerate(range(start_col, min(start_col + 3, end_col))):
                     if col < len(row) and i < 3:
-                        zone_key = zone_keys[i]
-                        try:
-                            zones[zone_key] = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
-                        except:
-                            zones[zone_key] = 0.0
+                        zones[zone_keys[i]] = _safe_float(row.iloc[col])
                 
                 suppliers_data[supplier_key] = zones
+            
+            # Calculate stock akhir
+            stock_akhir = stock_awal + total_penerimaan
             
             # Check if entry already exists for this date
             existing = await db.smartstock.find_one({"date": date_str})
@@ -2710,6 +2742,7 @@ async def upload_smart_stock_excel(
                         "stock_awal": stock_awal,
                         "suppliers": suppliers_data,
                         "total_penerimaan": total_penerimaan,
+                        "stock_akhir": stock_akhir,
                         "updated_at": datetime.now(timezone.utc).isoformat()
                     }}
                 )
@@ -2721,6 +2754,7 @@ async def upload_smart_stock_excel(
                     "stock_awal": stock_awal,
                     "suppliers": suppliers_data,
                     "total_penerimaan": total_penerimaan,
+                    "stock_akhir": stock_akhir,
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }
@@ -2730,12 +2764,22 @@ async def upload_smart_stock_excel(
         
         return {
             "message": f"Successfully processed {inserted_count} entries",
-            "count": inserted_count
+            "count": inserted_count,
+            "suppliers_found": list(supplier_columns.keys())
         }
     
     except Exception as e:
         logger.error(f"Error processing Excel file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
+
+def _safe_float(value) -> float:
+    """Safely convert value to float"""
+    if pd.isna(value) or value == '' or value is None:
+        return 0.0
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
 
 @api_router.delete("/smart-stock/{entry_id}")
 async def delete_smart_stock_entry(
