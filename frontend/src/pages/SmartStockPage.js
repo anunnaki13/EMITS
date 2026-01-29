@@ -443,9 +443,9 @@ const SmartStockPage = () => {
       )}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Area Chart - Stock Awal Trend */}
-        <Card className="glass-card border-white/10">
+        <Card className="glass-card border-white/10 lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-400" />
@@ -498,12 +498,12 @@ const SmartStockPage = () => {
           </CardContent>
         </Card>
 
-        {/* Stacked Bar Chart - Supplier Contributions */}
+        {/* Total Stock Today - Single Value Card */}
         <Card className="glass-card border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Package className="w-5 h-5 text-cyan-400" />
-              Total Penerimaan per Supplier
+              Total Stock Hari Ini
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -512,21 +512,72 @@ const SmartStockPage = () => {
                 <p className="text-slate-500">Loading...</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={barChartData}>
+              <div className="flex flex-col items-center justify-center h-64">
+                <p className="text-6xl font-bold text-cyan-400 mb-4">
+                  {(totalStockToday / 1000000).toFixed(2)}M
+                </p>
+                <p className="text-slate-400 text-sm">Metric Tons (MT)</p>
+                <p className="text-slate-500 text-xs mt-2">
+                  {new Date().toLocaleDateString('id-ID', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                  })}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Zonation Bar Chart - TODAY ONLY with Gradient */}
+        <Card className="glass-card border-white/10 lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Package className="w-5 h-5 text-amber-400" />
+              Zonasi Penerimaan Harian (Coalyard A, B, C) - Hari Ini
+            </CardTitle>
+            <p className="text-xs text-slate-500 mt-1">
+              Total penerimaan dari semua supplier berdasarkan zona peletakan di coalyard
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-80 flex items-center justify-center">
+                <p className="text-slate-500">Loading...</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={zonationChartData}>
+                  <defs>
+                    {/* Gradient Zona A - Green to Yellow to Red */}
+                    <linearGradient id="colorA" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
+                      <stop offset="50%" stopColor="#eab308" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
+                    </linearGradient>
+                    {/* Gradient Zona B */}
+                    <linearGradient id="colorB" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
+                      <stop offset="50%" stopColor="#eab308" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
+                    </linearGradient>
+                    {/* Gradient Zona C */}
+                    <linearGradient id="colorC" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
+                      <stop offset="50%" stopColor="#eab308" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={1}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis 
-                    dataKey="name" 
+                    dataKey="zone" 
                     stroke="#94a3b8"
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    style={{ fontSize: '10px' }}
+                    style={{ fontSize: '14px', fontWeight: 600 }}
                   />
                   <YAxis 
                     stroke="#94a3b8"
                     style={{ fontSize: '12px' }}
-                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}K MT`}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -536,7 +587,15 @@ const SmartStockPage = () => {
                     }}
                     formatter={(value) => [`${value.toLocaleString()} MT`, 'Total']}
                   />
-                  <Bar dataKey="total" fill="#06b6d4" radius={[8, 8, 0, 0]} />
+                  <Bar 
+                    dataKey="value" 
+                    radius={[12, 12, 0, 0]}
+                    maxBarSize={150}
+                  >
+                    {zonationChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
