@@ -373,8 +373,9 @@ def get_gcv_trend_data(merged_data: List[Dict], months: int = 3) -> List[Dict]:
 
 def get_radar_chart_data(record: Dict) -> List[Dict]:
     """
-    Get radar chart data for a single shipment comparing all three tests
+    Get radar chart data for a single shipment comparing all tests (3 or 4 sources)
     Parameters: GCV, TM, Ash, Sulphur (normalized to 0-100 scale)
+    Includes Umpire data if available
     """
     # Normalization ranges (typical coal values)
     gcv_range = (3000, 5000)  # kcal/kg
@@ -388,12 +389,16 @@ def get_radar_chart_data(record: Dict) -> List[Dict]:
         normalized = ((val - min_val) / (max_val - min_val)) * 100
         return max(0, min(100, normalized))
     
+    # Check if umpire data exists
+    has_umpire = record.get("umpire_gcv_arb") is not None
+    
     return [
         {
             "parameter": "GCV",
             "loading": normalize(record.get("loading_gcv_arb"), *gcv_range),
             "unloading": normalize(record.get("unloading_gcv_arb"), *gcv_range),
             "internal": normalize(record.get("internal_gcv_arb"), *gcv_range),
+            "umpire": normalize(record.get("umpire_gcv_arb"), *gcv_range) if has_umpire else None,
             "fullMark": 100
         },
         {
@@ -401,6 +406,7 @@ def get_radar_chart_data(record: Dict) -> List[Dict]:
             "loading": normalize(record.get("loading_tm_arb"), *tm_range),
             "unloading": normalize(record.get("unloading_tm_arb"), *tm_range),
             "internal": normalize(record.get("internal_tm_arb"), *tm_range),
+            "umpire": normalize(record.get("umpire_tm_arb"), *tm_range) if has_umpire else None,
             "fullMark": 100
         },
         {
@@ -408,6 +414,7 @@ def get_radar_chart_data(record: Dict) -> List[Dict]:
             "loading": normalize(record.get("loading_ash_arb"), *ash_range),
             "unloading": normalize(record.get("unloading_ash_arb"), *ash_range),
             "internal": normalize(record.get("internal_ash_arb"), *ash_range),
+            "umpire": normalize(record.get("umpire_ash_arb"), *ash_range) if has_umpire else None,
             "fullMark": 100
         },
         {
@@ -415,6 +422,7 @@ def get_radar_chart_data(record: Dict) -> List[Dict]:
             "loading": normalize(record.get("loading_ts_arb"), *ts_range),
             "unloading": normalize(record.get("unloading_ts_arb"), *ts_range),
             "internal": normalize(record.get("internal_ts_arb"), *ts_range),
+            "umpire": normalize(record.get("umpire_ts_arb"), *ts_range) if has_umpire else None,
             "fullMark": 100
         }
     ]
