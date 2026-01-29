@@ -2790,9 +2790,41 @@ async def get_sumber_pemakaian(
         {"_id": 0}
     ).sort("date", 1).to_list(100)
     
+    # Calculate today's stats
+    today_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_data = await db.sumberpemakaian.find_one({"date": today_date}, {"_id": 0})
+    
+    stats = {
+        "total_burn_today": 0,
+        "unit1_load": 0,
+        "unit2_load": 0,
+        "dominant_source": "N/A"
+    }
+    
+    if today_data and today_data.get("suppliers"):
+        supplier_totals = {}
+        for supplier, units in today_data["suppliers"].items():
+            supplier_total = 0
+            for unit, zones in units.items():
+                unit_total = sum(zones.values())
+                if unit == "UNIT1":
+                    stats["unit1_load"] += unit_total
+                else:
+                    stats["unit2_load"] += unit_total
+                supplier_total += unit_total
+            supplier_totals[supplier] = supplier_total
+        
+        stats["total_burn_today"] = stats["unit1_load"] + stats["unit2_load"]
+        
+        # Find dominant source
+        if supplier_totals:
+            dominant = max(supplier_totals.items(), key=lambda x: x[1])
+            stats["dominant_source"] = dominant[0].replace("_", " ")
+    
     return {
         "data": pemakaian,
         "recent_30_days": recent_pemakaian,
+        "stats": stats,
         "total_count": len(pemakaian)
     }
 
