@@ -3046,42 +3046,48 @@ async def get_smart_blending_recommendation(
         
         # Process vessels
         for v in vessels:
-            coal_inventory.append({
-                "source": "Vessel",
-                "supplier": v.get("supplier", "Unknown"),
-                "type": "MRC" if "MRC" in v.get("supplier", "").upper() else "LRC",
-                "gcv_ar": v.get("gcv_ar"),
-                "ash_ar": v.get("ash_ar"),
-                "ts_ar": v.get("ts_ar"),
-                "available_mt": v.get("quantity", 0),
-                "date": v.get("date_received")
-            })
+            supplier_name = v.get("suppliers", "Unknown")
+            if supplier_name and supplier_name != "Unknown":
+                coal_inventory.append({
+                    "source": "Vessel",
+                    "supplier": supplier_name,
+                    "type": "MRC" if "MRC" in supplier_name.upper() else "LRC",
+                    "gcv_ar": v.get("gcv_arb"),
+                    "ash_ar": v.get("ash_arb"),
+                    "ts_ar": v.get("ts_arb"),
+                    "available_mt": v.get("bl_mt", 0),
+                    "date": v.get("time_arrival")
+                })
         
         # Process barges
         for b in barges:
-            coal_inventory.append({
-                "source": "Barge",
-                "supplier": b.get("supplier", "Unknown"),
-                "type": "MRC" if "MRC" in b.get("supplier", "").upper() else "LRC",
-                "gcv_ar": b.get("gcv_ar"),
-                "ash_ar": b.get("ash_ar"),
-                "ts_ar": b.get("ts_ar"),
-                "available_mt": b.get("quantity", 0),
-                "date": b.get("date_received")
-            })
+            supplier_name = b.get("suppliers", "Unknown")
+            if supplier_name and supplier_name != "Unknown":
+                coal_inventory.append({
+                    "source": "Barge",
+                    "supplier": supplier_name,
+                    "type": "MRC" if "MRC" in supplier_name.upper() else "LRC",
+                    "gcv_ar": b.get("gcv_arb"),
+                    "ash_ar": b.get("ash_arb"),
+                    "ts_ar": b.get("ts_arb"),
+                    "available_mt": b.get("bl_mt", 0),
+                    "date": b.get("time_arrival")
+                })
         
         # Process trucking
         for t in trucking:
-            coal_inventory.append({
-                "source": "Trucking",
-                "supplier": t.get("supplier", "Unknown"),
-                "type": "MRC" if "MRC" in t.get("supplier", "").upper() else "LRC",
-                "gcv_ar": t.get("gcv_ar"),
-                "ash_ar": t.get("ash_ar"),
-                "ts_ar": t.get("ts_ar"),
-                "available_mt": t.get("quantity", 0),
-                "date": t.get("date_received")
-            })
+            supplier_name = t.get("suppliers", "Unknown")
+            if supplier_name and supplier_name != "Unknown":
+                coal_inventory.append({
+                    "source": "Trucking",
+                    "supplier": supplier_name,
+                    "type": "MRC" if "MRC" in supplier_name.upper() else "LRC",
+                    "gcv_ar": t.get("gcv_arb"),
+                    "ash_ar": t.get("ash_arb"),
+                    "ts_ar": t.get("ts_arb"),
+                    "available_mt": t.get("quantity", 0),
+                    "date": t.get("date_received")
+                })
         
         # 5. Create AI prompt for Gemini
         ai_prompt = f"""You are a Digital Coal Chemist for PLTU Tenayan Power Plant. Your task is to provide an optimal coal blending recommendation.
