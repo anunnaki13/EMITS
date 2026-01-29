@@ -57,6 +57,8 @@ const LaporanPage = () => {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [filterPeriode, setFilterPeriode] = useState("all");
+  const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
+  const PAGE_SIZE = 50;
 
   const categories = [
     { id: "vessel", label: "Vessel", icon: Ship, color: "cyan" },
@@ -68,10 +70,10 @@ const LaporanPage = () => {
   ];
 
   useEffect(() => {
-    fetchData();
+    fetchData(1);
   }, [activeTab, search]);
 
-  const fetchData = async () => {
+  const fetchData = async (page = 1) => {
     setLoading(true);
     try {
       const endpoint = activeTab === "vessel" ? "vessels" : 
@@ -79,7 +81,9 @@ const LaporanPage = () => {
                        activeTab === "trucking" ? "trucking" : 
                        activeTab === "biomassa" ? "biomassa" :
                        activeTab === "po_batubara" ? "po-batubara" : "merit-order";
-      const params = search ? { search } : {};
+      const params = { page, page_size: PAGE_SIZE };
+      if (search) params.search = search;
+      
       const response = await axios.get(`${API_URL}/api/${endpoint}`, { 
         headers: getAuthHeader(), 
         params 
