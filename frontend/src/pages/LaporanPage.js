@@ -174,8 +174,25 @@ const LaporanPage = () => {
   };
 
   const getTotalTonase = () => {
+    if (activeTab === "po_batubara") {
+      return data.reduce((sum, item) => sum + (item.tonase_po || 0), 0);
+    }
+    if (activeTab === "merit_order") {
+      return data.reduce((sum, item) => sum + (item.harga_cif || 0), 0);
+    }
     const field = activeTab === "trucking" ? "ds_mt" : "bl_mt";
     return data.reduce((sum, item) => sum + (item[field] || 0), 0);
+  };
+
+  const getTonaseLabel = () => {
+    if (activeTab === "po_batubara") return "Total Tonase PO";
+    if (activeTab === "merit_order") return "Total Harga CIF";
+    return "Total Tonase";
+  };
+
+  const getTonaseUnit = () => {
+    if (activeTab === "merit_order") return "Rupiah";
+    return "MT (Metric Ton)";
   };
 
   const getAvgGCV = () => {
