@@ -18,7 +18,8 @@ import {
   Package,
   ShoppingCart,
   Award,
-  Bot
+  Bot,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
