@@ -49,7 +49,8 @@ const SumberPemakaianPage = () => {
     total_burn_today: 0,
     unit1_load: 0,
     unit2_load: 0,
-    dominant_source: "N/A"
+    dominant_source: "N/A",
+    latest_date: null
   });
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -231,7 +232,14 @@ const SumberPemakaianPage = () => {
             </div>
             Total Pemakaian Batubara
           </h1>
-          <p className="text-slate-400 mt-1">Power Plant Consumption Tracker - Unit 1 & Unit 2</p>
+          <p className="text-slate-400 mt-1">
+            Power Plant Consumption Tracker - Unit 1 & Unit 2
+            {stats.latest_date && (
+              <span className="ml-2 text-cyan-400">
+                | Latest Entry: {new Date(stats.latest_date).toLocaleDateString('id-ID')}
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
@@ -401,16 +409,24 @@ const SumberPemakaianPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="glass-card border-red-500/30 bg-gradient-to-br from-red-500/10 to-orange-500/10">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">Total Burn Today</p>
-                <p className="text-3xl font-bold text-red-400 mt-2">
-                  {(stats.total_burn_today / 1000).toFixed(1)}K
-                </p>
-                <p className="text-xs text-slate-500 mt-1">Metric Tons</p>
+            {stats.total_burn_today === 0 && !stats.latest_date ? (
+              <div className="text-center py-4">
+                <Flame className="w-12 h-12 text-slate-600 mx-auto mb-2 opacity-30" />
+                <p className="text-slate-500 text-sm">Silakan Upload Excel atau Input Manual</p>
+                <p className="text-slate-600 text-xs mt-1">untuk melihat Statistik</p>
               </div>
-              <Flame className="w-12 h-12 text-red-400 opacity-50" />
-            </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">Total Burn</p>
+                  <p className="text-3xl font-bold text-red-400 mt-2">
+                    {(stats.total_burn_today / 1000).toFixed(1)}K
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Metric Tons</p>
+                </div>
+                <Flame className="w-12 h-12 text-red-400 opacity-50" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -446,16 +462,24 @@ const SumberPemakaianPage = () => {
 
         <Card className="glass-card border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm">Dominant Source</p>
-                <p className="text-lg font-bold text-emerald-400 mt-2 truncate">
-                  {stats.dominant_source}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">Top Supplier</p>
+            {stats.dominant_source === "N/A" && !stats.latest_date ? (
+              <div className="text-center py-4">
+                <Award className="w-12 h-12 text-slate-600 mx-auto mb-2 opacity-30" />
+                <p className="text-slate-500 text-sm">Tidak ada data</p>
+                <p className="text-slate-600 text-xs mt-1">Belum tersedia</p>
               </div>
-              <Award className="w-12 h-12 text-emerald-400 opacity-50" />
-            </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">Dominant Source</p>
+                  <p className="text-lg font-bold text-emerald-400 mt-2 truncate">
+                    {stats.dominant_source}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Top Supplier</p>
+                </div>
+                <Award className="w-12 h-12 text-emerald-400 opacity-50" />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
