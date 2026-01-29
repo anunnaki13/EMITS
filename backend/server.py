@@ -1752,6 +1752,57 @@ async def upload_biomassa_excel(file: UploadFile = File(...), user: dict = Depen
         logger.error(f"Error uploading biomassa excel: {e}")
         raise HTTPException(status_code=400, detail=f"Gagal memproses file: {str(e)}")
 
+# ==================== SUPPLIERS LIST ====================
+
+@api_router.get("/suppliers")
+async def get_suppliers_list(user: dict = Depends(get_current_user)):
+    """Get unique list of suppliers from all data sources"""
+    suppliers_set = set()
+    
+    # Get suppliers from vessels
+    vessel_suppliers = await db.vessels.distinct("suppliers")
+    for s in vessel_suppliers:
+        if s:
+            suppliers_set.add(s)
+    
+    # Get suppliers from barges
+    barge_suppliers = await db.barges.distinct("suppliers")
+    for s in barge_suppliers:
+        if s:
+            suppliers_set.add(s)
+    
+    # Get suppliers from trucking
+    trucking_suppliers = await db.trucking.distinct("suppliers")
+    for s in trucking_suppliers:
+        if s:
+            suppliers_set.add(s)
+    
+    # Get suppliers from biomassa
+    biomassa_suppliers = await db.biomassa.distinct("suppliers")
+    for s in biomassa_suppliers:
+        if s:
+            suppliers_set.add(s)
+    
+    # Get suppliers from PO Batubara
+    po_suppliers = await db.po_batubara.distinct("supplier_name")
+    for s in po_suppliers:
+        if s:
+            suppliers_set.add(s)
+    
+    # Get pemasok from Merit Order
+    merit_suppliers = await db.merit_order.distinct("pemasok")
+    for s in merit_suppliers:
+        if s:
+            suppliers_set.add(s)
+    
+    # Sort alphabetically
+    suppliers_list = sorted(list(suppliers_set))
+    
+    return {
+        "suppliers": suppliers_list,
+        "total": len(suppliers_list)
+    }
+
 # ==================== DASHBOARD STATS ====================
 
 @api_router.get("/dashboard/stats", response_model=DashboardStats)
