@@ -119,7 +119,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 ### P1 (High Priority)
 - [x] Real export PDF/Excel implementation di Laporan ✅ DONE
 - [x] Add PO Batubara dan Merit Order ke halaman Laporan ✅ DONE
-- [ ] Server-side pagination
+- [x] Server-side pagination ✅ DONE - All endpoints now return paginated response with total, page, total_pages
 
 ### P2 (Medium Priority)
 - [x] Debug Excel Parser untuk "Sumber Penerimaan" ✅ DONE - Fixed keyword filtering for supplier detection
