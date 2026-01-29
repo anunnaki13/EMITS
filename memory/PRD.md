@@ -30,6 +30,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ **AI Intelligence API** - /api/ai/query dengan 4 modul
 - ✅ **AI Quick Analysis Endpoints** - blending, boiler alerts, contract status, logistics losses
 - ✅ **AI Settings API** - Custom API key management
+- ✅ **Smart Stock Management API** - GET, POST, Upload Excel, Delete endpoints
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
@@ -37,6 +38,15 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ Vessel TNY, Barge TNY, Trucking TNY, Biomassa TNY pages
 - ✅ Purchase Order Batubara page
 - ✅ Merit Order page
+- ✅ **Smart Stock Management Page** dengan:
+  - Area Chart untuk tren Stock Awal (30 hari terakhir)
+  - Stacked Bar Chart untuk Total Penerimaan per Supplier
+  - Tabel interaktif dengan freeze header
+  - Filter tanggal (rentang tanggal)
+  - Upload Excel untuk bulk import
+  - Form Input Harian manual
+  - Export PDF button (placeholder)
+  - No Delivery alert untuk hari tanpa penerimaan
 - ✅ **Tenayan Fuel Intelligence Agent** dengan:
   - Smart Blending Optimizer modul
   - Boiler Risk Warning modul
