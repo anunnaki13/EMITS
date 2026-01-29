@@ -485,6 +485,20 @@ const LaporanPage = () => {
                 data-testid="search-laporan-input"
               />
             </div>
+            <Select value={filterSupplier} onValueChange={(val) => { setFilterSupplier(val); setPagination({ page: 1, total: 0, totalPages: 0 }); }}>
+              <SelectTrigger className="w-[250px] bg-slate-950/50 border-slate-800 text-white" data-testid="filter-supplier-select">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filter Supplier" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0B1221] border-slate-800 max-h-[300px]">
+                <SelectItem value="all" className="text-white">Semua Supplier</SelectItem>
+                {suppliersList.map((supplier) => (
+                  <SelectItem key={supplier} value={supplier} className="text-white text-sm">
+                    {supplier.length > 35 ? supplier.substring(0, 35) + "..." : supplier}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={filterPeriode} onValueChange={setFilterPeriode}>
               <SelectTrigger className="w-[180px] bg-slate-950/50 border-slate-800 text-white">
                 <Filter className="w-4 h-4 mr-2" />
