@@ -509,7 +509,7 @@ const LaporanPage = () => {
                     ) : (
                       data.map((item, index) => (
                         <TableRow key={item.id} className="border-white/5 hover:bg-slate-900/50" data-testid={`laporan-row-${item.id}`}>
-                          <TableCell className="text-slate-500 text-sm">{index + 1}</TableCell>
+                          <TableCell className="text-slate-500 text-sm">{(pagination.page - 1) * PAGE_SIZE + index + 1}</TableCell>
                           {columns.map(col => (
                             <TableCell key={col.key} className={`text-sm ${col.type === 'number' ? 'font-mono text-cyan-400' : 'text-slate-300'}`}>
                               {formatValue(item[col.key], col.type)}
@@ -521,6 +521,38 @@ const LaporanPage = () => {
                   </TableBody>
                 </Table>
               </div>
+              
+              {/* Pagination Controls */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 px-2">
+                  <p className="text-sm text-slate-400">
+                    Menampilkan {(pagination.page - 1) * PAGE_SIZE + 1} - {Math.min(pagination.page * PAGE_SIZE, pagination.total)} dari {pagination.total} data
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchData(pagination.page - 1)}
+                      disabled={pagination.page <= 1 || loading}
+                      className="border-slate-700 text-slate-300"
+                    >
+                      Sebelumnya
+                    </Button>
+                    <span className="text-sm text-slate-400 px-2">
+                      Halaman {pagination.page} dari {pagination.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchData(pagination.page + 1)}
+                      disabled={pagination.page >= pagination.totalPages || loading}
+                      className="border-slate-700 text-slate-300"
+                    >
+                      Selanjutnya
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           ))}
         </Tabs>
