@@ -441,7 +441,7 @@ const LaporanPage = () => {
       </div>
 
       <Card className="glass-card border-white/5 p-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setPagination({ page: 1, total: 0, totalPages: 0 }); }} className="w-full">
           <TabsList className="grid w-full grid-cols-6 bg-slate-900/50 mb-4">
             {categories.map(cat => (
               <TabsTrigger 
