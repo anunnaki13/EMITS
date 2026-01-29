@@ -101,7 +101,7 @@ const SmartBlendingPage = () => {
             </div>
             Smart Blending AI
           </h1>
-          <p className="text-slate-400 mt-1">Ahli Kimia Batubara Digital - Optimalisasi Berbasis AI</p>
+          <p className="text-slate-400 mt-1">Optimalisasi Blending Batubara Berbasis AI</p>
         </div>
       </div>
 
@@ -124,14 +124,14 @@ const SmartBlendingPage = () => {
               <Slider
                 value={[targetGCV]}
                 onValueChange={(val) => setTargetGCV(val[0])}
-                min={3000}
-                max={6000}
+                min={3700}
+                max={4700}
                 step={50}
                 className="py-4"
               />
               <div className="flex justify-between text-xs text-slate-500">
-                <span>3000</span>
-                <span>6000</span>
+                <span>3700</span>
+                <span>4700</span>
               </div>
             </div>
 
@@ -144,14 +144,14 @@ const SmartBlendingPage = () => {
               <Slider
                 value={[maxAsh * 10]}
                 onValueChange={(val) => setMaxAsh(val[0] / 10)}
-                min={0}
-                max={150}
-                step={5}
+                min={33}
+                max={60}
+                step={1}
                 className="py-4"
               />
               <div className="flex justify-between text-xs text-slate-500">
-                <span>0%</span>
-                <span>15%</span>
+                <span>3.3%</span>
+                <span>6.0%</span>
               </div>
             </div>
 
@@ -164,14 +164,14 @@ const SmartBlendingPage = () => {
               <Slider
                 value={[maxSulphur * 100]}
                 onValueChange={(val) => setMaxSulphur(val[0] / 100)}
-                min={0}
-                max={200}
-                step={5}
+                min={13}
+                max={220}
+                step={1}
                 className="py-4"
               />
               <div className="flex justify-between text-xs text-slate-500">
-                <span>0%</span>
-                <span>2%</span>
+                <span>0.13%</span>
+                <span>2.2%</span>
               </div>
             </div>
 
