@@ -3464,9 +3464,11 @@ async def get_coa_reconciliation(
     page_size: int = Query(50, ge=1, le=500),
     status: Optional[str] = None,
     search: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
-    """Get COA reconciliation data with pagination"""
+    """Get COA reconciliation data with pagination and date filter"""
     query = {}
     if status and status != "all":
         query["status"] = status
@@ -3476,9 +3478,20 @@ async def get_coa_reconciliation(
             {"suppliers": {"$regex": search, "$options": "i"}}
         ]
     
+    # Date range filter on completed_unloading
+    if date_from or date_to:
+        date_filter = {}
+        if date_from:
+            date_filter["$gte"] = date_from
+        if date_to:
+            date_filter["$lte"] = date_to + "T23:59:59"
+        if date_filter:
+            query["completed_unloading"] = date_filter
+    
     skip = (page - 1) * page_size
     total = await db.coa_reconciliation.count_documents(query)
-    items = await db.coa_reconciliation.find(query, {"_id": 0}).sort("shipment", -1).skip(skip).limit(page_size).to_list(page_size)
+    # Sort by completed_unloading descending (newest first)
+    items = await db.coa_reconciliation.find(query, {"_id": 0}).sort("completed_unloading", -1).skip(skip).limit(page_size).to_list(page_size)
     
     return {
         "items": items,
