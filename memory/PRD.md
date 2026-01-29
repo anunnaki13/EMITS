@@ -41,7 +41,9 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
   - GET /api/coa-reconciliation/supplier-consistency - Supplier deviation data
   - GET /api/coa-reconciliation/{id} - Detail with radar chart data
   - POST /api/coa-reconciliation/upload - Upload 3 COA files
+  - POST /api/coa-reconciliation/manual - Input data manual ✨ NEW
   - POST /api/coa-reconciliation/propose-umpire - Umpire proposal workflow
+  - DELETE /api/coa-reconciliation - Hapus semua data (admin only) ✨ NEW
 
 ### Frontend (React)
 - ✅ Login/Register page dengan dark theme
