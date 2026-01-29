@@ -382,7 +382,7 @@ const AIIntelligencePage = () => {
                     <p className="text-slate-500 text-sm mb-6">Pilih modul di samping, lalu ajukan pertanyaan Anda</p>
                     
                     {/* Suggested Queries */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-4xl mx-auto">
                       <button
                         onClick={() => handleQuickQuery("blending", "Carikan kombinasi optimal untuk target GCV 4000 Kcal/kg dengan ash content minimal")}
                         className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 text-left transition-all"
@@ -410,6 +410,20 @@ const AIIntelligencePage = () => {
                       >
                         <p className="text-sm text-amber-400 font-medium">📊 Logistics Analysis</p>
                         <p className="text-xs text-slate-500">Efisiensi & losses</p>
+                      </button>
+                      <button
+                        onClick={() => handleQuickQuery("smart_stock", "Berapa stok batubara saat ini? Berapa rata-rata pemakaian harian? Estimasi hari stok tersisa?")}
+                        className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:border-purple-500/40 text-left transition-all"
+                      >
+                        <p className="text-sm text-purple-400 font-medium">📦 Smart Stock</p>
+                        <p className="text-xs text-slate-500">Analisis stok & pemakaian</p>
+                      </button>
+                      <button
+                        onClick={() => handleQuickQuery("coa_reconciliation", "Analisis data COA. Supplier mana dengan deviasi GCV tertinggi? Berapa potential loss dari defisit kalori?")}
+                        className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/40 text-left transition-all"
+                      >
+                        <p className="text-sm text-orange-400 font-medium">⚖️ COA Reconciliation</p>
+                        <p className="text-xs text-slate-500">Rekonsiliasi kualitas & dispute</p>
                       </button>
                     </div>
                   </div>
