@@ -105,6 +105,11 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
    - Automatic Umpire Trigger: Tombol "Propose Umpire" untuk anomali tinggi
    - Audit Trail: Menyimpan nomor sampel dan catatan
 
+5. **Input & Manajemen Data** ✨ NEW
+   - Input Manual: Form untuk menambah data COA secara manual
+   - Upload Batch: Upload 3 file Excel (Loading, Unloading, Internal)
+   - Hapus Semua: Fitur admin untuk menghapus seluruh data (dengan konfirmasi)
+
 ## Prioritized Backlog
 
 ### P0 (Critical) - DONE ✅
