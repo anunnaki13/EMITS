@@ -2234,6 +2234,83 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
         ).sort("completed_unloading", -1).limit(10).to_list(10)
         context_parts.append(f"Available Biomass Stock: {biomass_stock}")
     
+    # Smart Stock Module Data
+    if module in ["general", "smart_stock"]:
+        # Get smart stock penerimaan data
+        penerimaan_data = await db.smart_stock.find(
+            {},
+            {"_id": 0, "source": 1, "supplier": 1, "cargo": 1, "tonase": 1, "gcv_arb": 1, "date": 1}
+        ).sort("date", -1).limit(30).to_list(30)
+        if penerimaan_data:
+            context_parts.append(f"Smart Stock - Sumber Penerimaan (30 terbaru): {penerimaan_data}")
+        
+        # Get smart stock pemakaian data
+        pemakaian_data = await db.sumber_pemakaian.find(
+            {},
+            {"_id": 0, "tanggal": 1, "energy_mwh": 1, "batubara_mt": 1, "biomassa_mt": 1, "sfc": 1}
+        ).sort("tanggal", -1).limit(30).to_list(30)
+        if pemakaian_data:
+            context_parts.append(f"Smart Stock - Sumber Pemakaian (30 terbaru): {pemakaian_data}")
+        
+        # Calculate stock summary
+        total_penerimaan = await db.smart_stock.aggregate([
+            {"$group": {"_id": None, "total": {"$sum": "$tonase"}}}
+        ]).to_list(1)
+        total_pemakaian = await db.sumber_pemakaian.aggregate([
+            {"$group": {"_id": None, "total_batubara": {"$sum": "$batubara_mt"}, "total_biomassa": {"$sum": "$biomassa_mt"}}}
+        ]).to_list(1)
+        
+        if total_penerimaan and total_pemakaian:
+            penerimaan = total_penerimaan[0].get("total", 0) if total_penerimaan else 0
+            batubara_pakai = total_pemakaian[0].get("total_batubara", 0) if total_pemakaian else 0
+            biomassa_pakai = total_pemakaian[0].get("total_biomassa", 0) if total_pemakaian else 0
+            context_parts.append(f"Ringkasan Stok: Total Penerimaan={penerimaan} MT, Total Pemakaian Batubara={batubara_pakai} MT, Total Pemakaian Biomassa={biomassa_pakai} MT")
+    
+    # COA Reconciliation Module Data
+    if module in ["general", "coa_reconciliation"]:
+        # Get COA reconciliation data
+        coa_data = await db.coa_reconciliation.find(
+            {},
+            {"_id": 0, "shipment": 1, "supplier": 1, "loading_gcv_arb": 1, "unloading_gcv_arb": 1, 
+             "internal_gcv_arb": 1, "delta_loading_internal": 1, "status": 1, "umpire_status": 1,
+             "completed_unloading": 1}
+        ).sort("completed_unloading", -1).limit(30).to_list(30)
+        if coa_data:
+            context_parts.append(f"COA Reconciliation Data (30 terbaru): {coa_data}")
+        
+        # Get KPIs summary
+        all_coa = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+        if all_coa:
+            kritis_count = sum(1 for c in all_coa if c.get("status") == "Kritis")
+            umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
+            
+            # Calculate potential loss
+            settings = await db.settings.find_one({"type": "coa"})
+            price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
+            potential_loss = 0
+            for c in all_coa:
+                delta = c.get("delta_loading_internal", 0) or 0
+                tonase = c.get("tonase", 0) or c.get("internal_tonase", 0) or 0
+                if delta > 0:
+                    potential_loss += delta * tonase * price_per_kcal
+            
+            context_parts.append(f"COA KPIs: Total Records={len(all_coa)}, Status Kritis={kritis_count}, Dalam Proses Umpire={umpire_count}, Potential Loss=Rp {potential_loss:,.0f}")
+            
+            # Supplier dengan deviasi tertinggi
+            supplier_deviasi = {}
+            for c in all_coa:
+                supplier = c.get("supplier", "Unknown")
+                delta = abs(c.get("delta_loading_internal", 0) or 0)
+                if supplier not in supplier_deviasi:
+                    supplier_deviasi[supplier] = []
+                supplier_deviasi[supplier].append(delta)
+            
+            top_deviasi = sorted(
+                [(s, sum(d)/len(d)) for s, d in supplier_deviasi.items() if d],
+                key=lambda x: x[1], reverse=True
+            )[:5]
+            context_parts.append(f"Top 5 Supplier dengan Deviasi GCV Tertinggi: {top_deviasi}")
+    
     return "\n\n".join(context_parts)
 
 def get_system_prompt(module: str) -> str:
