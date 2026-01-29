@@ -201,6 +201,86 @@ const SmartBlendingPage = () => {
               </div>
             </div>
 
+            {/* Max Total Moisture Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="text-slate-300">Maks. Total Moisture (%)</Label>
+                <span className="text-blue-400 font-mono font-semibold">{maxTotalMoisture.toFixed(1)}</span>
+              </div>
+              <Slider
+                value={[maxTotalMoisture * 10]}
+                onValueChange={(val) => setMaxTotalMoisture(val[0] / 10)}
+                min={250}
+                max={400}
+                step={5}
+                className="py-4"
+              />
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>25%</span>
+                <span>40%</span>
+              </div>
+            </div>
+
+            {/* Max Inherent Moisture Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="text-slate-300">Maks. Inherent Moisture (%)</Label>
+                <span className="text-indigo-400 font-mono font-semibold">{maxInherentMoisture.toFixed(1)}</span>
+              </div>
+              <Slider
+                value={[maxInherentMoisture * 10]}
+                onValueChange={(val) => setMaxInherentMoisture(val[0] / 10)}
+                min={138}
+                max={250}
+                step={2}
+                className="py-4"
+              />
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>13.8%</span>
+                <span>25%</span>
+              </div>
+            </div>
+
+            {/* Min Volatile Matter Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="text-slate-300">Min. Volatile Matter (%)</Label>
+                <span className="text-green-400 font-mono font-semibold">{minVolatileMatter.toFixed(1)}</span>
+              </div>
+              <Slider
+                value={[minVolatileMatter * 10]}
+                onValueChange={(val) => setMinVolatileMatter(val[0] / 10)}
+                min={279}
+                max={400}
+                step={5}
+                className="py-4"
+              />
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>27.9%</span>
+                <span>40%</span>
+              </div>
+            </div>
+
+            {/* Min Fixed Carbon Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="text-slate-300">Min. Fixed Carbon (%)</Label>
+                <span className="text-amber-400 font-mono font-semibold">{minFixedCarbon.toFixed(1)}</span>
+              </div>
+              <Slider
+                value={[minFixedCarbon * 10]}
+                onValueChange={(val) => setMinFixedCarbon(val[0] / 10)}
+                min={230}
+                max={410}
+                step={5}
+                className="py-4"
+              />
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>23%</span>
+                <span>41%</span>
+              </div>
+            </div>
+
             {/* Target Quantity Input */}
             <div className="space-y-2">
               <Label className="text-slate-300">Kuantitas Target (MT)</Label>
