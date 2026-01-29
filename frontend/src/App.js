@@ -14,6 +14,7 @@ import SmartBlendingPage from "@/pages/SmartBlendingPage";
 import AIIntelligencePage from "@/pages/AIIntelligencePage";
 import LaporanPage from "@/pages/LaporanPage";
 import COAReconciliationPage from "@/pages/COAReconciliationPage";
+import DisputeMonitorPage from "@/pages/DisputeMonitorPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Layout from "@/components/Layout";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
