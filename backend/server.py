@@ -3090,42 +3090,44 @@ async def get_smart_blending_recommendation(
                 })
         
         # 5. Create AI prompt for Gemini
-        ai_prompt = f"""You are a Digital Coal Chemist for PLTU Tenayan Power Plant. Your task is to provide an optimal coal blending recommendation.
+        ai_prompt = f"""Anda adalah Ahli Kimia Batubara Digital untuk PLTU Tenayan. Tugas Anda adalah memberikan rekomendasi blending batubara yang optimal.
 
-**BLENDING REQUIREMENTS:**
+**PERSYARATAN BLENDING:**
 - Target GCV: {request.target_gcv} kcal/kg (As Received)
-- Max Ash Content: {request.max_ash}% (As Received)
-- Max Total Sulphur: {request.max_sulphur}% (As Received)
-- Total Quantity Needed: {request.target_quantity:,.0f} MT
+- Maksimal Kandungan Abu: {request.max_ash}% (As Received)
+- Maksimal Total Sulphur: {request.max_sulphur}% (As Received)
+- Total Kuantitas yang Dibutuhkan: {request.target_quantity:,.0f} MT
 
-**AVAILABLE COAL INVENTORY:**
+**INVENTORI BATUBARA TERSEDIA:**
 {json.dumps(coal_inventory, indent=2)}
 
-**IMPORTANT NOTES:**
-- LRC (Low Rank Coal): Lower GCV (3000-4500 kcal/kg), higher moisture, cheaper
-- MRC (Medium Rank Coal): Higher GCV (4500-6000 kcal/kg), lower moisture, more expensive
-- Blending formula: Result_GCV = (Coal1_GCV × Coal1_%) + (Coal2_GCV × Coal2_%)
-- Priority: MEET GCV TARGET FIRST, then consider cost
+**CATATAN PENTING:**
+- LRC (Low Rank Coal): GCV lebih rendah (3000-4500 kcal/kg), moisture tinggi, lebih murah
+- MRC (Medium Rank Coal): GCV lebih tinggi (4500-6000 kcal/kg), moisture rendah, lebih mahal
+- Formula blending: Hasil_GCV = (Batubara1_GCV × Batubara1_%) + (Batubara2_GCV × Batubara2_%)
+- Prioritas: CAPAI TARGET GCV DULU, kemudian pertimbangkan biaya
+- WAJIB: Gunakan NAMA SUPPLIER ASLI dari data di atas, JANGAN buat nama dummy seperti "Supplier Alpha"
 
-**YOUR TASK:**
-1. Analyze available coals (consider GCV, Ash, Sulphur)
-2. Calculate optimal blend percentages
-3. Ensure target GCV is met
-4. Keep Ash and Sulphur within limits
-5. Recommend 2-4 coals for blending
+**TUGAS ANDA:**
+1. Analisis batubara yang tersedia (pertimbangkan GCV, Abu, Sulphur)
+2. Hitung persentase blend yang optimal
+3. Pastikan target GCV tercapai
+4. Jaga Abu dan Sulphur dalam batas
+5. Rekomendasikan 2-4 batubara untuk blending
+6. GUNAKAN nama supplier SEBENARNYA dari data (contoh: "PT PLN BATUBARA", "PT BUKIT ASAM")
 
-**OUTPUT FORMAT (JSON):**
+**FORMAT OUTPUT (JSON):**
 {{
   "recommendation": [
     {{
-      "supplier": "Supplier Name",
-      "source": "Vessel/Barge/Trucking",
-      "type": "LRC/MRC",
+      "supplier": "PT PLN BATUBARA",
+      "source": "Vessel",
+      "type": "LRC",
       "percentage": 60.0,
       "tonnage": 6000.0,
-      "gcv": 4200,
-      "ash": 6.5,
-      "sulphur": 0.6
+      "gcv": 4277,
+      "ash": 4.4,
+      "sulphur": 0.21
     }}
   ],
   "predicted_quality": {{
@@ -3134,11 +3136,11 @@ async def get_smart_blending_recommendation(
     "sulphur": 0.65
   }},
   "meets_target": true,
-  "reasoning": "Explain why this blend is optimal",
-  "cost_warning": "Note if using expensive coals"
+  "reasoning": "Jelaskan mengapa blend ini optimal dalam Bahasa Indonesia",
+  "cost_warning": "Catatan jika menggunakan batubara mahal (dalam Bahasa Indonesia)"
 }}
 
-Respond ONLY with valid JSON, no additional text."""
+Respons HANYA dengan JSON yang valid, tanpa teks tambahan. WAJIB gunakan nama supplier asli dari data."""
 
         # 6. Call Gemini AI
         llm_key = os.environ.get("EMERGENT_LLM_KEY")
