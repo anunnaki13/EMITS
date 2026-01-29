@@ -118,8 +118,8 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 
 ### P1 (High Priority)
 - [x] Real export PDF/Excel implementation di Laporan ✅ DONE
+- [x] Add PO Batubara dan Merit Order ke halaman Laporan ✅ DONE
 - [ ] Server-side pagination
-- [ ] Add PO Batubara dan Merit Order ke halaman Laporan
 
 ### P2 (Medium Priority)
 - [ ] Refactor backend server.py ke modular structure
