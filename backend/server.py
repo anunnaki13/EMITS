@@ -2874,34 +2874,38 @@ async def upload_sumber_pemakaian_excel(
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents), header=None)
         
-        # Column mapping based on Sumber Pemakaian.xlsx structure:
-        # Col 0: TANGGAL
-        # Col 1: STOCK AWAL (MT)
-        # Col 2-13: Unit 1 (all suppliers, A/B/C zones)
-        # Col 14-25: Unit 2 (all suppliers, A/B/C zones)
+        # CORRECT Column mapping for Sumber Pemakaian.xlsx:
+        # Row 0: TANGGAL | STOCK AWAL | (merged cells, not used)
+        # Row 1: Supplier names starting from Col 2
+        # Row 2: UNIT1/UNIT2 indicators
+        # Row 3: A, B, C zone indicators
+        # Row 4+: Data rows
         
-        # Get supplier names from row 0 (starting from column 2)
-        suppliers_row = df.iloc[0, 2:].tolist()
+        # Get supplier names from ROW 1 (starting from column 2)
+        suppliers_row = df.iloc[1, 2:].tolist()
         
-        # Identify unique suppliers and their column ranges
-        supplier_columns = {}
+        # Identify unique suppliers and count columns per supplier
+        supplier_columns = []
         current_supplier = None
-        col_start = 2
+        col_count = 0
         
         for i, cell_value in enumerate(suppliers_row):
             actual_col = i + 2
             if pd.notna(cell_value) and str(cell_value).strip() != '':
-                if current_supplier:
-                    supplier_columns[current_supplier] = (col_start, actual_col)
+                if current_supplier and col_count > 0:
+                    supplier_columns.append((current_supplier, col_count))
                 current_supplier = str(cell_value).strip()
-                col_start = actual_col
+                col_count = 1
+            else:
+                col_count += 1
         
+        # Add last supplier
         if current_supplier:
-            supplier_columns[current_supplier] = (col_start, len(df.columns))
+            supplier_columns.append((current_supplier, col_count))
         
-        logger.info(f"Found suppliers for pemakaian: {list(supplier_columns.keys())}")
+        logger.info(f"Found suppliers for pemakaian: {[s[0] for s in supplier_columns]}")
         
-        # Parse data rows (starting from row 4, after merged headers)
+        # Parse data rows (starting from row 4)
         inserted_count = 0
         for idx in range(4, len(df)):
             row = df.iloc[idx]
@@ -2922,9 +2926,11 @@ async def upload_sumber_pemakaian_excel(
             
             stock_awal = float(row[1]) if pd.notna(row[1]) and row[1] != '' else 0.0
             
-            # Parse suppliers data with UNIT1 and UNIT2 structure
+            # Parse suppliers data
             suppliers_data = {}
-            for supplier_name, (start_col, end_col) in supplier_columns.items():
+            col_offset = 2
+            
+            for supplier_name, num_cols in supplier_columns:
                 supplier_key = supplier_name.strip().replace(" ", "_").replace("(", "").replace(")", "").replace("&", "").replace("-", "_").upper()
                 
                 # Each supplier has 6 columns: UNIT1 (A,B,C) and UNIT2 (A,B,C)
@@ -2933,31 +2939,23 @@ async def upload_sumber_pemakaian_excel(
                     "UNIT2": {"A": 0.0, "B": 0.0, "C": 0.0}
                 }
                 
-                col_idx = 0
-                for col in range(start_col, min(start_col + 6, end_col)):
+                # Read the columns for this supplier
+                for i in range(min(num_cols, 6)):
+                    col = col_offset + i
                     if col < len(row):
-                        unit = "UNIT1" if col_idx < 3 else "UNIT2"
-                        zone = ["A", "B", "C"][col_idx % 3]
+                        unit = "UNIT1" if i < 3 else "UNIT2"
+                        zone = ["A", "B", "C"][i % 3]
                         try:
                             units_data[unit][zone] = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
                         except:
                             units_data[unit][zone] = 0.0
-                        col_idx += 1
                 
                 suppliers_data[supplier_key] = units_data
+                col_offset += num_cols
             
-            # Calculate total pemakaian: SUM of ALL Unit1 + Unit2 columns (col 2-25)
+            # Calculate total pemakaian: SUM from column 2 onwards
             total_pemakaian = 0
-            # Unit 1: columns 2-13 (12 columns)
-            for col in range(2, min(14, len(row))):
-                try:
-                    val = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
-                    total_pemakaian += val
-                except:
-                    pass
-            
-            # Unit 2: columns 14-25 (12 columns)  
-            for col in range(14, min(26, len(row))):
+            for col in range(2, len(row)):
                 try:
                     val = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
                     total_pemakaian += val
