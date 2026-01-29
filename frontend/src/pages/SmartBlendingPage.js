@@ -36,10 +36,10 @@ const SmartBlendingPage = () => {
   const [loading, setLoading] = useState(false);
   const [recommendation, setRecommendation] = useState(null);
   
-  // Input states
-  const [targetGCV, setTargetGCV] = useState(4000);
-  const [maxAsh, setMaxAsh] = useState(7.0);
-  const [maxSulphur, setMaxSulphur] = useState(0.8);
+  // Input states - default values from typical coal parameters
+  const [targetGCV, setTargetGCV] = useState(4000);  // Typical: 4000 kcal/kg
+  const [maxAsh, setMaxAsh] = useState(5.0);         // Typical: 5%
+  const [maxSulphur, setMaxSulphur] = useState(1.8); // Typical: 1.8%
   const [targetQuantity, setTargetQuantity] = useState(10000);
 
   const handleGetRecommendation = async () => {
