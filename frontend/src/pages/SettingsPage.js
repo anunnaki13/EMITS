@@ -349,6 +349,77 @@ const SettingsPage = () => {
         </Card>
       </div>
 
+      {/* COA Settings Card */}
+      <Card className="glass-card border-white/5 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+            <Scale className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <h3 className="text-white font-medium">Pengaturan COA Reconciliation</h3>
+            <p className="text-slate-500 text-sm">
+              Konfigurasi perhitungan Potential Loss
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-sm flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Harga per kCal per Ton (Rp)
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={coaSettings.price_per_kcal_per_ton}
+                onChange={(e) => setCoaSettings({...coaSettings, price_per_kcal_per_ton: e.target.value})}
+                placeholder="Contoh: 150"
+                className="bg-slate-900/50 border-slate-700 text-white"
+                data-testid="coa-price-input"
+              />
+              <p className="text-xs text-slate-500">
+                Digunakan untuk menghitung estimasi Potential Loss pada COA Reconciliation
+              </p>
+            </div>
+            
+            <div className="bg-slate-900/30 rounded-lg p-3 border border-white/5">
+              <p className="text-xs text-slate-400">
+                <span className="text-amber-400 font-medium">Formula:</span><br/>
+                Potential Loss = Σ (Delta_GCV × Tonase × Harga_per_kCal_per_Ton)
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                Dimana Delta_GCV = Loading_GCV - Internal_GCV (hanya jika positif)
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/20">
+              <p className="text-sm text-cyan-300 font-medium mb-2">Nilai Saat Ini</p>
+              <p className="text-2xl font-bold text-white">
+                {coaSettings.price_per_kcal_per_ton 
+                  ? `Rp ${parseFloat(coaSettings.price_per_kcal_per_ton).toLocaleString("id-ID")}`
+                  : "Belum diatur"
+                }
+              </p>
+              <p className="text-xs text-slate-400 mt-1">per kCal per Ton</p>
+            </div>
+            
+            <Button 
+              onClick={handleSaveCOASettings}
+              disabled={savingCOA}
+              className="w-full bg-amber-600 hover:bg-amber-500"
+              data-testid="save-coa-settings-btn"
+            >
+              {savingCOA ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Simpan Pengaturan COA
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       {/* AI Settings Card */}
       <Card className="glass-card border-white/5 p-6">
         <div className="flex items-center gap-3 mb-4">
