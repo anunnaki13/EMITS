@@ -32,6 +32,7 @@ import {
   BarChart3
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
