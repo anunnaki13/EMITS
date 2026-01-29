@@ -60,6 +60,12 @@ const SettingsPage = () => {
   });
   const [savingAI, setSavingAI] = useState(false);
   
+  // COA Settings state
+  const [coaSettings, setCoaSettings] = useState({
+    price_per_kcal_per_ton: ""
+  });
+  const [savingCOA, setSavingCOA] = useState(false);
+  
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
