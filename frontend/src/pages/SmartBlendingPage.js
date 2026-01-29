@@ -74,19 +74,19 @@ const SmartBlendingPage = () => {
       metric: 'GCV',
       Target: targetGCV,
       Predicted: recommendation.ai_recommendation.predicted_quality.gcv,
-      fullMark: 6000
+      fullMark: 4700  // Max from parameter range
     },
     {
       metric: 'Ash',
       Target: maxAsh,
       Predicted: recommendation.ai_recommendation.predicted_quality.ash,
-      fullMark: 15
+      fullMark: 6  // Max from parameter range
     },
     {
       metric: 'Sulphur',
       Target: maxSulphur,
       Predicted: recommendation.ai_recommendation.predicted_quality.sulphur,
-      fullMark: 2
+      fullMark: 2.2  // Max from parameter range
     }
   ] : [];
 
