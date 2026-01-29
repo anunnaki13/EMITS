@@ -2760,6 +2760,207 @@ async def delete_all_smart_stock(
         "deleted_count": result.deleted_count
     }
 
+# ==================== SUMBER PEMAKAIAN ENDPOINTS ====================
+
+@api_router.get("/sumber-pemakaian")
+async def get_sumber_pemakaian(
+    limit: int = Query(100, ge=1, le=500),
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get sumber pemakaian data with optional date range filter"""
+    
+    query = {}
+    if start_date or end_date:
+        date_query = {}
+        if start_date:
+            date_query["$gte"] = start_date
+        if end_date:
+            date_query["$lte"] = end_date
+        query["date"] = date_query
+    
+    pemakaian = await db.sumberpemakaian.find(query, {"_id": 0}).sort("date", -1).limit(limit).to_list(limit)
+    
+    # Get last 30 days for chart
+    from datetime import datetime, timezone, timedelta
+    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+    recent_pemakaian = await db.sumberpemakaian.find(
+        {"date": {"$gte": thirty_days_ago}},
+        {"_id": 0}
+    ).sort("date", 1).to_list(100)
+    
+    return {
+        "data": pemakaian,
+        "recent_30_days": recent_pemakaian,
+        "total_count": len(pemakaian)
+    }
+
+@api_router.post("/sumber-pemakaian/entry")
+async def create_sumber_pemakaian_entry(
+    entry: SumberPemakaianEntry,
+    user: dict = Depends(get_current_user)
+):
+    """Create new manual sumber pemakaian entry"""
+    
+    # Calculate total pemakaian from suppliers
+    total = 0
+    for supplier, units in entry.suppliers.items():
+        for unit, zones in units.items():
+            for zone, value in zones.items():
+                total += value if value else 0
+    
+    entry.total_pemakaian = total
+    
+    new_entry = {
+        "id": str(uuid.uuid4()),
+        "date": entry.date,
+        "stock_awal": entry.stock_awal,
+        "suppliers": entry.suppliers,
+        "total_pemakaian": entry.total_pemakaian,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.sumberpemakaian.insert_one(new_entry)
+    return {"message": "Entry created successfully", "id": new_entry["id"]}
+
+@api_router.post("/sumber-pemakaian/upload")
+async def upload_sumber_pemakaian_excel(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user)
+):
+    """Upload Excel file and parse sumber pemakaian data"""
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="File must be Excel format (.xlsx or .xls)")
+    
+    try:
+        contents = await file.read()
+        df = pd.read_excel(io.BytesIO(contents), header=None)
+        
+        # Get supplier names from row 0 (starting from column 2)
+        suppliers_row = df.iloc[0, 2:].tolist()
+        
+        # Identify unique suppliers and their column ranges
+        supplier_columns = {}
+        current_supplier = None
+        col_start = 2
+        
+        for i, cell_value in enumerate(suppliers_row):
+            actual_col = i + 2
+            if pd.notna(cell_value) and str(cell_value).strip() != '':
+                if current_supplier:
+                    supplier_columns[current_supplier] = (col_start, actual_col)
+                current_supplier = str(cell_value).strip()
+                col_start = actual_col
+        
+        if current_supplier:
+            supplier_columns[current_supplier] = (col_start, len(df.columns))
+        
+        logger.info(f"Found suppliers for pemakaian: {list(supplier_columns.keys())}")
+        
+        # Parse data rows (starting from row 4, after merged headers)
+        inserted_count = 0
+        for idx in range(4, len(df)):
+            row = df.iloc[idx]
+            
+            if pd.isna(row[0]):
+                continue
+            
+            # Parse date
+            try:
+                if isinstance(row[0], (int, float)):
+                    date_value = pd.to_datetime(row[0], origin='1899-12-30', unit='D')
+                else:
+                    date_value = pd.to_datetime(row[0])
+                date_str = date_value.strftime("%Y-%m-%d")
+            except Exception as e:
+                logger.warning(f"Date parsing error at row {idx}: {e}")
+                continue
+            
+            stock_awal = float(row[1]) if pd.notna(row[1]) and row[1] != '' else 0.0
+            
+            # Parse suppliers data with UNIT1 and UNIT2 structure
+            suppliers_data = {}
+            for supplier_name, (start_col, end_col) in supplier_columns.items():
+                supplier_key = supplier_name.strip().replace(" ", "_").replace("(", "").replace(")", "").replace("&", "").replace("-", "_").upper()
+                
+                # Each supplier has 6 columns: UNIT1 (A,B,C) and UNIT2 (A,B,C)
+                units_data = {
+                    "UNIT1": {"A": 0.0, "B": 0.0, "C": 0.0},
+                    "UNIT2": {"A": 0.0, "B": 0.0, "C": 0.0}
+                }
+                
+                col_idx = 0
+                for col in range(start_col, min(start_col + 6, end_col)):
+                    if col < len(row):
+                        unit = "UNIT1" if col_idx < 3 else "UNIT2"
+                        zone = ["A", "B", "C"][col_idx % 3]
+                        try:
+                            units_data[unit][zone] = float(row[col]) if pd.notna(row[col]) and row[col] != '' else 0.0
+                        except:
+                            units_data[unit][zone] = 0.0
+                        col_idx += 1
+                
+                suppliers_data[supplier_key] = units_data
+            
+            # Calculate total pemakaian
+            total_pemakaian = 0
+            for units in suppliers_data.values():
+                for zones in units.values():
+                    for value in zones.values():
+                        total_pemakaian += value
+            
+            # Check if entry already exists
+            existing = await db.sumberpemakaian.find_one({"date": date_str})
+            
+            if existing:
+                await db.sumberpemakaian.update_one(
+                    {"date": date_str},
+                    {"$set": {
+                        "stock_awal": stock_awal,
+                        "suppliers": suppliers_data,
+                        "total_pemakaian": total_pemakaian,
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+            else:
+                new_entry = {
+                    "id": str(uuid.uuid4()),
+                    "date": date_str,
+                    "stock_awal": stock_awal,
+                    "suppliers": suppliers_data,
+                    "total_pemakaian": total_pemakaian,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.sumberpemakaian.insert_one(new_entry)
+            
+            inserted_count += 1
+        
+        return {
+            "message": f"Successfully processed {inserted_count} entries",
+            "count": inserted_count
+        }
+    
+    except Exception as e:
+        logger.error(f"Error processing Excel file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
+
+@api_router.delete("/sumber-pemakaian")
+async def delete_all_sumber_pemakaian(
+    user: dict = Depends(get_current_user)
+):
+    """Delete all sumber pemakaian entries"""
+    
+    result = await db.sumberpemakaian.delete_many({})
+    
+    return {
+        "message": f"Successfully deleted {result.deleted_count} entries",
+        "deleted_count": result.deleted_count
+    }
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
