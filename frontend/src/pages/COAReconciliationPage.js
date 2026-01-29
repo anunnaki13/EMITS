@@ -857,15 +857,20 @@ const COAReconciliationPage = () => {
 
               {/* Radar Chart */}
               <div className="bg-slate-900/50 rounded-lg p-4">
-                <h4 className="text-sm font-medium mb-4">Grafik Radar - Profil Kualitas</h4>
+                <h4 className="text-sm font-medium mb-4">
+                  Grafik Radar - Profil Kualitas {selectedRecord.umpire_gcv_arb && "(Quad Check)"}
+                </h4>
                 <ResponsiveContainer width="100%" height={250}>
                   <RadarChart data={radarData}>
                     <PolarGrid stroke="#334155" />
                     <PolarAngleAxis dataKey="parameter" tick={{ fill: "#94a3b8", fontSize: 11 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 9 }} />
-                    <Radar name="Loading" dataKey="loading" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
-                    <Radar name="Unloading" dataKey="unloading" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
-                    <Radar name="Internal" dataKey="internal" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.3} />
+                    <Radar name="Loading" dataKey="loading" stroke="#22c55e" fill="#22c55e" fillOpacity={0.2} />
+                    <Radar name="Unloading" dataKey="unloading" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
+                    <Radar name="Internal" dataKey="internal" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
+                    {selectedRecord.umpire_gcv_arb && (
+                      <Radar name="Umpire" dataKey="umpire" stroke="#a855f7" fill="#a855f7" fillOpacity={0.3} />
+                    )}
                     <Legend />
                     <Tooltip contentStyle={{ backgroundColor: "#0B1221", border: "1px solid #1e293b" }} />
                   </RadarChart>
@@ -876,7 +881,7 @@ const COAReconciliationPage = () => {
               </div>
 
               {/* Detailed Values */}
-              <div className="grid grid-cols-3 gap-3 text-sm">
+              <div className={`grid ${selectedRecord.umpire_gcv_arb ? "grid-cols-4" : "grid-cols-3"} gap-3 text-sm`}>
                 <div className="bg-green-500/10 rounded-lg p-3">
                   <p className="text-green-400 font-medium text-xs mb-2">Loading</p>
                   <p>GCV: {formatNumber(selectedRecord.loading_gcv_arb)}</p>
@@ -898,6 +903,15 @@ const COAReconciliationPage = () => {
                   <p>Ash: {selectedRecord.internal_ash_arb || "-"}%</p>
                   <p>S: {selectedRecord.internal_ts_arb || "-"}%</p>
                 </div>
+                {selectedRecord.umpire_gcv_arb && (
+                  <div className="bg-purple-500/10 rounded-lg p-3">
+                    <p className="text-purple-400 font-medium text-xs mb-2">Umpire</p>
+                    <p>GCV: {formatNumber(selectedRecord.umpire_gcv_arb)}</p>
+                    <p>TM: {selectedRecord.umpire_tm_arb || "-"}%</p>
+                    <p>Ash: {selectedRecord.umpire_ash_arb || "-"}%</p>
+                    <p>S: {selectedRecord.umpire_ts_arb || "-"}%</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -913,7 +927,7 @@ const COAReconciliationPage = () => {
               Ajukan Pengujian Umpire
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              Shipment #{selectedRecord?.shipment} - {selectedRecord?.suppliers}
+              Shipment {selectedRecord?.shipment} - {selectedRecord?.suppliers}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
