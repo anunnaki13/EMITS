@@ -241,7 +241,7 @@ const SumberPemakaianPage = () => {
     }
   };
 
-  // Prepare data for Area Chart (Stock Awal trend)
+  // Prepare data for Area Chart (Stock Awal trend - last 30 days ONLY)
   const areaChartData = recent30Days.map(item => ({
     date: new Date(item.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
     stock: item.stock_awal
