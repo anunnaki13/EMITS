@@ -55,9 +55,11 @@ const TruckingPage = () => {
 
   const fetchTrucking = async () => {
     try {
-      const params = search ? { search } : {};
+      const params = { page: 1, page_size: 10000 };
+      if (search) params.search = search;
       const response = await axios.get(`${API_URL}/api/trucking`, { headers: getAuthHeader(), params });
-      const sortedData = response.data.reverse();
+      const data = response.data.items || response.data;
+      const sortedData = Array.isArray(data) ? data.reverse() : [];
       setTrucking(sortedData);
     } catch (error) {
       toast.error("Gagal memuat data trucking");
