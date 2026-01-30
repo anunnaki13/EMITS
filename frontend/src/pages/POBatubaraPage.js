@@ -137,9 +137,10 @@ const POBatubaraPage = () => {
     try {
       const response = await axios.get(`${API_URL}/api/po-batubara`, { 
         headers: getAuthHeader(),
-        params: { year, month }
+        params: { year, month, page: 1, page_size: 10000 }
       });
-      return response.data;
+      const data = response.data.items || response.data;
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       toast.error("Gagal memuat data bulan");
       return [];
