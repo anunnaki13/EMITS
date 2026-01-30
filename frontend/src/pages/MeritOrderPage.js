@@ -100,8 +100,9 @@ const MeritOrderPage = () => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/merit-order`, { headers: getAuthHeader() });
-      setData(response.data);
+      const response = await axios.get(`${API_URL}/api/merit-order`, { headers: getAuthHeader(), params: { page: 1, page_size: 10000 } });
+      const data = response.data.items || response.data;
+      setData(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error("Gagal memuat data Merit Order");
     } finally {
