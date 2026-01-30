@@ -56,10 +56,13 @@ const VesselPage = () => {
 
   const fetchVessels = async () => {
     try {
-      const params = search ? { search } : {};
+      const params = { page: 1, page_size: 10000 };
+      if (search) params.search = search;
       const response = await axios.get(`${API_URL}/api/vessels`, { headers: getAuthHeader(), params });
+      // Handle paginated response format
+      const data = response.data.items || response.data;
       // Sort by newest first (reverse order)
-      const sortedData = response.data.reverse();
+      const sortedData = Array.isArray(data) ? data.reverse() : [];
       setVessels(sortedData);
     } catch (error) {
       toast.error("Gagal memuat data vessel");
