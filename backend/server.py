@@ -663,7 +663,7 @@ async def create_vessel(data: VesselTNYCreate, user: dict = Depends(require_role
 @api_router.get("/vessels")
 async def get_vessels(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     search: Optional[str] = None,
     supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
@@ -744,7 +744,7 @@ async def create_barge(data: BargeTNYCreate, user: dict = Depends(require_role([
 @api_router.get("/barges")
 async def get_barges(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     search: Optional[str] = None,
     supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
@@ -824,7 +824,7 @@ async def create_trucking(data: TruckingTNYCreate, user: dict = Depends(require_
 @api_router.get("/trucking")
 async def get_trucking(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     search: Optional[str] = None,
     supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
@@ -904,7 +904,7 @@ async def create_biomassa(data: BiomassaTNYCreate, user: dict = Depends(require_
 @api_router.get("/biomassa")
 async def get_biomassa(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     search: Optional[str] = None,
     supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
@@ -971,7 +971,7 @@ async def delete_all_biomassa(user: dict = Depends(require_role(["admin"]))):
 @api_router.get("/po-batubara")
 async def get_po_batubara(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     year: Optional[int] = None,
     month: Optional[int] = None,
     search: Optional[str] = None,
@@ -1179,7 +1179,7 @@ async def upload_po_batubara_excel(file: UploadFile = File(...), user: dict = De
 @api_router.get("/merit-order")
 async def get_merit_orders(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     year: Optional[int] = None,
     month: Optional[int] = None,
     search: Optional[str] = None,
@@ -3059,7 +3059,7 @@ class SumberPemakaianEntry(BaseModel):
 
 @api_router.get("/smart-stock")
 async def get_smart_stock(
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=50000),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     user: dict = Depends(get_current_user)
@@ -3333,7 +3333,7 @@ async def delete_all_smart_stock(
 
 @api_router.get("/sumber-pemakaian")
 async def get_sumber_pemakaian(
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=50000),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     user: dict = Depends(get_current_user)
@@ -3866,7 +3866,7 @@ class UmpireProposal(BaseModel):
 @api_router.get("/coa-reconciliation")
 async def get_coa_reconciliation(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     status: Optional[str] = None,
     search: Optional[str] = None,
     date_from: Optional[str] = None,
@@ -3954,7 +3954,7 @@ async def get_supplier_consistency(user: dict = Depends(get_current_user)):
 @api_router.get("/coa-reconciliation/dispute-monitor")
 async def get_dispute_monitor(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=50000),
     umpire_status: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
