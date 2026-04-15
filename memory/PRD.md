@@ -72,6 +72,7 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 - ✅ **API_REFERENCE.md** referensi endpoint backend utama (Apr 15, 2026)
 - ✅ **DATABASE_SCHEMA.md** dokumentasi skema MongoDB dan rekomendasi indexing (Apr 15, 2026)
 - ✅ **DEPLOYMENT_GUIDE.md** panduan deployment detail ke VPS (Apr 15, 2026)
+- ✅ **pltu-tenayan-source-review.zip** paket source code unduhan untuk review lokal (Apr 15, 2026)
 
 ### Navigation Structure
 ```
