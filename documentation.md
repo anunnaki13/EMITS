@@ -718,3 +718,15 @@ Prioritas test:
 ## 16. Kesimpulan
 
 Aplikasi ini sudah mencakup domain operasional yang cukup luas dan bernilai tinggi untuk pengelolaan bahan bakar PLTU. Fondasi bisnisnya kuat: CRUD operasional, dashboard, smart stock, AI, pelaporan, dan COA dispute sudah tersedia. Fokus pengembangan berikutnya sebaiknya bukan menambah terlalu banyak fitur baru, tetapi menurunkan technical debt, menambah test coverage, dan memodularisasi backend agar maintainable untuk jangka panjang.
+
+---
+
+## 17. Dokumen Tambahan
+
+Dokumen pendukung developer yang tersedia di root project:
+- `README.md`
+- `documentation.md`
+- `API_REFERENCE.md`
+- `DATABASE_SCHEMA.md`
+- `DEPLOYMENT_GUIDE.md`
+- `frontend/public/docs/Smart_Blending_AI_Formula.md`

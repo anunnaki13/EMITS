@@ -69,6 +69,9 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
   - Umpire Proposal workflow dengan audit trail
 - ✅ **README.md** teknis proyek di root aplikasi (Jan 30, 2026)
 - ✅ **documentation.md** teknis lengkap untuk developer aplikasi di root aplikasi (Jan 30, 2026)
+- ✅ **API_REFERENCE.md** referensi endpoint backend utama (Apr 15, 2026)
+- ✅ **DATABASE_SCHEMA.md** dokumentasi skema MongoDB dan rekomendasi indexing (Apr 15, 2026)
+- ✅ **DEPLOYMENT_GUIDE.md** panduan deployment detail ke VPS (Apr 15, 2026)
 
 ### Navigation Structure
 ```

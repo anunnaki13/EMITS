@@ -169,6 +169,9 @@ pytest tests -q
 
 Untuk dokumentasi teknis yang lebih lengkap, lihat file berikut:
 - [`documentation.md`](./documentation.md)
+- [`API_REFERENCE.md`](./API_REFERENCE.md)
+- [`DATABASE_SCHEMA.md`](./DATABASE_SCHEMA.md)
+- [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md)
 - [`frontend/public/docs/Smart_Blending_AI_Formula.md`](./frontend/public/docs/Smart_Blending_AI_Formula.md)
 
 ## Catatan Teknis Saat Ini
