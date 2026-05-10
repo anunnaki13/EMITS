@@ -1,0 +1,17 @@
+/login	Login	false	public route
+/	(redirect)	false	<Navigate to="/dashboard" replace />
+/dashboard	Dashboard	true	ProtectedRoute (any-authenticated)
+/vessel	VesselPage	true	ProtectedRoute (any-authenticated)
+/barge	BargePage	true	ProtectedRoute (any-authenticated)
+/trucking	TruckingPage	true	ProtectedRoute (any-authenticated)
+/biomassa	BiomassaPage	true	ProtectedRoute (any-authenticated)
+/po-batubara	POBatubaraPage	true	ProtectedRoute (any-authenticated)
+/merit-order	MeritOrderPage	true	ProtectedRoute (any-authenticated)
+/smart-stock/sumber-penerimaan	SmartStockPage	true	ProtectedRoute (any-authenticated)
+/smart-stock/sumber-pemakaian	SumberPemakaianPage	true	ProtectedRoute (any-authenticated)
+/smart-stock/smart-blending	SmartBlendingPage	true	ProtectedRoute (any-authenticated)
+/ai-intelligence	AIIntelligencePage	true	ProtectedRoute (any-authenticated)
+/laporan	LaporanPage	true	ProtectedRoute (any-authenticated)
+/coa-reconciliation	COAReconciliationPage	true	ProtectedRoute (any-authenticated)
+/dispute-monitor	DisputeMonitorPage	true	ProtectedRoute (any-authenticated)
+/settings	SettingsPage	true	ProtectedRoute allowedRoles=["admin"]

@@ -1,0 +1,15 @@
+Dashboard	/dashboard	icon=LayoutDashboard; section=Menu Utama; top-level Link
+Vessel TNY	/vessel	icon=Ship; section=Rekap Penerimaan BB (collapsible)
+Barge TNY	/barge	icon=Anchor; section=Rekap Penerimaan BB
+Trucking TNY	/trucking	icon=Truck; section=Rekap Penerimaan BB
+Biomassa TNY	/biomassa	icon=Leaf; section=Rekap Penerimaan BB
+Purchase Order Batubara	/po-batubara	icon=ShoppingCart; section=Rekap Penerimaan BB
+Merit Order	/merit-order	icon=Award; section=Rekap Penerimaan BB
+Sumber Penerimaan	/smart-stock/sumber-penerimaan	icon=Package; section=Smart Stock (collapsible)
+Sumber Pemakaian	/smart-stock/sumber-pemakaian	icon=TrendingUp; section=Smart Stock
+Smart Blending AI	/smart-stock/smart-blending	icon=Sparkles; section=Smart Stock
+Laporan	/laporan	icon=FileText; section=Menu Utama; top-level Link
+Triple Check	/coa-reconciliation	icon=Scale; section=COA Reconciliation (collapsible)
+Dispute Monitor	/dispute-monitor	icon=Gavel; section=COA Reconciliation
+AI Intelligence	/ai-intelligence	icon=Bot; section=Menu Utama; top-level Link
+Pengaturan	/settings	icon=Settings; section=Administrasi (admin role-gated; rendered only when user.role==="admin")
