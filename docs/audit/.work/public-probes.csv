@@ -1,0 +1,4 @@
+/api/|GET|200
+/api/health|GET|200
+/api/auth/login|POST(empty-body)|422
+/api/auth/register|POST(empty-body)|422

@@ -1,0 +1,10 @@
+/api/vessels|items,page,page_size,total,total_pages
+/api/barges|items,page,page_size,total,total_pages
+/api/trucking|items,page,page_size,total,total_pages
+/api/biomassa|items,page,page_size,total,total_pages
+/api/po-batubara|items,page,page_size,total,total_pages
+/api/merit-order|items,page,page_size,total,total_pages
+/api/coa-reconciliation|items,page,page_size,total,total_pages
+/api/smart-stock|data,recent_30_days,supplier_totals,total_count
+/api/sumber-pemakaian|data,recent_30_days,stats,total_count
+/api/ai/sessions|items,page,page_size,total,total_pages
