@@ -1,5 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Query, Response
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Query, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -33,6 +35,26 @@ JWT_EXPIRATION_HOURS = 24
 
 # Create the main app
 app = FastAPI(title="PLTU Tenayan Fuel Management System")
+
+
+# ==================== AUTHFIX-02: VALIDATION ERROR HANDLER ====================
+# CONS-auth-header (locked SPEC) requires HTTP 400 for malformed body on /api/auth/*.
+# FastAPI's default for Pydantic ValidationError is HTTP 422 — we remap ONLY for
+# /api/auth/* paths so other routes (vessels/COA/etc.) keep the standard 422 default.
+# Decision record: pltu-tenayan-full-backup/docs/audit/AUTH_CONTRACT.md (D-AUTH-01).
+@app.exception_handler(RequestValidationError)
+async def auth_validation_handler(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api/auth/"):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": exc.errors()},
+        )
+    # Fall through to FastAPI default for non-auth routes (preserve 422 elsewhere).
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")

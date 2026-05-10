@@ -1,4 +1,8 @@
 # Authentication Router
+# NOTE: AUTHFIX-02 — when this router is eventually mounted (Phase 7 UPGRADE-01),
+# the `auth_validation_handler` registered on the FastAPI app instance in server.py
+# will apply here automatically (it scopes by request.url.path startswith('/api/auth/')).
+# No router-side handler is needed here. Decision record: docs/audit/AUTH_CONTRACT.md.
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List
