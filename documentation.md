@@ -730,3 +730,61 @@ Dokumen pendukung developer yang tersedia di root project:
 - `DATABASE_SCHEMA.md`
 - `DEPLOYMENT_GUIDE.md`
 - `frontend/public/docs/Smart_Blending_AI_Formula.md`
+
+
+## Known Issues
+
+Operational state of the system as of 2026-05-10. New issues land here with
+a status badge: `**[mitigated]**` (impact contained but root cause upstream),
+`**[pending-Phase-N]**` (scheduled for closure), or `**[accepted]**` (verified
+non-impactful today). The README points here as the canonical operator-facing
+surface.
+
+- **[mitigated]** Login: `ResizeObserver loop completed with undelivered notifications`
+  console emission on the register tab. Root cause is upstream in `@radix-ui/react-select`
+  Tabs-content remount machinery. Suppressed at the page level by
+  `frontend/public/index.html:49-65`. Login contract path is regression-protected
+  by `backend/tests/test_auth_session.py::test_login_then_me_rehydrates_same_user`
+  (Phase-2 plan 02-02). Full disposition + Phase-3 follow-up (Radix upgrade
+  evaluation): see `docs/audit/LOGIN_BUG_RESOLUTION.md`. (Cite: `docs/audit/LOGIN_BUG_RESOLUTION.md`,
+  `docs/audit/AUTH_CONTRACT.md`, `.planning/decisions/ADR-004-jwt-bcrypt-three-role-auth.md`)
+
+- **[pending-Phase-6]** Smart Blending AI: Universal LLM Key budget exhausted;
+  live calls fail with `BudgetExceededError`. Code path is correct. Phase 6
+  (OPS-01, OPS-02) restores the budget and adds graceful UI error surfacing.
+  Until then, the Smart Blending UI surfaces the raw error — operators should
+  use historical recommendations from `ai_conversations` instead. (Cite:
+  `.planning/ROADMAP.md` §"Phase 6: Operational Unblocks", `.planning/REQUIREMENTS.md` OPS-01/OPS-02)
+
+- **[pending-Phase-6]** Excel parser verification: the parser for
+  `total penerimaan.xlsx` has not been validated against a real production
+  sample (only synthetic fixtures). Phase 6 OPS-03 closes this with a
+  regression fixture checked into the repo. Until then, operators should
+  double-check upload results against the Excel source manually. (Cite:
+  `.planning/REQUIREMENTS.md` OPS-03)
+
+- **[pending-Phase-5]** Collection naming debt: four collection pairs
+  maintain duplicate names (`smartstock`/`smart_stock`,
+  `sumber_pemakaian`/`sumberpemakaian`, `app_settings`/`settings`,
+  `ai_chat_history`/`ai_conversations`). Active read targets are documented
+  in `DATABASE_SCHEMA.md`; legacy reads still occur in some code paths.
+  Phase 5 (DEBT-01..05) picks canonical winners, migrates live data,
+  and removes legacy reads. (Cite: `DATABASE_SCHEMA.md`,
+  `.planning/intel/constraints.md` → CONS-collection-naming-debt,
+  `.planning/ROADMAP.md` §"Phase 5: Collection Naming Debt Resolution")
+
+- **[accepted]** Audit-probe synthetic users: 3 `audit-probe-*@audit-probes-2026.com`
+  users were inserted into the live `users` collection during Phase-1 plan
+  01-04 register-flow audit. Verified clean as of 2026-05-10 (live count 0).
+  Phase-2 conftest cleanup fixture (`backend/tests/conftest.py`) re-runs the
+  anchor-prefixed deletion on every test session; documented for record only —
+  no active leak today. (Cite: `docs/audit/LOGIN_BUG_RESOLUTION.md` lines 75-77,
+  `.planning/phases/02-authentication-stabilization/VERIFICATION.md` SS-05)
+
+### Adding a new entry
+
+1. Pick the status badge (`mitigated`, `pending-Phase-N`, or `accepted`).
+2. One paragraph: what the user observes, what the root cause is, what the
+   mitigation or schedule is.
+3. Cite at least one source file (relative path from repo root).
+4. Commit on the inner repo with subject `docs(known-issues): add <slug>`.

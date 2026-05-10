@@ -6,6 +6,8 @@ Aplikasi full-stack untuk manajemen penerimaan bahan bakar, pemantauan kualitas 
 
 Sistem ini dibangun untuk membantu tim operasional, admin, dan developer mengelola data penerimaan batubara/biomassa dari berbagai jalur logistik, memonitor kualitas bahan bakar, menghasilkan laporan, serta menjalankan analisis berbasis AI untuk stok, blending, kontrak, boiler, dan dispute quality control.
 
+> **Status terkini:** lihat [Known Issues](documentation.md#known-issues) untuk login-bug status, Smart Blending AI budget, dan parser Excel verification status.
+
 ## Fitur Utama
 
 ### 1. Otentikasi dan Otorisasi
