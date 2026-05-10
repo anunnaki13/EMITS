@@ -12,7 +12,13 @@ import pytest
 import requests
 from pymongo import MongoClient
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8013").rstrip("/")
+# Phase 4: default the test port to 18013 (NOT 8013 — that is the live production backend).
+# This must happen BEFORE BASE_URL is set, so all tests inherit the test port.
+os.environ.setdefault("REACT_APP_BACKEND_URL", "http://127.0.0.1:18013")
+# Re-export so subprocess and downstream tests inherit.
+os.environ["REACT_APP_BACKEND_URL"] = os.environ["REACT_APP_BACKEND_URL"]
+
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "http://127.0.0.1:18013").rstrip("/")
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB_NAME = os.environ.get("DB_NAME", "pltu_tenayan")
 
@@ -27,9 +33,14 @@ def _require_env(name: str) -> str:
     return value
 
 
+def _base_url() -> str:
+    """Return the current test backend URL (may be updated by _backend_lifecycle)."""
+    return os.environ.get("REACT_APP_BACKEND_URL", "http://127.0.0.1:18013").rstrip("/")
+
+
 @pytest.fixture(scope="session")
 def base_url() -> str:
-    return BASE_URL
+    return _base_url()
 
 
 @pytest.fixture(scope="session")
@@ -91,3 +102,185 @@ def cleanup_audit_probe_users():
         print(f"[conftest] cleanup_audit_probe_users skipped: {e}")
     yield deleted
     # No teardown — tests do not insert audit-probe-* users.
+
+
+# ==================== Phase 4: Backend Lifecycle + DB Isolation ====================
+# D-11 / D-12: session-scoped autouse fixture that spawns the test backend on port 18013
+# (NOT 8013 — the live production backend stays untouched) with AI_FAKE=1 and
+# MONGO_TEST_DB_NAME injected. Drops the per-session test DB at teardown.
+
+import subprocess
+import time
+import signal
+import uuid
+import sys
+import tempfile
+from pathlib import Path
+import pymongo
+
+PHASE4_TEST_PORT = int(os.environ.get("PHASE4_TEST_PORT", "18013"))
+SESSION_ID = f"{os.getpid()}{uuid.uuid4().hex[:6]}"
+TEST_DB_NAME = f"pltu_tenayan_test_{SESSION_ID}"
+PID_FILE = Path(__file__).parent / ".backend.pid"
+BACKEND_DIR = Path(__file__).parent.parent  # pltu-tenayan-full-backup/backend/
+VENV_UVICORN = BACKEND_DIR / ".venv" / "bin" / "uvicorn"
+HEALTH_URL = f"http://127.0.0.1:{PHASE4_TEST_PORT}/api/health"
+
+# Export TEST_DB_NAME so factories and test code can read it.
+os.environ["MONGO_TEST_DB_NAME"] = TEST_DB_NAME
+
+
+def _probe_health(url: str = HEALTH_URL, timeout: int = 2) -> bool:
+    """Return True if the health endpoint responds 200."""
+    try:
+        r = requests.get(url, timeout=timeout)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def _wait_for_health(url: str = HEALTH_URL, timeout: int = 30) -> bool:
+    """Poll health endpoint until 200 or timeout. Returns True if healthy."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if _probe_health(url):
+            return True
+        time.sleep(0.5)
+    return False
+
+
+def _drop_test_db() -> None:
+    """Drop the per-session test database.
+
+    Safety guard: returns immediately if TEST_DB_NAME does not start with
+    'pltu_tenayan_test_' — this prevents accidentally dropping the production DB
+    under any circumstances (T-test-db-cross-contam-01 mitigation).
+    """
+    if not TEST_DB_NAME.startswith("pltu_tenayan_test_"):
+        return
+    try:
+        mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+        mongo_client = pymongo.MongoClient(mongo_url, serverSelectionTimeoutMS=3000)
+        mongo_client.drop_database(TEST_DB_NAME)
+        mongo_client.close()
+        print(f"[conftest] Dropped test DB: {TEST_DB_NAME}")
+    except Exception as e:
+        print(f"[conftest] _drop_test_db failed (non-fatal): {e}")
+
+
+def _kill_stale_pid() -> None:
+    """Read PID_FILE and kill the stale process if still running."""
+    if not PID_FILE.exists():
+        return
+    try:
+        old_pid = int(PID_FILE.read_text().strip())
+        os.kill(old_pid, 0)  # test if alive
+        os.kill(old_pid, signal.SIGTERM)
+        time.sleep(1)
+        try:
+            os.kill(old_pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    except (ValueError, ProcessLookupError):
+        pass  # Stale PID file but process already gone
+    PID_FILE.unlink(missing_ok=True)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _backend_lifecycle():
+    """D-11: Spawn uvicorn on PHASE4_TEST_PORT (default 18013) with AI_FAKE=1 and
+    per-session MONGO_TEST_DB_NAME. Teardown kills spawned process and drops test DB.
+
+    This fixture MUST write /tmp/emits-test-server.log on EVERY session (including
+    reuse paths) because Plan 04-04 test_no_outbound_llm_calls_observed greps that
+    file — no skip path is allowed (T-llm-budget-leak-01 invariant).
+
+    Port isolation: PHASE4_TEST_PORT defaults to 18013. The live production backend
+    on :8013 is NOT touched (T-prod-backend-clobber-01 mitigation).
+    """
+    sentinel_log = Path(tempfile.gettempdir()) / "emits-test-server.log"
+
+    # Update REACT_APP_BACKEND_URL to the test port so all fixtures use it.
+    os.environ["REACT_APP_BACKEND_URL"] = f"http://127.0.0.1:{PHASE4_TEST_PORT}"
+
+    # Clean up any stale PID from a previous crashed run.
+    _kill_stale_pid()
+
+    env = {
+        **os.environ,
+        "AI_FAKE": "1",
+        "MONGO_TEST_DB_NAME": TEST_DB_NAME,
+        "MONGO_URL": os.environ.get("MONGO_URL", "mongodb://localhost:27017"),
+        "DB_NAME": os.environ.get("DB_NAME", "pltu_tenayan"),
+        "JWT_SECRET": os.environ.get("JWT_SECRET", "tenayan-fuel-management-secret-key-2024"),
+        "CORS_ORIGINS": os.environ.get("CORS_ORIGINS", "*"),
+        # PYTHONPATH must include BACKEND_DIR so `from tests.fakes.ai_client import FakeAIClient`
+        # resolves inside the spawned subprocess (lazy import in get_ai_client()).
+        "PYTHONPATH": str(BACKEND_DIR),
+    }
+
+    log_fh = open(sentinel_log, "w")
+    proc = subprocess.Popen(
+        [str(VENV_UVICORN), "server:app", "--host", "127.0.0.1", "--port", str(PHASE4_TEST_PORT)],
+        cwd=str(BACKEND_DIR),
+        env=env,
+        stdout=log_fh,
+        stderr=subprocess.STDOUT,
+    )
+    spawned_pid = proc.pid
+    PID_FILE.write_text(str(spawned_pid))
+
+    health_url = f"http://127.0.0.1:{PHASE4_TEST_PORT}/api/health"
+    if not _wait_for_health(health_url, timeout=30):
+        proc.terminate()
+        log_fh.close()
+        PID_FILE.unlink(missing_ok=True)
+        pytest.fail(
+            f"Test backend (PID={spawned_pid}) did not start within 30s on port {PHASE4_TEST_PORT}. "
+            f"Check {sentinel_log} for details."
+        )
+
+    print(f"[conftest] Test backend started (PID={spawned_pid}) on port {PHASE4_TEST_PORT}, DB={TEST_DB_NAME}")
+
+    yield  # All tests run here
+
+    # Teardown: kill spawned process, close log, drop test DB.
+    try:
+        proc.terminate()
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+    log_fh.close()
+    PID_FILE.unlink(missing_ok=True)
+    _drop_test_db()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _seed_baseline_data(_backend_lifecycle):
+    """Seed ≥3 deterministic merit_order documents into the test DB.
+
+    Resolution for RESEARCH §Open Questions Q3: existing test_merit_order.py:71
+    (assert len(data) > 0) and :314 (assert len(data) >= 1) require at least 1
+    merit_order document to exist. test_po_batubara.py is already empty-DB-safe
+    (all reads guarded by `if len(data) > 0`).
+
+    Seeds 3 documents (months 1, 2, 3 of 2024) to satisfy both assertions.
+    Idempotent: skips if collection already non-empty.
+    """
+    from tests.factories.merit_order import make_merit_order
+
+    mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+    try:
+        mongo_client = pymongo.MongoClient(mongo_url, serverSelectionTimeoutMS=3000)
+        existing = mongo_client[TEST_DB_NAME].merit_order.count_documents({})
+        if existing == 0:
+            for month in [1, 2, 3]:
+                make_merit_order(year=2024, month=month)
+            print(f"[conftest] _seed_baseline_data: seeded 3 merit_order docs into {TEST_DB_NAME}")
+        else:
+            print(f"[conftest] _seed_baseline_data: collection non-empty ({existing} docs), skipping seed")
+        mongo_client.close()
+    except Exception as e:
+        print(f"[conftest] _seed_baseline_data failed (non-fatal): {e}")
+
+    yield
