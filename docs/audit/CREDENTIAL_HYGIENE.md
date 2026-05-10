@@ -81,12 +81,26 @@ The EXCLUDE array in `scripts/check_credentials.sh` allowlists files that
 contain forbidden patterns AND pre-date this hygiene gate. Each entry has a
 TODO naming the phase that will remove it. The current list:
 
-- `backend/tests/test_dashboard_advanced.py` — inline `"adminpassword"` at
-  lines 18 and 28. TODO Phase 4 TEST-02: replace with env-var read.
-- `backend/tests/test_coa_reconciliation.py` — inline `"adminpassword"` at
-  multiple call sites. TODO Phase 4 TEST-02: replace with env-var read.
-- `backend/tests/test_merit_order.py` — same. TODO Phase 4 TEST-02.
-- `backend/tests/test_po_batubara.py` — same. TODO Phase 4 TEST-02.
+- ~~`backend/tests/test_dashboard_advanced.py`~~ — **CLEARED 2026-05-11** by Phase 4
+  plan 04-01. Inline `"adminpassword"` literals at lines 18, 28 replaced with
+  `_require_env("TEST_ADMIN_PASSWORD")`. Exemption removed from the scanner EXCLUDE
+  list. The file now passes `bash scripts/check_credentials.sh` on its own merits.
+- ~~`backend/tests/test_coa_reconciliation.py`~~ — **CLEARED 2026-05-11** by Phase 4
+  plan 04-01. Inline `"adminpassword"` literals at lines 19, 29, 47 (and additional
+  class auth_token fixtures) replaced with `_require_env("TEST_ADMIN_PASSWORD")`.
+  Production-URL fallback on line 10 changed from
+  `'https://supply-chain-ai-40.preview.emergentagent.com'` to
+  `'http://127.0.0.1:18013'`. Exemption removed from the scanner EXCLUDE list.
+  The file now passes `bash scripts/check_credentials.sh` on its own merits.
+- ~~`backend/tests/test_merit_order.py`~~ — **CLEARED 2026-05-11** by Phase 4 plan
+  04-01. Inline `"adminpassword"` literals replaced with `_require_env("TEST_ADMIN_PASSWORD")`.
+  Exemption removed from the scanner EXCLUDE list. The file now passes
+  `bash scripts/check_credentials.sh` on its own merits.
+- ~~`backend/tests/test_po_batubara.py`~~ — **CLEARED 2026-05-11** by Phase 4 plan
+  04-01. Inline `"adminpassword"` literals replaced with `_require_env("TEST_ADMIN_PASSWORD")`.
+  Docstring and print references to "adminpassword" also sanitized. Exemption removed
+  from the scanner EXCLUDE list. The file now passes `bash scripts/check_credentials.sh`
+  on its own merits.
 - `test_reports/iteration_3.json` … `iteration_6.json` — captured test-run
   artifacts from prior iterations contain the literal in summary strings.
   TODO Phase 4 TEST-02: regenerate from sanitized fixtures or remove from

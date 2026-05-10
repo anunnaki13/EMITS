@@ -5,8 +5,12 @@ Tests: GET /api/po-batubara/years, GET /api/po-batubara, POST/PUT/DELETE operati
 import pytest
 import requests
 import os
+from tests.conftest import _require_env
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = _require_env("TEST_ADMIN_PASSWORD")
 
 class TestPOBatubaraAPI:
     """PO Batubara API endpoint tests"""
@@ -16,7 +20,7 @@ class TestPOBatubaraAPI:
         """Setup authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         self.token = response.json()["access_token"]
@@ -26,17 +30,17 @@ class TestPOBatubaraAPI:
         }
     
     def test_login_with_admin_credentials(self):
-        """Test login with admin@example.com / adminpassword"""
+        """Test login with admin credentials (TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD)"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
         assert data["user"]["email"] == "admin@example.com"
         assert data["user"]["role"] == "admin"
-        print("✓ Login with admin@example.com / adminpassword - SUCCESS")
+        print("✓ Login with admin credentials - SUCCESS")
     
     def test_get_po_batubara_years(self):
         """Test GET /api/po-batubara/years - returns yearly summary data"""

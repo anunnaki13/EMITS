@@ -5,8 +5,12 @@ Tests CRUD operations for Merit Order feature in PLTU Tenayan Fuel Management Sy
 import pytest
 import requests
 import os
+from tests.conftest import _require_env
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = _require_env("TEST_ADMIN_PASSWORD")
 
 class TestMeritOrderAPI:
     """Merit Order API endpoint tests"""
@@ -20,7 +24,7 @@ class TestMeritOrderAPI:
         # Login to get token
         login_response = self.session.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         assert login_response.status_code == 200, f"Login failed: {login_response.text}"
         
@@ -41,7 +45,7 @@ class TestMeritOrderAPI:
         """Test login with admin credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         }, headers={"Content-Type": "application/json"})
         
         assert response.status_code == 200

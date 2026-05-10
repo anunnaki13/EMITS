@@ -6,8 +6,12 @@ Tests for COA Reconciliation & Dispute Monitor feature
 import pytest
 import requests
 import os
+from tests.conftest import _require_env
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://supply-chain-ai-40.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'http://127.0.0.1:18013')
+
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = _require_env("TEST_ADMIN_PASSWORD")
 
 
 class TestCOAReconciliationAuth:
@@ -18,7 +22,7 @@ class TestCOAReconciliationAuth:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         return response.json()["access_token"]
@@ -27,7 +31,7 @@ class TestCOAReconciliationAuth:
         """Test login with valid credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200
         data = response.json()
@@ -44,7 +48,7 @@ class TestCOAReconciliationList:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         return response.json()["access_token"]
     
@@ -157,7 +161,7 @@ class TestCOAReconciliationKPIs:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         return response.json()["access_token"]
     
@@ -223,7 +227,7 @@ class TestCOAReconciliationTrend:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         return response.json()["access_token"]
     
@@ -256,7 +260,7 @@ class TestCOAReconciliationSupplierConsistency:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         return response.json()["access_token"]
     
@@ -288,7 +292,7 @@ class TestCOAReconciliationDetail:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         return response.json()["access_token"]
     
@@ -349,7 +353,7 @@ class TestCOAReconciliationUmpire:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "admin@example.com",
-            "password": "adminpassword"
+            "password": ADMIN_PASSWORD
         })
         return response.json()["access_token"]
     

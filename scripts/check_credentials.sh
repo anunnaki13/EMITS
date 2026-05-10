@@ -31,12 +31,6 @@ EXCLUDE=(
     "docs/audit/CREDENTIAL_HYGIENE.md"
     "docs/audit/LOGIN_BUG.md"
 
-    # --- pre-existing inline test credentials (TODO Phase 4 TEST-02: replace with env-var read) ---
-    "backend/tests/test_dashboard_advanced.py"
-    "backend/tests/test_coa_reconciliation.py"
-    "backend/tests/test_merit_order.py"
-    "backend/tests/test_po_batubara.py"
-
     # --- pre-existing test reports with inline credentials (TODO Phase 4 TEST-02: regenerate from sanitized fixtures) ---
     "test_reports/iteration_3.json"
     "test_reports/iteration_4.json"

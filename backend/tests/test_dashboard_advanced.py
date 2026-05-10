@@ -5,28 +5,33 @@ Tests: /api/dashboard/advanced endpoint with all visualizations
 import pytest
 import requests
 import os
+from tests.conftest import _require_env
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = _require_env("TEST_ADMIN_PASSWORD")
+
+
 class TestDashboardAdvanced:
     """Dashboard Advanced API tests"""
-    
+
     @pytest.fixture(autouse=True)
     def setup(self):
         """Setup - get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@example.com",
-            "password": "adminpassword"
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         self.token = response.json()["access_token"]
         self.headers = {"Authorization": f"Bearer {self.token}"}
-    
+
     def test_login_success(self):
         """Test login with admin credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@example.com",
-            "password": "adminpassword"
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200
         data = response.json()
