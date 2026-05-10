@@ -1,0 +1,64 @@
+--- REGISTER role=admin ---
+HTTP/1.1 422 Unprocessable Entity
+date: Sun, 10 May 2026 11:39:03 GMT
+server: uvicorn
+content-length: 360
+content-type: application/json
+
+{"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"audit-probe-admin-1778413143@example.invalid","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+--- REGISTER role=operator ---
+HTTP/1.1 422 Unprocessable Entity
+date: Sun, 10 May 2026 11:39:03 GMT
+server: uvicorn
+content-length: 363
+content-type: application/json
+
+{"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"audit-probe-operator-1778413143@example.invalid","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+--- REGISTER role=viewer ---
+HTTP/1.1 422 Unprocessable Entity
+date: Sun, 10 May 2026 11:39:03 GMT
+server: uvicorn
+content-length: 361
+content-type: application/json
+
+{"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"audit-probe-viewer-1778413143@example.invalid","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+--- CLEANUP-NOTE ---
+Three audit-probe-* users were inserted with role admin/operator/viewer (timestamp suffix 1778413143). They use email TLD .invalid and prefix audit-probe-. Phase 2 (regression test) or Phase 5 (cleanup) may remove them via: db.users.deleteMany({email: /^audit-probe-/}).
+
+--- DEVIATION NOTE ---
+The .invalid TLD probes above all returned 422 because Pydantic's email-validator (used by FastAPI) rejects RFC 6761 reserved TLDs (.invalid, .test, .local, .example) as 'special-use or reserved'. No documents were inserted from that round. Re-probing below with a non-reserved synthetic domain so Path C has real register success/failure evidence. The synthetic prefix audit-probe- is preserved for cleanup.
+
+--- REGISTER role=admin (synthetic domain) ---
+HTTP/1.1 200 OK
+date: Sun, 10 May 2026 11:39:27 GMT
+server: uvicorn
+content-length: 517
+content-type: application/json
+
+{"access_token":"<REDACTED-JWT>","token_type":"bearer","user":{"id":"f1a6c24d-2de8-4e93-8487-ca4f405bf880","email":"audit-probe-admin-1778413168@audit-probes-2026.com","name":"Audit Probe admin","role":"admin","created_at":"2026-05-10T11:39:28.460212+00:00"}}
+--- REGISTER role=operator (synthetic domain) ---
+HTTP/1.1 200 OK
+date: Sun, 10 May 2026 11:39:27 GMT
+server: uvicorn
+content-length: 534
+content-type: application/json
+
+{"access_token":"<REDACTED-JWT>","token_type":"bearer","user":{"id":"f658bd62-cfad-424f-a588-e0663d86a797","email":"audit-probe-operator-1778413168@audit-probes-2026.com","name":"Audit Probe operator","role":"operator","created_at":"2026-05-10T11:39:28.882665+00:00"}}
+--- REGISTER role=viewer (synthetic domain) ---
+HTTP/1.1 200 OK
+date: Sun, 10 May 2026 11:39:28 GMT
+server: uvicorn
+content-length: 523
+content-type: application/json
+
+{"access_token":"<REDACTED-JWT>","token_type":"bearer","user":{"id":"d713d9b1-502e-4551-a525-5ec6fc8b60be","email":"audit-probe-viewer-1778413168@audit-probes-2026.com","name":"Audit Probe viewer","role":"viewer","created_at":"2026-05-10T11:39:29.293473+00:00"}}
+--- REGISTER duplicate-email (admin re-submit) ---
+HTTP/1.1 400 Bad Request
+date: Sun, 10 May 2026 11:39:28 GMT
+server: uvicorn
+content-length: 34
+content-type: application/json
+
+{"detail":"Email sudah terdaftar"}
+--- CLEANUP-NOTE (revised) ---
+Effective inserts: see HTTP status of each 'synthetic domain' probe above. Successful inserts use email pattern: audit-probe-{role}-1778413168@audit-probes-2026.com. Phase 2 (regression test) or Phase 5 (cleanup) may remove with: db.users.deleteMany({email: /^audit-probe-/}). The .invalid probes earlier in this file all returned 422 (no inserts).
