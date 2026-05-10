@@ -46,6 +46,23 @@
                 document.head.appendChild(tailwindScript);
             }
         </script>
+        <script>
+            // Suppress benign "ResizeObserver loop completed with undelivered notifications"
+            // emitted by Radix UI primitives (Select, Popover) during dev. Functionality is
+            // unaffected; CRA's webpack-dev-server overlay surfaces it as a runtime error.
+            (function () {
+                var RO_RE = /^ResizeObserver loop /;
+                window.addEventListener('error', function (e) {
+                    if (e && e.message && RO_RE.test(e.message)) {
+                        e.stopImmediatePropagation();
+                    }
+                });
+                window.addEventListener('unhandledrejection', function (e) {
+                    var msg = e && e.reason && (e.reason.message || String(e.reason));
+                    if (msg && RO_RE.test(msg)) e.stopImmediatePropagation();
+                });
+            })();
+        </script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
