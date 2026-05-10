@@ -1,8 +1,16 @@
 """Factory for merit_order documents (Phase 4 D-02).
 
 Critical: _seed_baseline_data in conftest.py calls make_merit_order(year=2024, month=N)
-for N in [1,2,3] so that existing test_merit_order.py:71 (assert len(data) > 0) and
-:314 (assert len(data) >= 1) pass against a fresh test DB.
+for N in [1,2,3] so that test_merit_order.py tests have baseline data in the test DB.
+
+Field names match MeritOrderCreate (server.py:519-531):
+  periode, periode_year, periode_month, pemasok, moda,
+  tipikal_kcal_kg, jenis_kontrak, harga_batubara, harga_freight,
+  harga_cif, rp_kg, rp_kcal
+
+Rule 1 fix (04-05): original factory had wrong field names (supplier, coal_type, etc.)
+that did not match the server model, causing test_03_merit_order_data_structure to fail
+with "Missing field: periode" after the pagination envelope migration.
 """
 import os
 import uuid
@@ -21,21 +29,28 @@ def _get_test_db_name() -> str:
 
 
 def make_merit_order(**overrides) -> dict:
-    """Insert one minimal merit_order document into the test DB. Returns doc dict (without _id)."""
+    """Insert one minimal merit_order document into the test DB. Returns doc dict (without _id).
+
+    Fields match MeritOrderCreate model (server.py:519-531) so that test assertions
+    checking for 'periode', 'pemasok', 'moda', etc. pass against seeded test data.
+    """
+    # Default uses year/month overrides to build a deterministic periode string.
+    year = overrides.pop("year", 2024)
+    month = overrides.pop("month", 1)
     doc = {
         "id": str(uuid.uuid4()),
-        "year": 2025,
-        "month": 1,
-        "supplier": "PT TEST SUPPLIER",
-        "coal_type": "LRC",
-        "gcv_contract": 4200.0,
-        "gcv_actual": 4150.0,
-        "price_per_kcal": 0.018,
-        "price_per_mt": 75.0,
-        "bl_mt": 5000.0,
-        "ds_mt": 4950.0,
-        "source": "Vessel",
-        "rank": 1,
+        "periode": f"{year}-{month:02d}-01",
+        "periode_year": year,
+        "periode_month": month,
+        "pemasok": "PT TEST SUPPLIER",
+        "moda": "Vessel",
+        "tipikal_kcal_kg": 4200.0,
+        "jenis_kontrak": "CIF",
+        "harga_batubara": 850000.0,
+        "harga_freight": 50000.0,
+        "harga_cif": 900000.0,
+        "rp_kg": 900.0,
+        "rp_kcal": 0.214286,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "created_by": "test-factory",
         **overrides,

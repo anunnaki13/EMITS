@@ -57,72 +57,88 @@ class TestMeritOrderAPI:
         print("✓ Login successful with admin credentials")
     
     def test_02_get_merit_orders_list(self):
-        """Test GET /api/merit-order - list all merit orders"""
+        """Test GET /api/merit-order - list all merit orders (pagination envelope per ADR-008)"""
         response = self.session.get(f"{BASE_URL}/api/merit-order")
-        
+
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
-        assert len(data) == 58, f"Expected 58 records, got {len(data)}"
-        print(f"✓ GET /api/merit-order returns {len(data)} records")
+        # Phase-2 introduced pagination envelope: {items, total, page, page_size, total_pages}
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+        assert isinstance(data["items"], list)
+        assert data["total"] >= 0, f"Expected non-negative total, got {data['total']}"
+        print(f"✓ GET /api/merit-order returns envelope with {data['total']} total records")
     
     def test_03_merit_order_data_structure(self):
-        """Test merit order data has correct structure"""
+        """Test merit order data has correct structure (pagination envelope per ADR-008)"""
         response = self.session.get(f"{BASE_URL}/api/merit-order")
-        
+
         assert response.status_code == 200
         data = response.json()
-        assert len(data) > 0
-        
+        # Phase-2 introduced pagination envelope: unwrap items list
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+        assert len(data["items"]) > 0, "No merit order items to inspect data structure"
+
         # Check first record has required fields
-        first_record = data[0]
-        required_fields = ["id", "periode", "pemasok", "moda", "tipikal_kcal_kg", 
-                          "jenis_kontrak", "harga_batubara", "harga_cif", "rp_kcal"]
-        
+        first_record = data["items"][0]
+        required_fields = ["id", "periode", "pemasok", "moda", "tipikal_kcal_kg",
+                           "jenis_kontrak", "harga_batubara", "harga_cif", "rp_kcal"]
+
         for field in required_fields:
             assert field in first_record, f"Missing field: {field}"
-        
+
         print(f"✓ Merit order data structure is correct with all required fields")
     
     def test_04_merit_order_moda_values(self):
-        """Test moda field has valid values (Vessel variants, Tongkang, Trucking)"""
+        """Test moda field has valid values (Vessel variants, Tongkang, Trucking) — ADR-008 envelope"""
         response = self.session.get(f"{BASE_URL}/api/merit-order")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+        # Phase-2 introduced pagination envelope: unwrap items list
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+
         # Valid moda values include Vessel variants from Excel data
         valid_moda = {"Vessel", "Tongkang", "Trucking", "Vessel Hand Size", "Vessel Supramax"}
         moda_found = set()
-        
-        for record in data:
+
+        for record in data["items"]:
             if record.get("moda"):
                 moda_found.add(record["moda"])
-        
+
         # Check that all moda values are valid
         for moda in moda_found:
             assert moda in valid_moda, f"Invalid moda value: {moda}"
-        
+
         print(f"✓ Moda values are valid: {moda_found}")
     
     def test_05_merit_order_kontrak_values(self):
-        """Test jenis_kontrak field has valid values (CIF, CFR, FOB)"""
+        """Test jenis_kontrak field has valid values (CIF, CFR, FOB) — ADR-008 envelope"""
         response = self.session.get(f"{BASE_URL}/api/merit-order")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+        # Phase-2 introduced pagination envelope: unwrap items list
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+
         valid_kontrak = {"CIF", "CFR", "FOB"}
         kontrak_found = set()
-        
-        for record in data:
+
+        for record in data["items"]:
             if record.get("jenis_kontrak"):
                 kontrak_found.add(record["jenis_kontrak"])
-        
+
         # Check that all kontrak values are valid
         for kontrak in kontrak_found:
             assert kontrak in valid_kontrak, f"Invalid kontrak value: {kontrak}"
-        
+
         print(f"✓ Jenis kontrak values are valid: {kontrak_found}")
     
     def test_06_create_merit_order(self):
@@ -312,11 +328,15 @@ class TestMeritOrderAPI:
         
         # Search for the record
         response = self.session.get(f"{BASE_URL}/api/merit-order?search=UNIQUE_SEARCH_TEST_XYZ")
-        
+
         assert response.status_code == 200
         data = response.json()
-        assert len(data) >= 1
-        assert any(r["pemasok"] == "UNIQUE_SEARCH_TEST_XYZ" for r in data)
+        # Phase-2 introduced pagination envelope: unwrap items list
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+        assert len(data["items"]) >= 1, "Search returned no items for UNIQUE_SEARCH_TEST_XYZ"
+        assert any(r["pemasok"] == "UNIQUE_SEARCH_TEST_XYZ" for r in data["items"])
         print("✓ Search filter works correctly")
 
 

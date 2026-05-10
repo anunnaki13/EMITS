@@ -304,6 +304,19 @@ def _seed_baseline_data(_backend_lifecycle):
 
     # --- 2. Seed merit_order documents ---
     mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+    # T-test-data-leak-01: assert TEST_DB_NAME is correctly namespaced before ANY factory insert.
+    assert TEST_DB_NAME.startswith("pltu_tenayan_test_"), (
+        f"T-test-data-leak-01: TEST_DB_NAME must start with 'pltu_tenayan_test_', got {TEST_DB_NAME!r}"
+    )
+    # Re-assert MONGO_TEST_DB_NAME in the parent-process env so factory functions
+    # (which read os.environ["MONGO_TEST_DB_NAME"]) write to the same DB the server uses.
+    # Guard against double-import drift: conftest.py may be loaded by both pytest's
+    # internal machinery (as "conftest") and by test files that do
+    # `from tests.conftest import _require_env` (as "tests.conftest"), producing two
+    # different TEST_DB_NAME values from two uuid4() calls at module level. The subprocess
+    # env is set correctly in _backend_lifecycle (explicit "MONGO_TEST_DB_NAME": TEST_DB_NAME),
+    # but os.environ in the parent process may have been overridden by the second import.
+    os.environ["MONGO_TEST_DB_NAME"] = TEST_DB_NAME  # re-assert to fix double-import drift
     try:
         mongo_client = pymongo.MongoClient(mongo_url, serverSelectionTimeoutMS=3000)
         existing = mongo_client[TEST_DB_NAME].merit_order.count_documents({})

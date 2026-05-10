@@ -72,19 +72,22 @@ class TestPOBatubaraAPI:
         print(f"✓ GET /api/po-batubara/years - SUCCESS ({len(data)} years found)")
     
     def test_get_po_batubara_by_year_month(self):
-        """Test GET /api/po-batubara?year=2025&month=1 - returns PO data for specific month"""
-        response = requests.get(f"{BASE_URL}/api/po-batubara", 
-                               headers=self.headers,
-                               params={"year": 2025, "month": 1})
+        """Test GET /api/po-batubara?year=2025&month=1 - returns PO data (ADR-008 envelope)"""
+        response = requests.get(f"{BASE_URL}/api/po-batubara",
+                                headers=self.headers,
+                                params={"year": 2025, "month": 1})
         assert response.status_code == 200
         data = response.json()
-        
-        # Verify response is a list
-        assert isinstance(data, list)
-        
-        # Verify structure of PO data
-        if len(data) > 0:
-            po = data[0]
+
+        # Phase-2 introduced pagination envelope: {items, total, page, page_size, total_pages}
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+        assert isinstance(data["items"], list)
+
+        # Verify structure of PO data (if any items present)
+        if len(data["items"]) > 0:
+            po = data["items"][0]
             assert "id" in po
             assert "po_number" in po
             assert "supplier_name" in po
@@ -92,20 +95,24 @@ class TestPOBatubaraAPI:
             assert "total" in po
             assert "completed_year" in po
             assert "completed_month" in po
-            
+
             # Verify year/month filter works
             assert po["completed_year"] == 2025
             assert po["completed_month"] == 1
-        
-        print(f"✓ GET /api/po-batubara?year=2025&month=1 - SUCCESS ({len(data)} records)")
+
+        print(f"✓ GET /api/po-batubara?year=2025&month=1 - SUCCESS ({data['total']} total records)")
     
     def test_get_po_batubara_all(self):
-        """Test GET /api/po-batubara - returns all PO data"""
+        """Test GET /api/po-batubara - returns all PO data (ADR-008 envelope)"""
         response = requests.get(f"{BASE_URL}/api/po-batubara", headers=self.headers)
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
-        print(f"✓ GET /api/po-batubara (all) - SUCCESS ({len(data)} records)")
+        # Phase-2 introduced pagination envelope: {items, total, page, page_size, total_pages}
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+        assert isinstance(data["items"], list)
+        print(f"✓ GET /api/po-batubara (all) - SUCCESS ({data['total']} total records)")
     
     def test_create_po_batubara(self):
         """Test POST /api/po-batubara - create new PO"""
@@ -152,18 +159,22 @@ class TestPOBatubaraAPI:
         print("✓ Cleanup: Test PO deleted")
     
     def test_get_po_batubara_by_id(self):
-        """Test GET /api/po-batubara/{id} - get specific PO"""
+        """Test GET /api/po-batubara/{id} - get specific PO (ADR-008 envelope)"""
         # First get list to find an ID
-        list_response = requests.get(f"{BASE_URL}/api/po-batubara", 
-                                    headers=self.headers,
-                                    params={"limit": 1})
+        list_response = requests.get(f"{BASE_URL}/api/po-batubara",
+                                     headers=self.headers,
+                                     params={"page": 1, "page_size": 1})
         assert list_response.status_code == 200
         data = list_response.json()
-        
-        if len(data) > 0:
-            po_id = data[0]["id"]
-            response = requests.get(f"{BASE_URL}/api/po-batubara/{po_id}", 
-                                   headers=self.headers)
+        # Phase-2 introduced pagination envelope: unwrap items list
+        assert isinstance(data, dict) and "items" in data, (
+            f"Expected pagination envelope dict with 'items', got: {type(data)}"
+        )
+
+        if len(data["items"]) > 0:
+            po_id = data["items"][0]["id"]
+            response = requests.get(f"{BASE_URL}/api/po-batubara/{po_id}",
+                                    headers=self.headers)
             assert response.status_code == 200
             po = response.json()
             assert po["id"] == po_id
