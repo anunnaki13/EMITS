@@ -405,3 +405,20 @@ Tonase_i = Total_Kuantitas × Persentase_i
 
 **Dokumen ini dibuat untuk keperluan internal PLTU Tenayan**  
 **© 2026 Sistem Manajemen Bahan Bakar Digital**
+
+---
+
+**Phase-3 verification (2026-05-10):** This formula is verified against
+`.planning/intel/constraints.md` → CONS-blending-formula, CONS-blending-input-ranges,
+CONS-blending-constraint-validation, CONS-blending-ai-output, CONS-blending-tolerance.
+No drift detected. See `docs/audit/SMART_BLENDING_FORMULA_AUDIT.md` for the full audit log.
+
+**Operational status:** Smart Blending AI is operationally degraded — the formula and code
+path are correct, but the Universal LLM Key budget is exhausted (BudgetExceededError).
+Live recommendations are blocked until budget is restored (Phase 6, OPS-01).
+See `documentation.md#known-issues` for the active Known Issues entry.
+
+Verified against CONS-blending-formula (linear weighted-average, all 7 parameters),
+CONS-blending-input-ranges (parameter ranges and defaults), CONS-blending-constraint-validation
+(GCV ≥ target, Ash/Sulphur/TM/IM ≤ max, VM/FC ≥ min), CONS-blending-ai-output (JSON shape),
+and CONS-blending-tolerance (±5% prediction tolerance).

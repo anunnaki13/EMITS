@@ -26,6 +26,18 @@ FastAPI
 MongoDB
 ```
 
+### Catatan: Postur VPS Produksi Saat Ini (2026-05-10)
+
+Panduan umum ini menggunakan port internal `8001` sebagai contoh. **Deployment produksi PLTU Tenayan yang sedang berjalan menggunakan:**
+- Backend uvicorn: port **8013** (berjalan langsung tanpa nginx, tidak lewat systemd)
+- Frontend yarn start: port **3013**
+- MongoDB: `localhost:27017` (single-host, bukan MongoDB Atlas/external)
+- `REACT_APP_BACKEND_URL`: `http://103.150.197.225:8013` (untuk produksi) atau `http://localhost:8013` (untuk dev lokal)
+
+Untuk memulihkan services setelah VPS restart, lihat [LOCAL_SETUP.md → VPS Service Recovery (post-restart)](LOCAL_SETUP.md#vps-service-recovery-post-restart).
+
+---
+
 ## 2. Spesifikasi VPS Minimum
 
 Rekomendasi minimum untuk produksi kecil-menengah:
@@ -154,9 +166,19 @@ Contoh isi jika frontend dan backend berada di domain yang sama:
 REACT_APP_BACKEND_URL=https://your-domain.com
 ```
 
+Untuk produksi VPS PLTU Tenayan (backend berjalan di port 8013 langsung, tanpa nginx reverse proxy):
+```env
+REACT_APP_BACKEND_URL=http://103.150.197.225:8013
+```
+
+Untuk dev lokal:
+```env
+REACT_APP_BACKEND_URL=http://localhost:8013
+```
+
 Penting:
 - backend route harus tetap dipanggil dengan prefix `/api`
-- nilai ini harus domain publik, bukan `localhost`
+- nilai ini harus domain publik, bukan `localhost` (kecuali untuk dev lokal)
 
 ### 7.2 Install Dependency dan Build
 
@@ -195,8 +217,9 @@ mongosh --eval 'db.runCommand({ ping: 1 })'
 ### Opsi B — MongoDB Eksternal / Managed
 Gunakan connection string penuh pada `MONGO_URL`, misalnya:
 
+# Set MONGO_URL in backend/.env; example shape mongodb://localhost:27017 (single-host VPS topology per ADR-001).
 ```env
-MONGO_URL=mongodb+srv://user:password@cluster.mongodb.net/?retryWrites=true&w=majority
+MONGO_URL=${MONGO_URL}
 DB_NAME=pltu_tenayan
 ```
 
@@ -345,10 +368,11 @@ Buka:
 - `https://your-domain.com/dashboard`
 
 ### 12.4 Cek login API
+# Source from gitignored memory/test_credentials.md — see docs/audit/CREDENTIAL_HYGIENE.md
 ```bash
-curl -X POST "https://your-domain.com/api/auth/login" \
+curl -X POST "http://103.150.197.225:8013/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"adminpassword"}'
+  -d "{\"email\":\"admin@example.com\",\"password\":\"${TEST_ADMIN_PASSWORD}\"}"
 ```
 
 ### 12.5 Cek upload dan export
@@ -547,3 +571,20 @@ Jika aplikasi berkembang lebih besar, langkah evolusi berikutnya yang disarankan
 ## 20. Kesimpulan
 
 Untuk tahap sekarang, model deployment paling stabil adalah satu VPS dengan Nginx + systemd + FastAPI + MongoDB, dengan frontend React dibuild statis. Struktur ini sederhana, mudah di-debug, murah untuk awal, dan sudah cukup baik untuk aplikasi operasional internal maupun semi-produksi selama backup, SSL, logging, dan kontrol environment dijaga dengan benar.
+
+---
+
+## 21. Service Recovery (post-restart)
+
+Untuk perintah uvicorn + yarn-start yang tepat guna memulihkan services setelah
+VPS reboot, lihat [LOCAL_SETUP.md → VPS Service Recovery (post-restart)](LOCAL_SETUP.md#vps-service-recovery-post-restart).
+Phase-3 D-11 mempromosikan prosedur tersebut menjadi runbook tunggal yang
+berwewenang (canonical runbook) sehingga operator tidak perlu menemukan ulang
+perintah dari berbagai dokumen.
+
+Ringkasan cepat:
+- Backend: aktifkan venv, jalankan uvicorn di port 8013, verifikasi dengan `curl http://localhost:8013/api/health`
+- Frontend: `yarn start` di port 3013, verifikasi dengan `curl -s -o /dev/null -w "%{http_code}" http://localhost:3013/`
+- MongoDB: cek `systemctl status mongod` — seharusnya sudah auto-start via systemd
+
+Lihat LOCAL_SETUP.md untuk perintah lengkap termasuk path venv yang benar dan smoke-test login end-to-end.

@@ -689,3 +689,50 @@ Disarankan:
 ## 18. Kesimpulan
 
 Skema database aplikasi ini kaya domain dan cukup fleksibel, tetapi mulai menunjukkan kebutuhan standardisasi serius. Untuk pengembangan jangka panjang, fokus terbaik adalah menstabilkan naming koleksi, menambah index, memperjelas batas antara data inti vs data legacy, dan mendokumentasikan field operasional hasil upload Excel secara lebih formal.
+
+---
+
+## Duplicate Pair Active Read Targets (Phase-3 audit, 2026-05-10)
+
+Phase-3 plan 03-05 documents the active read target for each duplicate-pair
+collection. **This is documentation only — Phase 5 (DEBT-01..05) owns the
+rename and migration.** Determinations are based on `grep -nE 'db\.<name>\.'
+backend/server.py` evidence and live row counts as of 2026-05-10.
+
+| Pair | Active (read target) | Legacy | Active count | Legacy count | Code evidence |
+|------|----------------------|--------|--------------|--------------|---------------|
+| smartstock vs smart_stock | **Both names actively read** — CRUD endpoints use `smartstock`; AI module uses `smart_stock` | N/A — canonical winner deferred to Phase 5 | 207 | 0 | `backend/server.py:3100` db.smartstock.find (CRUD); `backend/server.py:2377` db.smart_stock.find (AI module) |
+| sumberpemakaian vs sumber_pemakaian | **Both names actively read** — CRUD endpoints use `sumberpemakaian`; AI module uses `sumber_pemakaian` | N/A — canonical winner deferred to Phase 5 | 208 | 0 | `backend/server.py:3374` db.sumberpemakaian.find (CRUD); `backend/server.py:2385` db.sumber_pemakaian.find (AI module) |
+| app_settings vs settings | **Both names actively read** — `/settings/coa` GET/PUT uses `app_settings`; COA export and AI COA-alerts use `settings` | N/A — canonical winner deferred to Phase 5 | 1 | 0 | `backend/server.py:3853` db.app_settings.find_one (settings endpoint); `backend/server.py:4382` db.settings.find_one (COA export); `backend/server.py:2425` db.settings.find_one (AI module) |
+| ai_chat_history vs ai_conversations | `ai_chat_history` | `ai_conversations` | 10 | 0 | `backend/server.py:2264` ai_chat_collection = db.ai_chat_history (module-level assignment; all AI session reads go through this variable) |
+
+**Notes on "Both names actively read" rows:**
+
+For `smartstock`/`smart_stock`: the CRUD module (line 3100 onwards) reads from
+`db.smartstock` (207 records, the production write target). The AI intelligence
+module (line 2377) reads from `db.smart_stock` (0 records). Because live data
+lives only in `smartstock`, the AI quick-smart-stock endpoint currently returns
+empty/zero context from `smart_stock`. Phase 5 must migrate the AI module read
+to `smartstock` and drop `smart_stock`.
+
+For `sumberpemakaian`/`sumber_pemakaian`: same pattern — CRUD writes to
+`sumberpemakaian` (208 records); AI module reads `sumber_pemakaian` (0 records).
+Phase 5 must align the AI module read to `sumberpemakaian`.
+
+For `app_settings`/`settings`: the canonical `/settings/coa` endpoint reads and
+writes `app_settings` (1 record, production data). The COA-export PDF path
+(line 4382) and AI COA-alerts context (line 2425) still read the legacy `settings`
+collection (0 records). This means COA export and AI COA-alerts silently fall back
+to the hardcoded default (`price_per_kcal_per_ton = 50`). Phase 5 must unify
+these reads to `app_settings`.
+
+**Method:** `grep -nE 'db\.(smartstock|smart_stock|sumberpemakaian|sumber_pemakaian|app_settings|settings|ai_chat_history|ai_conversations)\.' backend/server.py`
+plus live `db.<name>.countDocuments({})` against the production VPS
+(read-only — no writes performed by this audit).
+
+**Phase 5 dependency:** the rename plan (DEBT-01..05) MUST start from this
+table — picking a canonical winner per row, dry-running migration, and
+removing legacy reads only after verified row-count + checksum parity.
+
+See `.planning/ROADMAP.md` §"Phase 5: Collection Naming Debt Resolution"
+and `.planning/intel/constraints.md` → CONS-collection-naming-debt.

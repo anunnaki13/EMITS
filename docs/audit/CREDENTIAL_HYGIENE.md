@@ -103,11 +103,18 @@ TODO naming the phase that will remove it. The current list:
   reference). TODO Phase 3 plan 03-05 (or Phase 5): regenerate from the new
   top-level `API_REFERENCE.md` source-of-truth, OR replace the in-app viewer
   with a live `/openapi.json` proxy.
-- `DEPLOYMENT_GUIDE.md` and `frontend/public/docs/DEPLOYMENT_GUIDE.md` —
-  contain a `mongodb+srv://user:password@cluster.mongodb.net/...` example
-  string AND inline admin-password curl bodies. TODO Phase 3 STAB-03:
-  rewrite as `${MONGO_URL}` placeholders sourced from the operator's local
-  `.env`.
+- ~~`DEPLOYMENT_GUIDE.md`~~ — **CLEARED 2026-05-10** by Phase-3 plan 03-05.
+  The top-level `DEPLOYMENT_GUIDE.md` has been updated: the
+  `mongodb+srv://user:password@cluster.mongodb.net/...` example string is
+  replaced with `${MONGO_URL}` placeholder; the inline `adminpassword` curl
+  body is replaced with `${TEST_ADMIN_PASSWORD}` placeholder. Exemption
+  removed from the scanner EXCLUDE list. The file now passes
+  `bash scripts/check_credentials.sh` on its own merits.
+  `frontend/public/docs/DEPLOYMENT_GUIDE.md` (in-app doc viewer's mirror copy)
+  still uses old format — Phase 4 or later TODO.
+- `frontend/public/docs/DEPLOYMENT_GUIDE.md` — in-app doc viewer's frozen
+  copy of the deployment guide; still contains the old credential examples.
+  TODO Phase 4 or later: update to match the cleaned top-level version.
 - `memory/PRD.md` — upstream PRD text inlines the admin password in the
   test-credentials block. TODO Phase 3 STAB-03: redact the credentials block
   and reference `memory/test_credentials.md` instead.

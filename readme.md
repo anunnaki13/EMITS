@@ -155,8 +155,12 @@ yarn start
 ```bash
 cd /app/backend
 pip install -r requirements.txt
-uvicorn server:app --reload --host 0.0.0.0 --port 8001
+uvicorn server:app --reload --host 0.0.0.0 --port 8013
 ```
+
+> **Catatan produksi:** VPS PLTU Tenayan menjalankan backend di port 8013.
+> Sesuaikan port dengan kebutuhan environment; gunakan `REACT_APP_BACKEND_URL=http://localhost:8013`
+> pada frontend untuk dev lokal.
 
 ## Pengujian
 
