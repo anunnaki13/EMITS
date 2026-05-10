@@ -222,3 +222,102 @@ class TestDashboardAdvanced:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
+
+
+# --- Phase 4 TEST-07 happy-path additions ---
+# These tests use conftest fixtures (base_url, admin_headers) and are
+# designed to pass against an EMPTY test DB (all counts/aggregations = 0/empty).
+# They assert structure only (field presence + types), not data values.
+
+
+def test_dashboard_stats_happy_path(base_url, admin_headers):
+    """TEST-07: GET /api/dashboard/stats returns 200 + DashboardStats shape.
+
+    Field names extracted from server.py:539 DashboardStats(BaseModel):
+      total_vessel, total_barge, total_trucking, total_biomassa,
+      total_tonase_batubara, total_tonase_biomassa, avg_gcv,
+      recent_shipments, monthly_trend, supplier_stats
+    All fields must be present; degenerate values (0, []) are acceptable.
+    """
+    r = requests.get(
+        f"{base_url}/api/dashboard/stats",
+        headers=admin_headers,
+        timeout=15,
+    )
+    assert r.status_code == 200, f"/dashboard/stats: {r.status_code} {r.text[:300]}"
+    body = r.json()
+    # Field names extracted from server.py:539-549 DashboardStats model.
+    for key in [
+        "total_vessel",
+        "total_barge",
+        "total_trucking",
+        "total_biomassa",
+        "total_tonase_batubara",
+        "total_tonase_biomassa",
+        "avg_gcv",
+        "recent_shipments",
+        "monthly_trend",
+        "supplier_stats",
+    ]:
+        assert key in body, f"missing {key!r} in stats body: {list(body.keys())}"
+    # Type assertions (degenerate OK)
+    assert isinstance(body["total_vessel"], int)
+    assert isinstance(body["total_barge"], int)
+    assert isinstance(body["total_trucking"], int)
+    assert isinstance(body["total_biomassa"], int)
+    assert isinstance(body["avg_gcv"], (int, float))
+    assert isinstance(body["recent_shipments"], list)
+    assert isinstance(body["monthly_trend"], list)
+    assert isinstance(body["supplier_stats"], list)
+
+
+def test_dashboard_advanced_happy_path(base_url, admin_headers):
+    """TEST-07: GET /api/dashboard/advanced returns 200 + analytics shape.
+
+    Per RESEARCH §11.5: the handler uses ``dateutil.relativedelta(months=6)``
+    to compute its window. Synthetic fixtures (Jan-2026 dates) fall within
+    the 6-month window from 2026-05-11 -- so uploaded vessels DO surface.
+    Against an empty DB this is still a valid happy-path (empty arrays).
+
+    Top-level keys extracted from server.py:2249-2260 handler return statement:
+      total_ds_mt, total_tonase_po, contract_percentage, fuel_composition,
+      gcv_trend, supplier_economy, slagging_matrix, six_months_summary,
+      available_periods, available_moda
+    """
+    r = requests.get(
+        f"{base_url}/api/dashboard/advanced",
+        headers=admin_headers,
+        timeout=15,
+    )
+    assert r.status_code == 200, f"/dashboard/advanced: {r.status_code} {r.text[:300]}"
+    body = r.json()
+    assert isinstance(body, dict), f"expected dict, got {type(body)}"
+    # Top-level keys extracted from server.py:2249-2260 handler.
+    for key in [
+        "total_ds_mt",
+        "total_tonase_po",
+        "contract_percentage",
+        "fuel_composition",
+        "gcv_trend",
+        "supplier_economy",
+        "slagging_matrix",
+        "six_months_summary",
+        "available_periods",
+        "available_moda",
+    ]:
+        assert key in body, f"missing {key!r} in advanced body: {list(body.keys())}"
+    # Type assertions (degenerate/empty OK)
+    assert isinstance(body["total_ds_mt"], (int, float))
+    assert isinstance(body["total_tonase_po"], (int, float))
+    assert isinstance(body["contract_percentage"], (int, float))
+    assert isinstance(body["fuel_composition"], list)
+    assert isinstance(body["gcv_trend"], list)
+    assert isinstance(body["supplier_economy"], list)
+    assert isinstance(body["slagging_matrix"], list)
+    assert isinstance(body["six_months_summary"], list)
+    assert isinstance(body["available_periods"], list)
+    assert isinstance(body["available_moda"], list)
+    # six_months_summary always has exactly 6 entries (one per past month)
+    assert len(body["six_months_summary"]) == 6, (
+        f"expected 6 months in six_months_summary, got {len(body['six_months_summary'])}"
+    )
