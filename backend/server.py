@@ -17,6 +17,7 @@ import bcrypt
 import pandas as pd
 import io
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from app.ai.client import AIClient, get_ai_client
 import json
 import asyncio
 
@@ -26,7 +27,8 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+_db_name = os.environ.get("MONGO_TEST_DB_NAME") or os.environ['DB_NAME']
+db = client[_db_name]
 
 # JWT Settings
 JWT_SECRET = os.environ.get('JWT_SECRET', 'tenayan-fuel-management-secret-key-2024')
@@ -2617,40 +2619,18 @@ Output yang diharapkan:
     return module_prompts.get(module, module_prompts["general"])
 
 @api_router.post("/ai/query")
-async def ai_query(request: AIQueryRequest, user: dict = Depends(get_current_user)):
+async def ai_query(request: AIQueryRequest, user: dict = Depends(get_current_user), ai: AIClient = Depends(get_ai_client)):
     """Process AI query with database context"""
     try:
-        # Get user's custom API key or use default
-        user_settings = await db.user_settings.find_one({"user_id": user["id"]})
-        
-        api_key = os.environ.get("EMERGENT_LLM_KEY")
-        llm_provider = "gemini"
-        llm_model = "gemini-2.5-flash"
-        
-        if user_settings:
-            if user_settings.get("custom_api_key"):
-                api_key = user_settings["custom_api_key"]
-            if user_settings.get("llm_provider"):
-                llm_provider = user_settings["llm_provider"]
-            if user_settings.get("llm_model"):
-                llm_model = user_settings["llm_model"]
-        
         # Generate session ID if not provided
         session_id = request.session_id or f"tenayan-ai-{user['id']}-{uuid.uuid4()}"
-        
+
         # Get database context
         db_context = await get_database_context(request.module, request.parameters)
-        
+
         # Get system prompt
         system_prompt = get_system_prompt(request.module)
-        
-        # Initialize LLM Chat
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=session_id,
-            system_message=system_prompt
-        ).with_model(llm_provider, llm_model)
-        
+
         # Prepare message with context
         full_query = f"""DATA CONTEXT:
 {db_context}
@@ -2659,11 +2639,9 @@ USER QUERY:
 {request.query}
 
 Berikan analisis dan jawaban berdasarkan data di atas."""
-        
-        user_message = UserMessage(text=full_query)
-        
-        # Get AI response
-        response = await chat.send_message(user_message)
+
+        # Get AI response via injected client
+        response = await ai.send_message(session_id, system_prompt, full_query)
         
         # Save to chat history
         chat_entry = {
@@ -3617,7 +3595,8 @@ class SmartBlendingRequest(BaseModel):
 @api_router.post("/smart-blending/recommend")
 async def get_smart_blending_recommendation(
     request: SmartBlendingRequest,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
+    ai: AIClient = Depends(get_ai_client)
 ):
     """Get AI-powered smart blending recommendation using Gemini"""
     
@@ -3787,25 +3766,10 @@ async def get_smart_blending_recommendation(
 
 Respons HANYA dengan JSON yang valid, tanpa teks tambahan. WAJIB gunakan nama supplier asli dari data."""
 
-        # 6. Get API key from user settings or use default
-        user_settings = await db.user_settings.find_one({"user_id": user["id"]}, {"_id": 0})
-        llm_key = None
-        if user_settings and user_settings.get("custom_api_key"):
-            llm_key = user_settings.get("custom_api_key")
-        if not llm_key:
-            llm_key = os.environ.get("EMERGENT_LLM_KEY")
-        
-        if not llm_key:
-            raise HTTPException(status_code=400, detail="API Key tidak ditemukan. Silakan konfigurasi di Pengaturan AI Intelligence.")
-        
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"smart-blending-{uuid.uuid4()}",
-            system_message="You are an expert coal blending optimization AI for power plants."
-        ).with_model("gemini", "gemini-2.5-flash")
-        
-        user_message = UserMessage(text=ai_prompt)
-        response = await chat.send_message(user_message)
+        # 6. Call AI via injected client (AI_FAKE=1 swaps in FakeAIClient in test env)
+        session_id = f"smart-blending-{uuid.uuid4()}"
+        system_message = "You are an expert coal blending optimization AI for power plants."
+        response = await ai.send_message(session_id, system_message, ai_prompt)
         
         # 7. Parse AI response
         try:
