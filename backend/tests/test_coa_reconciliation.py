@@ -425,3 +425,132 @@ class TestCOAReconciliationUnauthorized:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
+
+
+# --- Phase 4 TEST-05 happy-path additions ---
+# These tests use the conftest session-scoped fixtures (base_url, admin_headers)
+# so they target the Phase-4 isolated test backend on port 18013 with an empty test DB.
+# Empty-DB tolerance: all four endpoints return 200 with zero/empty structures when the
+# coa_reconciliation collection is empty (per server.py:3904-3919 early-exit path).
+
+def test_coa_kpis_happy_path(base_url, admin_headers):
+    """TEST-05: /kpis returns 200 with documented KPI shape (empty-DB tolerant).
+
+    server.py:3895-3924 returns all keys even when collection is empty:
+    total_records, high_deviation_count, potential_loss_rp, total_tonnage_problem,
+    umpire_status, supplier_deviations, worst_supplier, avg_accuracy,
+    critical_count, warning_count, normal_count, price_per_kcal_per_ton, price_not_set
+    """
+    r = requests.get(
+        f"{base_url}/api/coa-reconciliation/kpis",
+        headers=admin_headers,
+        timeout=15,
+    )
+    assert r.status_code == 200, f"/kpis: {r.status_code} {r.text[:300]}"
+    body = r.json()
+    assert isinstance(body, dict), f"expected dict, got {type(body)}"
+    # Exact keys from server.py:3905-3918 (empty-data early-return path)
+    required_keys = [
+        "total_records",
+        "high_deviation_count",
+        "potential_loss_rp",
+        "total_tonnage_problem",
+        "umpire_status",
+        "supplier_deviations",
+        "worst_supplier",
+        "avg_accuracy",
+        "critical_count",
+        "warning_count",
+        "normal_count",
+    ]
+    for key in required_keys:
+        assert key in body, f"/kpis missing key {key!r}: keys={list(body.keys())}"
+    # umpire_status sub-dict must have proposed/in_progress/completed/total
+    us = body["umpire_status"]
+    assert isinstance(us, dict), f"umpire_status should be dict, got {type(us)}"
+    for sub_key in ("proposed", "in_progress", "completed", "total"):
+        assert sub_key in us, f"umpire_status missing key {sub_key!r}"
+
+
+def test_coa_trend_happy_path(base_url, admin_headers):
+    """TEST-05: /trend returns 200 with a list of trend points (empty-DB tolerant).
+
+    server.py:3926-3930 calls get_gcv_trend_data(all_data, months) which returns a list.
+    Against an empty DB the list is empty — 200 + empty list is still a happy path.
+    """
+    r = requests.get(
+        f"{base_url}/api/coa-reconciliation/trend",
+        headers=admin_headers,
+        params={"months": 3},
+        timeout=15,
+    )
+    assert r.status_code == 200, f"/trend: {r.status_code} {r.text[:300]}"
+    body = r.json()
+    # server.py returns a list (not a dict) — accept both for forward-compat
+    assert isinstance(body, (list, dict)), (
+        f"/trend unexpected shape: expected list or dict, got {type(body)}"
+    )
+
+
+def test_coa_supplier_consistency_happy_path(base_url, admin_headers):
+    """TEST-05: /supplier-consistency returns 200 with a list (empty-DB tolerant).
+
+    server.py:3932-3937 returns kpis.get("supplier_deviations", []) — always a list.
+    """
+    r = requests.get(
+        f"{base_url}/api/coa-reconciliation/supplier-consistency",
+        headers=admin_headers,
+        timeout=15,
+    )
+    assert r.status_code == 200, f"/supplier-consistency: {r.status_code} {r.text[:300]}"
+    body = r.json()
+    assert isinstance(body, list), (
+        f"/supplier-consistency expected list, got {type(body)}"
+    )
+
+
+def test_coa_export_excel_happy_path(base_url, admin_headers):
+    """TEST-05: /export/excel returns 200 with xlsx bytes (RESEARCH §11.7: binary, not JSON).
+
+    server.py:4210-4315 returns Response with media_type=application/vnd.openxmlformats-
+    officedocument.spreadsheetml.sheet. Even with zero rows the workbook is non-empty
+    (it has a header row). T-coa-export-leak-01: do NOT log r.content.
+    """
+    r = requests.get(
+        f"{base_url}/api/coa-reconciliation/export/excel",
+        headers=admin_headers,
+        timeout=30,
+    )
+    assert r.status_code == 200, (
+        f"/export/excel: {r.status_code} — headers={dict(r.headers)}"
+    )
+    ctype = r.headers.get("content-type", "").lower()
+    assert (
+        "spreadsheet" in ctype or "excel" in ctype or "openxmlformats" in ctype
+    ), f"/export/excel unexpected content-type: {ctype!r}"
+    # Body must be non-empty bytes (the xlsx file with at least the header row)
+    assert len(r.content) > 0, "/export/excel response body is empty"
+    # Do NOT call r.json() — body is binary xlsx (RESEARCH §11.7)
+
+
+def test_coa_export_pdf_happy_path(base_url, admin_headers):
+    """TEST-05: /export/pdf returns 200 with PDF bytes.
+
+    server.py:4317-4400 returns PDF via reportlab. Against an empty DB the PDF still
+    has a title and KPI summary table. Body starts with PDF magic bytes b'%PDF-'.
+    """
+    r = requests.get(
+        f"{base_url}/api/coa-reconciliation/export/pdf",
+        headers=admin_headers,
+        timeout=30,
+    )
+    assert r.status_code == 200, (
+        f"/export/pdf: {r.status_code} — headers={dict(r.headers)}"
+    )
+    ctype = r.headers.get("content-type", "").lower()
+    assert "pdf" in ctype, f"/export/pdf unexpected content-type: {ctype!r}"
+    # PDF magic bytes: %PDF-
+    assert r.content[:5] == b"%PDF-", (
+        f"/export/pdf body does not start with PDF magic bytes; "
+        f"starts with {r.content[:10]!r}"
+    )
