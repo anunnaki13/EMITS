@@ -91,3 +91,8 @@ frontend/node_modules/.cache/default-development/1.pack
 frontend/node_modules/.cache/default-development/10.pack
 frontend/node_modules/.cache/default-development/4.pack_
 frontend/node_modules/.cache/default-development/6.pack_
+
+# Test credentials — local-only, never tracked
+memory/test_credentials.md
+memory/*.credentials.md
+*.test_credentials.md
