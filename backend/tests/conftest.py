@@ -257,18 +257,52 @@ def _backend_lifecycle():
 
 @pytest.fixture(scope="session", autouse=True)
 def _seed_baseline_data(_backend_lifecycle):
-    """Seed ≥3 deterministic merit_order documents into the test DB.
+    """Seed baseline data required by auth and merit_order tests into the test DB.
 
-    Resolution for RESEARCH §Open Questions Q3: existing test_merit_order.py:71
-    (assert len(data) > 0) and :314 (assert len(data) >= 1) require at least 1
-    merit_order document to exist. test_po_batubara.py is already empty-DB-safe
-    (all reads guarded by `if len(data) > 0`).
+    1. Admin user — registered via /api/auth/register on the test backend (port 18013)
+       using TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD env vars. Auth tests (test_auth_session.py,
+       test_auth_roles.py) require a valid admin account to exist in the test DB.
+       Idempotent: skips if a user with TEST_ADMIN_EMAIL already exists (HTTP 400 = already registered).
 
-    Seeds 3 documents (months 1, 2, 3 of 2024) to satisfy both assertions.
-    Idempotent: skips if collection already non-empty.
+    2. Merit order docs — seeds 3 deterministic documents (months 1-3, 2024) to satisfy
+       test_merit_order.py:71 (assert len(data) > 0) and :314 (assert len(data) >= 1).
+       Idempotent: skips if collection already non-empty.
+
+    Rule 1 auto-fix (04-02): the test backend starts with a fresh isolated DB; without an admin
+    user the login-dependent auth tests all fail with 401 "Email atau password salah".
     """
     from tests.factories.merit_order import make_merit_order
 
+    backend_url = os.environ.get("REACT_APP_BACKEND_URL", f"http://127.0.0.1:{PHASE4_TEST_PORT}")
+    admin_email = os.environ.get("TEST_ADMIN_EMAIL", "")
+    admin_password = os.environ.get("TEST_ADMIN_PASSWORD", "")
+
+    # --- 1. Seed admin user via /api/auth/register ---
+    if admin_email and admin_password:
+        try:
+            r = requests.post(
+                f"{backend_url}/api/auth/register",
+                json={
+                    "email": admin_email,
+                    "password": admin_password,
+                    "name": "Test Admin",
+                    "role": "admin",
+                },
+                timeout=10,
+            )
+            if r.status_code == 200:
+                print(f"[conftest] _seed_baseline_data: registered admin user {admin_email}")
+            elif r.status_code == 400:
+                # Already registered — idempotent
+                print(f"[conftest] _seed_baseline_data: admin user {admin_email} already exists")
+            else:
+                print(f"[conftest] _seed_baseline_data: admin register returned {r.status_code}: {r.text[:200]}")
+        except Exception as e:
+            print(f"[conftest] _seed_baseline_data: admin register failed (non-fatal): {e}")
+    else:
+        print("[conftest] _seed_baseline_data: TEST_ADMIN_EMAIL/PASSWORD not set, skipping admin seed")
+
+    # --- 2. Seed merit_order documents ---
     mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
     try:
         mongo_client = pymongo.MongoClient(mongo_url, serverSelectionTimeoutMS=3000)
@@ -278,7 +312,7 @@ def _seed_baseline_data(_backend_lifecycle):
                 make_merit_order(year=2024, month=month)
             print(f"[conftest] _seed_baseline_data: seeded 3 merit_order docs into {TEST_DB_NAME}")
         else:
-            print(f"[conftest] _seed_baseline_data: collection non-empty ({existing} docs), skipping seed")
+            print(f"[conftest] _seed_baseline_data: merit_order non-empty ({existing} docs), skipping seed")
         mongo_client.close()
     except Exception as e:
         print(f"[conftest] _seed_baseline_data failed (non-fatal): {e}")
