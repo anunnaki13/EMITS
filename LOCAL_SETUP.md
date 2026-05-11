@@ -266,7 +266,7 @@ cd /home/damnation/emits/pltu-tenayan-full-backup/backend
 # Activate the project venv
 source .venv/bin/activate
 
-# Source the backend environment (JWT_SECRET, MONGO_URL, DB_NAME, CORS_ORIGINS, EMERGENT_LLM_KEY, ...)
+# Source the backend environment (JWT_SECRET, MONGO_URL, DB_NAME, CORS_ORIGINS, OPENROUTER_API_KEY, ...)
 # Use `set -a` so the values export into the subprocess; never echo them.
 set -a
 . ./.env
@@ -328,5 +328,5 @@ decimal-phase convention. MongoDB itself already auto-starts via systemd
 ### Cross-references
 
 - Original procedure: `pltu-tenayan-full-backup/docs/audit/LOGIN_BUG_RESOLUTION.md` "VPS-restart note (Phase-3 follow-up trigger)" (lines 26-42).
-- Backend env contract: `backend/.env` (gitignored; `JWT_SECRET`, `MONGO_URL`, `DB_NAME`, `CORS_ORIGINS`, optional `EMERGENT_LLM_KEY`).
+- Backend env contract: `backend/.env` (gitignored; `JWT_SECRET`, `MONGO_URL`, `DB_NAME`, `CORS_ORIGINS`, optional `OPENROUTER_API_KEY`).
 - Credential hygiene: `docs/audit/CREDENTIAL_HYGIENE.md` — never inline JWTs, MongoDB URIs with credentials, or admin passwords in this runbook.

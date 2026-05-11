@@ -96,7 +96,7 @@ Modul AI yang didukung:
 Catatan:
 - integrasi AI menggunakan `emergentintegrations`
 - model yang dipakai saat ini: Gemini `gemini-2.5-flash`
-- jika key user tidak di-set, backend akan mencoba memakai `EMERGENT_LLM_KEY`
+- jika key user tidak di-set, backend akan mencoba memakai `OPENROUTER_API_KEY`
 
 ### 3.6 COA Reconciliation & Dispute Monitor
 Fitur inti:
@@ -556,7 +556,7 @@ Diperlukan minimal:
 - `DB_NAME`
 - `JWT_SECRET`
 - `CORS_ORIGINS`
-- `EMERGENT_LLM_KEY` (jika memakai default key global)
+- `OPENROUTER_API_KEY` (jika memakai default key global)
 
 ### 10.3 Menjalankan Frontend
 ```bash

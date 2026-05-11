@@ -140,7 +140,7 @@ MongoDB
 - `DB_NAME` — nama database
 - `JWT_SECRET` — secret JWT
 - `CORS_ORIGINS` — daftar origin yang diizinkan
-- `EMERGENT_LLM_KEY` — kunci LLM default bila user tidak memakai custom key
+- `OPENROUTER_API_KEY` — kunci LLM default bila user tidak memakai custom key
 
 ## Menjalankan Aplikasi
 

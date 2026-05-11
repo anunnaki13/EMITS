@@ -129,14 +129,14 @@ MONGO_URL=mongodb://127.0.0.1:27017
 DB_NAME=pltu_tenayan
 JWT_SECRET=ganti-dengan-secret-yang-kuat
 CORS_ORIGINS=https://your-domain.com,https://www.your-domain.com
-EMERGENT_LLM_KEY=isi-jika-memakai-default-global-key
+OPENROUTER_API_KEY=isi-jika-memakai-default-global-key
 ```
 
 Catatan penting:
 - jangan gunakan fallback default jika environment penting belum tersedia
 - `MONGO_URL` dan `DB_NAME` wajib benar
 - `CORS_ORIGINS` harus memuat domain frontend publik
-- jika user memakai custom AI key per user, `EMERGENT_LLM_KEY` tetap berguna sebagai default backend
+- jika user memakai custom AI key per user, `OPENROUTER_API_KEY` tetap berguna sebagai default backend
 
 ### 6.3 Uji Backend Manual
 
@@ -378,7 +378,7 @@ curl -X POST "http://103.150.197.225:8013/api/auth/login" \
 ### 12.5 Cek upload dan export
 - Upload Excel pada salah satu halaman data
 - Export COA PDF/Excel
-- Cek Smart Blending AI bila `EMERGENT_LLM_KEY` tersedia dan budget cukup
+- Cek Smart Blending AI bila `OPENROUTER_API_KEY` tersedia dan budget cukup
 
 ---
 
@@ -531,7 +531,7 @@ Cek:
 
 ### 17.5 Smart Blending AI gagal
 Penyebab umum:
-- `EMERGENT_LLM_KEY` tidak tersedia
+- `OPENROUTER_API_KEY` tidak tersedia
 - budget Universal Key habis
 - user settings AI tidak valid
 
