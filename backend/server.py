@@ -16,8 +16,8 @@ import jwt
 import bcrypt
 import pandas as pd
 import io
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 from app.ai.client import AIClient, get_ai_client
+from app.ai.openrouter_client import LLMUnavailableError
 import json
 import asyncio
 
@@ -38,6 +38,16 @@ JWT_EXPIRATION_HOURS = 24
 # Create the main app
 app = FastAPI(title="PLTU Tenayan Fuel Management System")
 
+
+# ==================== LLM UNAVAILABLE HANDLER (D-09, OPS-02) ====================
+# Maps LLMUnavailableError -> HTTP 503 with Indonesian detail body.
+# Covers: retry exhaustion, 401/402/non-retryable OpenRouter responses.
+@app.exception_handler(LLMUnavailableError)
+async def llm_unavailable_handler(request: Request, exc: LLMUnavailableError):
+    return JSONResponse(
+        status_code=503,
+        content={"detail": str(exc)},
+    )
 
 # ==================== AUTHFIX-02: VALIDATION ERROR HANDLER ====================
 # CONS-auth-header (locked SPEC) requires HTTP 400 for malformed body on /api/auth/*.
@@ -2260,7 +2270,7 @@ async def get_dashboard_advanced(
     }
 
 # ==================== AI INTELLIGENCE AGENT ====================
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+# (emergentintegrations removed Phase 6 D-02; now uses OpenRouterClient via get_ai_client())
 
 # AI Chat History Collection
 ai_chat_collection = db.ai_chat_history
@@ -2273,8 +2283,8 @@ class AIQueryRequest(BaseModel):
 
 class AISettingsUpdate(BaseModel):
     custom_api_key: Optional[str] = None
-    llm_provider: Optional[str] = "gemini"
-    llm_model: Optional[str] = "gemini-2.5-flash"
+    llm_provider: Optional[str] = "openrouter"
+    llm_model: Optional[str] = "openai/gpt-4o-mini"
 
 async def get_database_context(module: str, parameters: dict = None) -> str:
     """Gather relevant data from database based on module"""
@@ -2696,8 +2706,8 @@ async def get_ai_settings(user: dict = Depends(get_current_user)):
     if not settings:
         return {
             "custom_api_key": None,
-            "llm_provider": "gemini",
-            "llm_model": "gemini-2.5-flash",
+            "llm_provider": "openrouter",
+            "llm_model": "openai/gpt-4o-mini",
             "using_default": True
         }
     return {
