@@ -3053,6 +3053,110 @@ async def create_new_session(module: str = "general", user: dict = Depends(get_c
         "message": "Sesi percakapan baru telah dibuat"
     }
 
+# ==================== AI CONVERSATIONS (D-18, OPS-04) ====================
+
+@api_router.get("/ai/conversations")
+async def list_conversations(user: dict = Depends(get_current_user)):
+    """List user's conversations from ai_chat_history grouped by session_id, newest first."""
+    pipeline = [
+        {"$match": {"user_id": user["id"]}},
+        {"$sort": {"created_at": 1}},
+        {"$group": {
+            "_id": "$session_id",
+            "first_query": {"$first": "$query"},
+            "last_message_at": {"$max": "$created_at"},
+        }},
+        {"$sort": {"last_message_at": -1}},
+    ]
+    sessions = await ai_chat_collection.aggregate(pipeline).to_list(100)
+    return [
+        {
+            "id": s["_id"],
+            "title": (s.get("first_query") or "Percakapan tanpa judul")[:50],
+            "last_message_at": s["last_message_at"],
+        }
+        for s in sessions
+    ]
+
+
+@api_router.post("/ai/conversations", status_code=201)
+async def create_conversation(user: dict = Depends(get_current_user)):
+    """Create a new empty conversation. Returns conversation id."""
+    conv_id = f"tenayan-ai-{user['id']}-{uuid.uuid4()}"
+    return {
+        "id": conv_id,
+        "title": "Percakapan tanpa judul",
+        "last_message_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@api_router.get("/ai/conversations/{conv_id}/messages")
+async def get_conversation_messages(
+    conv_id: str,
+    before: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=50),
+    user: dict = Depends(get_current_user),
+):
+    """Paginated message retrieval for a conversation. Returns messages oldest-first."""
+    query: dict = {"session_id": conv_id, "user_id": user["id"]}
+    if before:
+        query["id"] = {"$lt": before}
+    docs = await ai_chat_collection.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    if not docs and before is None:
+        raise HTTPException(status_code=404, detail="Percakapan tidak ditemukan")
+    messages = []
+    for doc in reversed(docs):
+        messages.append({
+            "id": f"u-{doc['id']}",
+            "role": "user",
+            "content": doc.get("query", ""),
+            "created_at": doc["created_at"],
+        })
+        if doc.get("response"):
+            messages.append({
+                "id": f"a-{doc['id']}",
+                "role": "assistant",
+                "content": doc["response"],
+                "created_at": doc["created_at"],
+            })
+    return messages
+
+
+@api_router.post("/ai/conversations/{conv_id}/messages")
+async def send_conversation_message(
+    conv_id: str,
+    request: Request,
+    user: dict = Depends(get_current_user),
+    ai: AIClient = Depends(get_ai_client),
+):
+    """Send a user message; backend calls LLM; persists exchange; returns AI response."""
+    body = await request.json()
+    content = (body.get("content") or "").strip()
+    if not content:
+        raise HTTPException(status_code=422, detail="content is required")
+    system_prompt = get_system_prompt("general")
+    response = await ai.send_message(conv_id, system_prompt, content)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    doc_id = str(uuid.uuid4())
+    await ai_chat_collection.insert_one({
+        "id": doc_id,
+        "user_id": user["id"],
+        "session_id": conv_id,
+        "module": "general",
+        "query": content,
+        "response": response,
+        "parameters": None,
+        "created_at": now_iso,
+    })
+    return {
+        "id": f"a-{doc_id}",
+        "role": "assistant",
+        "content": response,
+        "created_at": now_iso,
+    }
+
 # ==================== SMART STOCK ENDPOINTS ====================
 
 class SmartStockEntry(BaseModel):
