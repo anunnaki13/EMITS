@@ -2884,11 +2884,15 @@ async def get_smart_stock_summary(user: dict = Depends(get_current_user)):
         }}
     ]).to_list(1)
     
-    penerimaan = total_penerimaan[0].get("total", 0) if total_penerimaan else 0
-    batubara_pakai = total_pemakaian[0].get("total_batubara", 0) if total_pemakaian else 0
-    biomassa_pakai = total_pemakaian[0].get("total_biomassa", 0) if total_pemakaian else 0
-    avg_daily = avg_usage[0].get("avg_batubara", 0) if avg_usage else 0
-    
+    # Latent-bug hotfix (Phase-5 CP2, 2026-05-11): MongoDB aggregation can return
+    # None for $sum/$avg when source fields are null; dict.get(key, default) does NOT
+    # convert None → default. Coerce with `or 0` so downstream arithmetic is safe.
+    # RESEARCH §Focus 6 flagged this exposure risk; smoke test caught it on real data.
+    penerimaan = (total_penerimaan[0].get("total") if total_penerimaan else 0) or 0
+    batubara_pakai = (total_pemakaian[0].get("total_batubara") if total_pemakaian else 0) or 0
+    biomassa_pakai = (total_pemakaian[0].get("total_biomassa") if total_pemakaian else 0) or 0
+    avg_daily = (avg_usage[0].get("avg_batubara") if avg_usage else 0) or 0
+
     current_stock = penerimaan - batubara_pakai - biomassa_pakai
     days_of_supply = int(current_stock / avg_daily) if avg_daily > 0 else 0
     
