@@ -2376,7 +2376,7 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
     # Smart Stock Module Data
     if module in ["general", "smart_stock"]:
         # Get smart stock penerimaan data
-        penerimaan_data = await db.smart_stock.find(
+        penerimaan_data = await db.smartstock.find(
             {},
             {"_id": 0, "source": 1, "supplier": 1, "cargo": 1, "tonase": 1, "gcv_arb": 1, "date": 1}
         ).sort("date", -1).limit(30).to_list(30)
@@ -2384,7 +2384,7 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
             context_parts.append(f"Smart Stock - Sumber Penerimaan (30 terbaru): {penerimaan_data}")
         
         # Get smart stock pemakaian data
-        pemakaian_data = await db.sumber_pemakaian.find(
+        pemakaian_data = await db.sumberpemakaian.find(
             {},
             {"_id": 0, "tanggal": 1, "energy_mwh": 1, "batubara_mt": 1, "biomassa_mt": 1, "sfc": 1}
         ).sort("tanggal", -1).limit(30).to_list(30)
@@ -2392,10 +2392,10 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
             context_parts.append(f"Smart Stock - Sumber Pemakaian (30 terbaru): {pemakaian_data}")
         
         # Calculate stock summary
-        total_penerimaan = await db.smart_stock.aggregate([
+        total_penerimaan = await db.smartstock.aggregate([
             {"$group": {"_id": None, "total": {"$sum": "$tonase"}}}
         ]).to_list(1)
-        total_pemakaian = await db.sumber_pemakaian.aggregate([
+        total_pemakaian = await db.sumberpemakaian.aggregate([
             {"$group": {"_id": None, "total_batubara": {"$sum": "$batubara_mt"}, "total_biomassa": {"$sum": "$biomassa_mt"}}}
         ]).to_list(1)
         
@@ -2424,7 +2424,7 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
             umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
             
             # Calculate potential loss
-            settings = await db.settings.find_one({"type": "coa"})
+            settings = await db.app_settings.find_one({"type": "coa"})
             price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
             potential_loss = 0
             for c in all_coa:
@@ -2860,21 +2860,21 @@ async def get_logistics_losses(user: dict = Depends(get_current_user)):
 async def get_smart_stock_summary(user: dict = Depends(get_current_user)):
     """Get quick smart stock summary"""
     # Get total penerimaan
-    total_penerimaan = await db.smart_stock.aggregate([
+    total_penerimaan = await db.smartstock.aggregate([
         {"$group": {"_id": None, "total": {"$sum": "$tonase"}}}
     ]).to_list(1)
-    
+
     # Get total pemakaian
-    total_pemakaian = await db.sumber_pemakaian.aggregate([
+    total_pemakaian = await db.sumberpemakaian.aggregate([
         {"$group": {
-            "_id": None, 
+            "_id": None,
             "total_batubara": {"$sum": "$batubara_mt"},
             "total_biomassa": {"$sum": "$biomassa_mt"}
         }}
     ]).to_list(1)
-    
+
     # Get average daily usage (last 30 days)
-    avg_usage = await db.sumber_pemakaian.aggregate([
+    avg_usage = await db.sumberpemakaian.aggregate([
         {"$sort": {"tanggal": -1}},
         {"$limit": 30},
         {"$group": {
@@ -2921,11 +2921,11 @@ async def get_coa_alerts(user: dict = Depends(get_current_user)):
     
     # Count umpire in progress
     umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
-    
+
     # Calculate potential loss
-    settings = await db.settings.find_one({"type": "coa"})
+    settings = await db.app_settings.find_one({"type": "coa"})
     price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
-    
+
     potential_loss = 0
     supplier_deviasi = {}
     
@@ -4342,8 +4342,8 @@ async def export_coa_to_pdf(
     all_coa = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
     kritis_count = sum(1 for c in all_coa if c.get("status") == "Kritis")
     umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
-    
-    settings = await db.settings.find_one({"type": "coa"})
+
+    settings = await db.app_settings.find_one({"type": "coa"})
     price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
     potential_loss = 0
     for c in all_coa:
