@@ -68,9 +68,22 @@ const SmartBlendingPage = () => {
       );
 
       setRecommendation(response.data);
-      toast.success("AI recommendation generated successfully!");
+      toast.success("Rekomendasi AI berhasil dibuat!");
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Failed to get recommendation");
+      if (!error.response) {
+        toast.error("Tidak terhubung ke server.", { duration: 6000 });
+      } else if (error.response.status === 401) {
+        toast.error("Sesi habis. Silakan login ulang.", { duration: 5000 });
+      } else if (error.response.status === 503) {
+        toast.error("Layanan AI tidak tersedia", {
+          description:
+            error.response.data?.detail ||
+            "Layanan AI sementara tidak tersedia. Silakan coba lagi sebentar.",
+          duration: 8000,
+        });
+      } else {
+        toast.error("Terjadi kesalahan pada server. Silakan coba lagi.", { duration: 5000 });
+      }
       console.error(error);
     } finally {
       setLoading(false);

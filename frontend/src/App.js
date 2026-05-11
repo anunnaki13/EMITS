@@ -12,6 +12,7 @@ import SmartStockPage from "@/pages/SmartStockPage";
 import SumberPemakaianPage from "@/pages/SumberPemakaianPage";
 import SmartBlendingPage from "@/pages/SmartBlendingPage";
 import AIIntelligencePage from "@/pages/AIIntelligencePage";
+import AIChatPage from "@/pages/AIChatPage";
 import LaporanPage from "@/pages/LaporanPage";
 import COAReconciliationPage from "@/pages/COAReconciliationPage";
 import DisputeMonitorPage from "@/pages/DisputeMonitorPage";
@@ -133,6 +134,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><AIIntelligencePage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai-chat"
+        element={
+          <ProtectedRoute>
+            <Layout><AIChatPage /></Layout>
           </ProtectedRoute>
         }
       />

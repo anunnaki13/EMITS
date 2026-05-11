@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Sparkles,
   Scale,
-  Gavel
+  Gavel,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -257,8 +258,23 @@ const Layout = ({ children }) => {
             }`}
           >
             <Bot className="w-5 h-5" />
-            <span className="text-sm font-medium">AI Intelligence</span>
+            <span className="text-sm font-normal">AI Intelligence</span>
             {location.pathname === "/ai-intelligence" && <ChevronRight className="w-4 h-4 ml-auto" />}
+          </Link>
+
+          {/* Riwayat Percakapan AI */}
+          <Link
+            to="/ai-chat"
+            onClick={() => setSidebarOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              location.pathname === "/ai-chat"
+                ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 border border-cyan-500/30"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-sm font-normal">Riwayat Percakapan AI</span>
+            {location.pathname === "/ai-chat" && <ChevronRight className="w-4 h-4 ml-auto" />}
           </Link>
 
           {user?.role === "admin" && (
