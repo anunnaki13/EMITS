@@ -10,7 +10,7 @@ Karakter penyimpanan saat ini:
 - Tidak memakai relasi SQL; relasi bersifat logis melalui field seperti `id`, `created_by`, `user_id`, `reconciliation_id`
 - Beberapa koleksi menyimpan `datetime` sebagai ISO string
 - Banyak dokumen menyertakan `created_at`, `updated_at`, `created_by`, atau metadata upload
-- Beberapa nama koleksi menunjukkan adanya legacy/transitional structure
+- Nama koleksi telah distandardisasi per Phase 5 (2026-05-11); tidak ada lagi duplikasi aktif
 
 ## 2. Daftar Koleksi yang Terlihat di Kode
 
@@ -24,20 +24,13 @@ Koleksi yang terobservasi dari kode backend:
 - `po_batubara`
 - `merit_order`
 - `smartstock`
-- `smart_stock`
-- `sumber_pemakaian`
 - `sumberpemakaian`
 - `coa_reconciliation`
 - `app_settings`
-- `settings`
 - `ai_chat_history`
-- `ai_conversations`
 
 Catatan penting:
-- `smartstock` dan `smart_stock` tampak hidup berdampingan; ini mengindikasikan naming legacy/transisi.
-- `sumber_pemakaian` dan `sumberpemakaian` juga mengindikasikan pola serupa.
-- `app_settings` dan `settings` sama-sama muncul di kode; perlu standardisasi jangka panjang.
-- `ai_chat_history` dan `ai_conversations` menunjukkan ada dua pola penyimpanan history AI pada generasi fitur yang berbeda.
+- Nama koleksi telah distandardisasi per Phase 5 (2026-05-11). Lihat Duplicate Pair Resolution Log di bawah.
 
 ---
 
@@ -371,7 +364,7 @@ Menyimpan ranking/evaluasi ekonomi pemasok dan moda pasok.
 
 ## 9. Koleksi Smart Stock
 
-## 9.1 `smartstock` / `smart_stock`
+## 9.1 `smartstock`
 
 ### Tujuan
 Menyimpan stok harian berdasarkan sumber penerimaan dan supplier/zona.
@@ -409,14 +402,11 @@ Menyimpan stok harian berdasarkan sumber penerimaan dan supplier/zona.
 - index `date`
 - unique/partial unique index opsional pada `date` bila 1 entry per hari dijaga
 
-## 9.2 Catatan naming
-Kode aktif list smart stock membaca dari `db.smartstock`, tetapi nama `smart_stock` juga muncul di kode. Sebelum migrasi skema, developer perlu memastikan koleksi mana yang benar-benar dipakai environment produksi.
-
 ---
 
 ## 10. Koleksi Sumber Pemakaian
 
-## 10.1 `sumber_pemakaian` / `sumberpemakaian`
+## 10.1 `sumberpemakaian`
 
 ### Tujuan
 Menyimpan pemakaian bahan bakar per hari, per unit, dan per supplier.
@@ -447,9 +437,6 @@ Menyimpan pemakaian bahan bakar per hari, per unit, dan per supplier.
 
 ### Rekomendasi index
 - index `date`
-
-### Catatan naming
-Seperti smart stock, ada indikasi naming legacy yang harus distandardisasi.
 
 ---
 
@@ -551,9 +538,6 @@ Menyimpan konfigurasi aplikasi global, terutama COA settings.
 ### Rekomendasi index
 - unique index pada `type`
 
-## 12.2 `settings`
-Muncul di kode, namun penggunaan aktifnya perlu diverifikasi. Potensial legacy/global settings collection.
-
 ---
 
 ## 13. Koleksi AI History
@@ -573,50 +557,7 @@ Karena route dan fitur history masih ada, kemungkinan minimal memuat:
 - `created_at`
 
 ### Status
-Masih relevan untuk compatibility/history lama, namun fitur session-based yang lebih jelas kini menggunakan `ai_conversations`.
-
-## 13.2 `ai_conversations`
-
-### Tujuan
-Penyimpanan percakapan AI per sesi.
-
-### Field inti
-| Field | Tipe | Keterangan |
-|---|---|---|
-| `session_id` | string | ID sesi percakapan |
-| `user_id` | string | User pemilik sesi |
-| `messages` | array | Daftar pesan user/assistant |
-| `created_at` | string | Waktu dibuat |
-| `updated_at` | string | Waktu update terakhir |
-| `module` | string | Domain percakapan |
-
-### Struktur `messages[]`
-```json
-[
-  {
-    "role": "user",
-    "content": "Analisis supplier terbaik",
-    "timestamp": "2026-01-30T12:00:00+00:00",
-    "module": "general"
-  },
-  {
-    "role": "assistant",
-    "content": "Berdasarkan data...",
-    "timestamp": "2026-01-30T12:00:02+00:00",
-    "module": "general"
-  }
-]
-```
-
-### Query pattern umum
-- list sesi per `user_id`
-- cari `session_id + user_id`
-- sort berdasarkan `updated_at`
-
-### Rekomendasi index
-- unique index `session_id`
-- index `user_id`
-- compound index `user_id + updated_at`
+`ai_chat_history` is the canonical AI chat history collection (per ADR-012). The previous `ai_conversations` duplicate has been resolved by Phase 5 (2026-05-11).
 
 ---
 
@@ -626,7 +567,7 @@ Walau MongoDB tidak memaksa relasi, aplikasi memiliki relasi logis berikut:
 
 - `users.id` → `created_by`, `updated_by`, `uploaded_by`, `umpire_completed_by`, `user_id`
 - `user_settings.user_id` → `users.id`
-- `ai_conversations.user_id` → `users.id`
+- `ai_chat_history.user_id` → `users.id`
 - `coa_reconciliation.id` ↔ dipakai oleh flow umpire melalui `reconciliation_id`
 - `merit_order`, `vessels`, `barges`, `trucking`, `smartstock` → menjadi input analitik untuk Smart Blending AI
 - `po_batubara`, `merit_order`, `vessels`, `barges` → menjadi context data untuk AI Intelligence dan dashboard
@@ -649,11 +590,7 @@ File export tidak disimpan permanen sebagai koleksi database; file dibangkitkan 
 ## 16. Technical Debt dan Standardisasi yang Disarankan
 
 ### 16.1 Naming Koleksi
-Prioritas penting:
-- standardisasi `smartstock` vs `smart_stock`
-- standardisasi `sumber_pemakaian` vs `sumberpemakaian`
-- standardisasi `app_settings` vs `settings`
-- standardisasi `ai_chat_history` vs `ai_conversations`
+Resolved by Phase 5 (2026-05-11). See ADR-009 (smartstock), ADR-010 (sumberpemakaian), ADR-011 (app_settings), ADR-012 (ai_chat_history). Procedure: pltu-tenayan-full-backup/MIGRATION_RUNBOOK.md.
 
 ### 16.2 Index Management
 Saat ini kode tidak menunjukkan definisi index eksplisit. Disarankan menambahkan bootstrap index pada startup atau migration script terpisah.
@@ -679,60 +616,36 @@ Disarankan:
 | `po_batubara` | `id`, `po_number`, `supplier_name`, `completed_year`, `completed_month` |
 | `merit_order` | `id`, `periode`, `pemasok`, `rp_kcal` |
 | `smartstock` | `date` |
-| `sumber_pemakaian` | `date` |
+| `sumberpemakaian` | `date` |
 | `coa_reconciliation` | `id`, `shipment`, `suppliers`, `status`, `umpire_status`, `completed_unloading` |
 | `app_settings` | `type` unique |
-| `ai_conversations` | `session_id` unique, `user_id`, `user_id + updated_at` |
+| `ai_chat_history` | `user_id`, `created_at` |
 
 ---
 
 ## 18. Kesimpulan
 
-Skema database aplikasi ini kaya domain dan cukup fleksibel, tetapi mulai menunjukkan kebutuhan standardisasi serius. Untuk pengembangan jangka panjang, fokus terbaik adalah menstabilkan naming koleksi, menambah index, memperjelas batas antara data inti vs data legacy, dan mendokumentasikan field operasional hasil upload Excel secara lebih formal.
+Skema database aplikasi ini kaya domain dan cukup fleksibel. Naming koleksi telah distandardisasi di Phase 5 (2026-05-11). Untuk pengembangan jangka panjang, fokus terbaik adalah menambah index, mempertegas batas antara data inti vs data historis/arsip, dan mendokumentasikan field operasional hasil upload Excel secara lebih formal.
 
 ---
 
-## Duplicate Pair Active Read Targets (Phase-3 audit, 2026-05-10)
+## Duplicate Pair Resolution Log
 
-Phase-3 plan 03-05 documents the active read target for each duplicate-pair
-collection. **This is documentation only — Phase 5 (DEBT-01..05) owns the
-rename and migration.** Determinations are based on `grep -nE 'db\.<name>\.'
-backend/server.py` evidence and live row counts as of 2026-05-10.
+Phase-3 plan 03-05 audited 4 duplicate-name collection pairs. Phase 5 (2026-05-11)
+resolved each pair: a canonical name was locked in an ADR, the superseded collection
+was confirmed empty in the live `pltu_tenayan` DB, server.py reads were switched
+to the canonical name, and the empty superseded collection was dropped after a ≥48h
+observation window. See `pltu-tenayan-full-backup/MIGRATION_RUNBOOK.md` for the
+procedure.
 
-| Pair | Active (read target) | Legacy | Active count | Legacy count | Code evidence |
-|------|----------------------|--------|--------------|--------------|---------------|
-| smartstock vs smart_stock | **Both names actively read** — CRUD endpoints use `smartstock`; AI module uses `smart_stock` | N/A — canonical winner deferred to Phase 5 | 207 | 0 | `backend/server.py:3100` db.smartstock.find (CRUD); `backend/server.py:2377` db.smart_stock.find (AI module) |
-| sumberpemakaian vs sumber_pemakaian | **Both names actively read** — CRUD endpoints use `sumberpemakaian`; AI module uses `sumber_pemakaian` | N/A — canonical winner deferred to Phase 5 | 208 | 0 | `backend/server.py:3374` db.sumberpemakaian.find (CRUD); `backend/server.py:2385` db.sumber_pemakaian.find (AI module) |
-| app_settings vs settings | **Both names actively read** — `/settings/coa` GET/PUT uses `app_settings`; COA export and AI COA-alerts use `settings` | N/A — canonical winner deferred to Phase 5 | 1 | 0 | `backend/server.py:3853` db.app_settings.find_one (settings endpoint); `backend/server.py:4382` db.settings.find_one (COA export); `backend/server.py:2425` db.settings.find_one (AI module) |
-| ai_chat_history vs ai_conversations | `ai_chat_history` | `ai_conversations` | 10 | 0 | `backend/server.py:2264` ai_chat_collection = db.ai_chat_history (module-level assignment; all AI session reads go through this variable) |
+| Pair | Canonical (kept) | Superseded (resolved) | ADR | Resolved | Notes |
+|------|------------------|--------------------|------|----------|-------|
+| smartstock / smart_stock | smartstock | smart_stock | [ADR-009](../../.planning/decisions/ADR-009-canonical-smartstock.md) | Resolved by Phase 5 (2026-05-11) | Superseded: 0 records; absent from live DB at drop time |
+| sumberpemakaian / sumber_pemakaian | sumberpemakaian | sumber_pemakaian | [ADR-010](../../.planning/decisions/ADR-010-canonical-sumberpemakaian.md) | Resolved by Phase 5 (2026-05-11) | Superseded: 0 records; absent from live DB at drop time |
+| app_settings / settings | app_settings | settings | [ADR-011](../../.planning/decisions/ADR-011-canonical-app-settings.md) | Resolved by Phase 5 (2026-05-11) | Superseded: 0 records; 3 server.py reads switched (lines 2427, 2926, 4346); absent from live DB at drop time |
+| ai_chat_history / ai_conversations | ai_chat_history | ai_conversations | [ADR-012](../../.planning/decisions/ADR-012-canonical-ai-chat-history.md) | Resolved by Phase 5 (2026-05-11) | Superseded: 0 records; zero server.py reads (no code edits required); absent from live DB at drop time |
 
-**Notes on "Both names actively read" rows:**
-
-For `smartstock`/`smart_stock`: the CRUD module (line 3100 onwards) reads from
-`db.smartstock` (207 records, the production write target). The AI intelligence
-module (line 2377) reads from `db.smart_stock` (0 records). Because live data
-lives only in `smartstock`, the AI quick-smart-stock endpoint currently returns
-empty/zero context from `smart_stock`. Phase 5 must migrate the AI module read
-to `smartstock` and drop `smart_stock`.
-
-For `sumberpemakaian`/`sumber_pemakaian`: same pattern — CRUD writes to
-`sumberpemakaian` (208 records); AI module reads `sumber_pemakaian` (0 records).
-Phase 5 must align the AI module read to `sumberpemakaian`.
-
-For `app_settings`/`settings`: the canonical `/settings/coa` endpoint reads and
-writes `app_settings` (1 record, production data). The COA-export PDF path
-(line 4382) and AI COA-alerts context (line 2425) still read the legacy `settings`
-collection (0 records). This means COA export and AI COA-alerts silently fall back
-to the hardcoded default (`price_per_kcal_per_ton = 50`). Phase 5 must unify
-these reads to `app_settings`.
-
-**Method:** `grep -nE 'db\.(smartstock|smart_stock|sumberpemakaian|sumber_pemakaian|app_settings|settings|ai_chat_history|ai_conversations)\.' backend/server.py`
+**Method (Phase 3 audit, preserved for historical context):**
+`grep -nE 'db\.(smartstock|smart_stock|sumberpemakaian|sumber_pemakaian|app_settings|settings|ai_chat_history|ai_conversations)\.' backend/server.py`
 plus live `db.<name>.countDocuments({})` against the production VPS
-(read-only — no writes performed by this audit).
-
-**Phase 5 dependency:** the rename plan (DEBT-01..05) MUST start from this
-table — picking a canonical winner per row, dry-running migration, and
-removing legacy reads only after verified row-count + checksum parity.
-
-See `.planning/ROADMAP.md` §"Phase 5: Collection Naming Debt Resolution"
-and `.planning/intel/constraints.md` → CONS-collection-naming-debt.
+(read-only — no writes performed by the audit).
