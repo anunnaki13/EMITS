@@ -2388,7 +2388,7 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
         # Get smart stock penerimaan data
         penerimaan_data = await db.smartstock.find(
             {},
-            {"_id": 0, "source": 1, "supplier": 1, "cargo": 1, "tonase": 1, "gcv_arb": 1, "date": 1}
+            {"_id": 0, "date": 1, "total_penerimaan": 1, "suppliers": 1}
         ).sort("date", -1).limit(30).to_list(30)
         if penerimaan_data:
             context_parts.append(f"Smart Stock - Sumber Penerimaan (30 terbaru): {penerimaan_data}")
@@ -2396,24 +2396,23 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
         # Get smart stock pemakaian data
         pemakaian_data = await db.sumberpemakaian.find(
             {},
-            {"_id": 0, "tanggal": 1, "energy_mwh": 1, "batubara_mt": 1, "biomassa_mt": 1, "sfc": 1}
-        ).sort("tanggal", -1).limit(30).to_list(30)
+            {"_id": 0, "date": 1, "total_pemakaian": 1, "suppliers": 1}
+        ).sort("date", -1).limit(30).to_list(30)
         if pemakaian_data:
             context_parts.append(f"Smart Stock - Sumber Pemakaian (30 terbaru): {pemakaian_data}")
         
         # Calculate stock summary
         total_penerimaan = await db.smartstock.aggregate([
-            {"$group": {"_id": None, "total": {"$sum": "$tonase"}}}
+            {"$group": {"_id": None, "total": {"$sum": "$total_penerimaan"}}}
         ]).to_list(1)
         total_pemakaian = await db.sumberpemakaian.aggregate([
-            {"$group": {"_id": None, "total_batubara": {"$sum": "$batubara_mt"}, "total_biomassa": {"$sum": "$biomassa_mt"}}}
+            {"$group": {"_id": None, "total_pemakaian": {"$sum": "$total_pemakaian"}}}
         ]).to_list(1)
         
         if total_penerimaan and total_pemakaian:
             penerimaan = total_penerimaan[0].get("total", 0) if total_penerimaan else 0
-            batubara_pakai = total_pemakaian[0].get("total_batubara", 0) if total_pemakaian else 0
-            biomassa_pakai = total_pemakaian[0].get("total_biomassa", 0) if total_pemakaian else 0
-            context_parts.append(f"Ringkasan Stok: Total Penerimaan={penerimaan} MT, Total Pemakaian Batubara={batubara_pakai} MT, Total Pemakaian Biomassa={biomassa_pakai} MT")
+            pemakaian = total_pemakaian[0].get("total_pemakaian", 0) if total_pemakaian else 0
+            context_parts.append(f"Ringkasan Stok: Total Penerimaan={penerimaan} MT, Total Pemakaian={pemakaian} MT")
     
     # COA Reconciliation Module Data
     if module in ["general", "coa_reconciliation"]:
@@ -2871,26 +2870,24 @@ async def get_smart_stock_summary(user: dict = Depends(get_current_user)):
     """Get quick smart stock summary"""
     # Get total penerimaan
     total_penerimaan = await db.smartstock.aggregate([
-        {"$group": {"_id": None, "total": {"$sum": "$tonase"}}}
+        {"$group": {"_id": None, "total": {"$sum": "$total_penerimaan"}}}
     ]).to_list(1)
 
     # Get total pemakaian
     total_pemakaian = await db.sumberpemakaian.aggregate([
         {"$group": {
             "_id": None,
-            "total_batubara": {"$sum": "$batubara_mt"},
-            "total_biomassa": {"$sum": "$biomassa_mt"}
+            "total_pemakaian": {"$sum": "$total_pemakaian"}
         }}
     ]).to_list(1)
 
     # Get average daily usage (last 30 days)
     avg_usage = await db.sumberpemakaian.aggregate([
-        {"$sort": {"tanggal": -1}},
+        {"$sort": {"date": -1}},
         {"$limit": 30},
         {"$group": {
             "_id": None,
-            "avg_batubara": {"$avg": "$batubara_mt"},
-            "avg_energy": {"$avg": "$energy_mwh"}
+            "avg_pemakaian": {"$avg": "$total_pemakaian"}
         }}
     ]).to_list(1)
     
@@ -2899,16 +2896,15 @@ async def get_smart_stock_summary(user: dict = Depends(get_current_user)):
     # convert None → default. Coerce with `or 0` so downstream arithmetic is safe.
     # RESEARCH §Focus 6 flagged this exposure risk; smoke test caught it on real data.
     penerimaan = (total_penerimaan[0].get("total") if total_penerimaan else 0) or 0
-    batubara_pakai = (total_pemakaian[0].get("total_batubara") if total_pemakaian else 0) or 0
-    biomassa_pakai = (total_pemakaian[0].get("total_biomassa") if total_pemakaian else 0) or 0
-    avg_daily = (avg_usage[0].get("avg_batubara") if avg_usage else 0) or 0
+    pemakaian = (total_pemakaian[0].get("total_pemakaian") if total_pemakaian else 0) or 0
+    avg_daily = (avg_usage[0].get("avg_pemakaian") if avg_usage else 0) or 0
 
-    current_stock = penerimaan - batubara_pakai - biomassa_pakai
+    current_stock = penerimaan - pemakaian
     days_of_supply = int(current_stock / avg_daily) if avg_daily > 0 else 0
-    
+
     return {
         "total_penerimaan": penerimaan,
-        "total_pemakaian": batubara_pakai + biomassa_pakai,
+        "total_pemakaian": pemakaian,
         "current_stock": current_stock,
         "avg_daily_usage": avg_daily,
         "days_of_supply": days_of_supply,
