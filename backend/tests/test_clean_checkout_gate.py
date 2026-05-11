@@ -88,3 +88,41 @@ def test_pytest_collect_only_succeeds():
     # fresh checkout before any test file exists -- should not happen here).
     if result.returncode == 5:
         pytest.fail("pytest collected zero tests -- Wave-0 may not have landed")
+
+
+def test_no_legacy_collection_reads_in_server_py():
+    """DEBT-03: server.py contains zero reads against legacy collection names.
+
+    Phase-5 Plan 05-02 replaced all `db.smart_stock`, `db.sumber_pemakaian`,
+    and `db.settings.find_one({"type": "coa"})` reads with the canonical
+    names (`db.smartstock`, `db.sumberpemakaian`, `db.app_settings`).
+
+    This gate prevents regression: if anyone re-introduces a legacy read,
+    this test fails immediately.
+
+    IMPORTANT: line 2377 `if module in ["general", "smart_stock"]:` is a
+    Python string literal (module-routing key), NOT a collection read —
+    we use a precise grep that excludes string literals via the `db.<name>`
+    access pattern.
+    """
+    import re
+    server_py = BACKEND_DIR / "server.py"
+    text = server_py.read_text(encoding="utf-8")
+    # Strip Python comment lines so a "# legacy: db.smart_stock" annotation
+    # in a docstring does not trip the gate (RESEARCH Anti-Pattern: grep-gate hygiene)
+    non_comment_lines = [
+        line for line in text.splitlines()
+        if not line.lstrip().startswith("#")
+    ]
+    body = "\n".join(non_comment_lines)
+    # The locked-out patterns: db.<legacy>. (followed by find / aggregate / etc.)
+    forbidden_re = re.compile(
+        r"\bdb\.(smart_stock|sumber_pemakaian)\b"
+        r"|\bdb\.settings\.find_one\(\{\"type\": \"coa\"\}\)"
+    )
+    matches = forbidden_re.findall(body)
+    assert not matches, (
+        f"DEBT-03 regression: found {len(matches)} legacy collection read(s) "
+        f"in server.py: {matches[:5]}. See ADR-009/010/011 and Plan 05-02 "
+        f"interfaces table for the canonical replacements."
+    )
