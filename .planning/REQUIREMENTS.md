@@ -38,11 +38,11 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 ### Dashboard Command Center v3 (DASH3)
 
-- [ ] **DASH3-01**: Dashboard first viewport prioritizes stock risk, burn/coverage estimate, arrival schedule vs realization, and dispute/umpire status.
-- [ ] **DASH3-02**: Operator can filter dashboard by period, supplier, and mode without breaking existing module pages.
-- [ ] **DASH3-03**: Dashboard cards link to filtered drilldowns for stock, arrivals, COA reconciliation, dispute monitor, and reports.
-- [ ] **DASH3-04**: Dashboard highlights supplier quality/risk signals using COA delta, shipment timeliness, and active disputes.
-- [ ] **DASH3-05**: Dashboard layout remains readable on common desktop and tablet widths with no overlapping text or controls.
+- [x] **DASH3-01**: Dashboard first viewport prioritizes stock risk, burn/coverage estimate, arrival schedule vs realization, and dispute/umpire status.
+- [x] **DASH3-02**: Operator can filter dashboard by period, supplier, and mode without breaking existing module pages.
+- [x] **DASH3-03**: Dashboard cards link to filtered drilldowns for stock, arrivals, COA reconciliation, dispute monitor, and reports.
+- [x] **DASH3-04**: Dashboard highlights supplier quality/risk signals using COA delta, shipment timeliness, and active disputes.
+- [x] **DASH3-05**: Dashboard layout remains readable on common desktop and tablet widths with no overlapping text or controls.
 
 ### Management Reports v2 (REPORT2)
 
@@ -60,7 +60,7 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 ### Engineering Cleanup (CLEANUP)
 
-- [ ] **CLEANUP-01**: Existing React `react-hooks/exhaustive-deps` warnings are resolved or documented with intentional exclusions.
+- [x] **CLEANUP-01**: Existing React `react-hooks/exhaustive-deps` warnings are resolved or documented with intentional exclusions.
 - [x] **CLEANUP-02**: Focused pytest runs load local test admin credentials consistently without exposing secrets in committed files.
 - [x] **CLEANUP-03**: Local-only artifacts (`.env`, generated folders, runtime metadata) are either ignored, documented, or cleaned from the working tree.
 
@@ -87,7 +87,7 @@ Make EMITS safer to operate as production software by automating backups, harden
 | COAIMP-01..06 | Phase 18 | Complete |
 | DEPLOY-01..05 | Phase 19 | Complete |
 | CLEANUP-02..03 | Phase 19 | Complete |
-| DASH3-01..05 | Phase 20 | Planned |
-| CLEANUP-01 | Phase 20 | Planned |
+| DASH3-01..05 | Phase 20 | Complete |
+| CLEANUP-01 | Phase 20 | Complete |
 | REPORT2-01..04 | Phase 21 | Planned |
 | AI2-01..04 | Phase 21 | Planned |

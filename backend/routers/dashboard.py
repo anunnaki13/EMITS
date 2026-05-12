@@ -1,3 +1,4 @@
+import re
 from datetime import date
 from typing import Optional
 
@@ -32,6 +33,67 @@ def _period_match(field: str, period: Optional[str]) -> dict:
         return {}
     start, end = bounds
     return {field: {"$gte": start, "$lt": end}}
+
+def _merge_match(*matches: dict) -> dict:
+    active = [match for match in matches if match]
+    if not active:
+        return {}
+    if len(active) == 1:
+        return active[0]
+    return {"$and": active}
+
+def _supplier_match(field: str, supplier: Optional[str]) -> dict:
+    if not supplier or supplier == "all":
+        return {}
+    escaped = re.escape(str(supplier).strip())
+    return {field: {"$regex": f"^{escaped}$", "$options": "i"}}
+
+def _normalize_mode(mode: Optional[str]) -> str:
+    if not mode:
+        return "all"
+    value = str(mode).strip().lower()
+    aliases = {
+        "kapal": "vessel",
+        "vessel": "vessel",
+        "barge": "barge",
+        "tongkang": "barge",
+        "truck": "trucking",
+        "truk": "trucking",
+        "trucking": "trucking",
+        "biomass": "biomassa",
+        "biomassa": "biomassa",
+    }
+    return aliases.get(value, "all")
+
+def _mode_match(field: str, mode: Optional[str]) -> dict:
+    normalized = _normalize_mode(mode)
+    if normalized == "all":
+        return {}
+    patterns = {
+        "vessel": r"(vessel|kapal)",
+        "barge": r"(barge|tongkang)",
+        "trucking": r"(truck|trucking|truk)",
+        "biomassa": r"(biomass|biomassa)",
+    }
+    return {field: {"$regex": patterns[normalized], "$options": "i"}}
+
+def _source_enabled(selected_mode: str, source_mode: str) -> bool:
+    return selected_mode == "all" or selected_mode == source_mode
+
+def _supplier_name(value: Optional[str]) -> str:
+    cleaned = str(value or "").strip()
+    return cleaned if cleaned else "Unknown"
+
+def _risk_level(score: float) -> str:
+    if score >= 80:
+        return "high"
+    if score >= 40:
+        return "medium"
+    return "low"
+
+async def _distinct_strings(collection, field: str, match: Optional[dict] = None) -> list:
+    values = await collection.distinct(field, match or {})
+    return sorted({str(value).strip() for value in values if str(value or "").strip()})
 
 def _stock_risk(days_of_supply: Optional[int]) -> dict:
     if days_of_supply is None:
@@ -92,10 +154,16 @@ async def _sum_collection(collection, match: dict, field: str) -> float:
 @router.get("/operational")
 async def get_dashboard_operational(
     period: Optional[str] = Query("all"),
+    supplier: Optional[str] = Query("all"),
+    mode: Optional[str] = Query("all"),
     user: dict = Depends(get_current_user)
 ):
-    """Operational dashboard data focused on stock, arrivals, and coal disputes."""
-    stock_match = _period_match("date", period)
+    """Operational dashboard data focused on stock, arrivals, supplier risk, and coal disputes."""
+    selected_period = period or "all"
+    selected_supplier = supplier or "all"
+    selected_mode = _normalize_mode(mode)
+
+    stock_match = _period_match("date", selected_period)
     total_penerimaan = await _sum_collection(db.smartstock, stock_match, "total_penerimaan")
     total_pemakaian = await _sum_collection(db.sumberpemakaian, stock_match, "total_pemakaian")
     latest_stock = await db.smartstock.find_one({}, {"_id": 0}, sort=[("date", -1)])
@@ -110,23 +178,22 @@ async def get_dashboard_operational(
     days_of_supply = int(current_stock / avg_daily_usage) if avg_daily_usage > 0 else None
     stock_risk = _stock_risk(days_of_supply)
 
-    po_match = _period_match("time_arrival", period)
+    po_period_match = _period_match("time_arrival", selected_period)
+    po_supplier_match = _supplier_match("supplier_name", selected_supplier)
+    po_mode_match = _mode_match("moda", selected_mode)
+    po_match = _merge_match(po_period_match, po_supplier_match, po_mode_match)
     scheduled_count = await db.po_batubara.count_documents(po_match)
     scheduled_tonnage = await _sum_collection(db.po_batubara, po_match, "tonase_po")
     today_prefix = date.today().isoformat()
-    at_risk_match = {**po_match, "time_arrival": {"$lt": today_prefix}}
-    if po_match.get("time_arrival"):
-        at_risk_match["time_arrival"] = {
-            **po_match["time_arrival"],
-            "$lt": min(po_match["time_arrival"].get("$lt", today_prefix), today_prefix),
-        }
+    at_risk_match = _merge_match(po_match, {"time_arrival": {"$lt": today_prefix}})
     at_risk_count = await db.po_batubara.count_documents(at_risk_match)
     at_risk_schedule = await db.po_batubara.find(
         at_risk_match,
         {"_id": 0, "no_jadwal": 1, "supplier_name": 1, "moda": 1, "time_arrival": 1, "tonase_po": 1}
     ).sort("time_arrival", 1).limit(5).to_list(5)
+    upcoming_match = _merge_match(po_match, {"time_arrival": {"$gte": today_prefix}})
     upcoming_schedule = await db.po_batubara.find(
-        po_match,
+        upcoming_match,
         {"_id": 0, "no_jadwal": 1, "supplier_name": 1, "moda": 1, "time_arrival": 1, "tonase_po": 1}
     ).sort("time_arrival", 1).limit(8).to_list(8)
 
@@ -139,15 +206,28 @@ async def get_dashboard_operational(
     realized_by_mode = []
     realized_count = 0
     realized_tonnage = 0.0
-    for mode, collection, date_field, tonnage_field in realized_sources:
-        match = _period_match(date_field, period)
+    realized_records_by_supplier = {}
+    for source_mode, collection, date_field, tonnage_field in realized_sources:
+        if not _source_enabled(selected_mode, source_mode):
+            continue
+        match = _merge_match(
+            _period_match(date_field, selected_period),
+            _supplier_match("suppliers", selected_supplier),
+        )
         count = await collection.count_documents(match)
         tonnage = await _sum_collection(collection, match, tonnage_field)
         realized_count += count
         realized_tonnage += tonnage
-        realized_by_mode.append({"mode": mode, "count": count, "tonnage": tonnage})
+        realized_by_mode.append({"mode": source_mode, "count": count, "tonnage": tonnage})
+        supplier_docs = await collection.find(match, {"_id": 0, "suppliers": 1}).to_list(10000)
+        for item in supplier_docs:
+            name = _supplier_name(item.get("suppliers"))
+            realized_records_by_supplier[name] = realized_records_by_supplier.get(name, 0) + 1
 
-    coa_match = _period_match("completed_unloading", period)
+    coa_match = _merge_match(
+        _period_match("completed_unloading", selected_period),
+        _supplier_match("suppliers", selected_supplier),
+    )
     all_coa = await db.coa_reconciliation.find(coa_match, {"_id": 0}).to_list(10000)
     critical_count = sum(1 for item in all_coa if str(item.get("status", "")).lower() in {"critical", "kritis"})
     warning_count = sum(1 for item in all_coa if str(item.get("status", "")).lower() == "warning")
@@ -174,16 +254,151 @@ async def get_dashboard_operational(
         reverse=True,
     )[:8]
 
+    supplier_risk_map = {}
+
+    def risk_entry(name: Optional[str]) -> dict:
+        supplier_name = _supplier_name(name)
+        if supplier_name not in supplier_risk_map:
+            supplier_risk_map[supplier_name] = {
+                "supplier": supplier_name,
+                "quality_records": 0,
+                "critical_count": 0,
+                "warning_count": 0,
+                "active_disputes": 0,
+                "scheduled_count": 0,
+                "at_risk_count": 0,
+                "realized_count": 0,
+                "avg_delta": None,
+                "max_delta": None,
+                "_delta_sum": 0.0,
+                "_delta_count": 0,
+            }
+        return supplier_risk_map[supplier_name]
+
+    def numeric(value) -> Optional[float]:
+        try:
+            if value is None or value == "":
+                return None
+            return abs(float(value))
+        except (TypeError, ValueError):
+            return None
+
+    scheduled_rows = await db.po_batubara.find(
+        po_match,
+        {"_id": 0, "supplier_name": 1, "time_arrival": 1}
+    ).to_list(10000)
+    for item in scheduled_rows:
+        entry = risk_entry(item.get("supplier_name"))
+        entry["scheduled_count"] += 1
+        if str(item.get("time_arrival") or "") < today_prefix:
+            entry["at_risk_count"] += 1
+
+    for supplier_name, count in realized_records_by_supplier.items():
+        risk_entry(supplier_name)["realized_count"] += count
+
+    for item in all_coa:
+        entry = risk_entry(item.get("suppliers"))
+        entry["quality_records"] += 1
+        status = str(item.get("status", "")).lower()
+        umpire_status = str(item.get("umpire_status", "")).lower()
+        if status in {"critical", "kritis"}:
+            entry["critical_count"] += 1
+        elif status == "warning":
+            entry["warning_count"] += 1
+        if umpire_status in {"proposed", "in_progress"}:
+            entry["active_disputes"] += 1
+        delta = None
+        for delta_field in ["delta_loading_internal", "delta_unloading_internal", "delta_loading_unloading"]:
+            delta = numeric(item.get(delta_field))
+            if delta is not None:
+                break
+        if delta is not None:
+            entry["_delta_sum"] += delta
+            entry["_delta_count"] += 1
+            entry["max_delta"] = max(entry["max_delta"] or 0, delta)
+
+    supplier_risk = []
+    for entry in supplier_risk_map.values():
+        if entry["_delta_count"] > 0:
+            entry["avg_delta"] = entry["_delta_sum"] / entry["_delta_count"]
+        timeliness_rate = None
+        if entry["scheduled_count"] > 0:
+            not_late = max(entry["scheduled_count"] - entry["at_risk_count"], 0)
+            timeliness_rate = not_late / entry["scheduled_count"] * 100
+        avg_delta = entry["avg_delta"] or 0
+        risk_score = (
+            entry["critical_count"] * 35
+            + entry["warning_count"] * 15
+            + entry["active_disputes"] * 25
+            + entry["at_risk_count"] * 10
+            + min(avg_delta / 4, 25)
+        )
+        if timeliness_rate is not None:
+            risk_score += max((100 - timeliness_rate) / 4, 0)
+        risk_score = min(max(risk_score, 0), 100)
+        supplier_risk.append({
+            "supplier": entry["supplier"],
+            "quality_records": entry["quality_records"],
+            "critical_count": entry["critical_count"],
+            "warning_count": entry["warning_count"],
+            "active_disputes": entry["active_disputes"],
+            "scheduled_count": entry["scheduled_count"],
+            "at_risk_count": entry["at_risk_count"],
+            "realized_count": entry["realized_count"],
+            "avg_delta": entry["avg_delta"],
+            "max_delta": entry["max_delta"],
+            "timeliness_rate": timeliness_rate,
+            "risk_score": round(risk_score, 1),
+            "risk_level": _risk_level(risk_score),
+        })
+    supplier_risk.sort(
+        key=lambda item: (
+            item["risk_score"],
+            item["active_disputes"],
+            item["critical_count"],
+            item["at_risk_count"],
+        ),
+        reverse=True,
+    )
+    supplier_risk = supplier_risk[:8]
+
+    supplier_values = set()
+    supplier_values.update(await _distinct_strings(db.po_batubara, "supplier_name", po_period_match))
+    supplier_values.update(await _distinct_strings(db.coa_reconciliation, "suppliers", _period_match("completed_unloading", selected_period)))
+    for _source_mode, collection, date_field, _tonnage_field in realized_sources:
+        supplier_values.update(await _distinct_strings(collection, "suppliers", _period_match(date_field, selected_period)))
+    if selected_supplier != "all":
+        supplier_values.add(selected_supplier)
+    available_suppliers = [{"value": "all", "label": "Semua Supplier"}] + [
+        {"value": item, "label": item} for item in sorted(supplier_values)
+    ]
+
     available_periods = [
         {"value": "all", "label": "Semua Periode"},
         {"value": "2026", "label": "2026"},
         {"value": "2025", "label": "2025"},
         {"value": "2024", "label": "2024"},
     ]
+    available_modes = [
+        {"value": "all", "label": "Semua Moda"},
+        {"value": "vessel", "label": "Vessel"},
+        {"value": "barge", "label": "Barge/Tongkang"},
+        {"value": "trucking", "label": "Trucking"},
+        {"value": "biomassa", "label": "Biomassa"},
+    ]
 
     return {
-        "period": period or "all",
+        "period": selected_period,
+        "supplier": selected_supplier,
+        "mode": selected_mode,
+        "filters": {
+            "period": selected_period,
+            "supplier": selected_supplier,
+            "mode": selected_mode,
+        },
         "available_periods": available_periods,
+        "available_suppliers": available_suppliers,
+        "available_modes": available_modes,
         "stock": {
             "current_stock": current_stock,
             "latest_stock_date": latest_stock.get("date") if latest_stock else None,
@@ -219,7 +434,8 @@ async def get_dashboard_operational(
                 "active": active_umpire_count,
             },
             "recent": recent_disputes,
-        }
+        },
+        "supplier_risk": supplier_risk,
     }
 
 @router.get("/stats", response_model=DashboardStats)

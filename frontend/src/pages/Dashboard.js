@@ -63,22 +63,32 @@ const RISK_COLORS = {
   'UNKNOWN': '#6B7280'
 };
 
-const StatCard = ({ title, value, subtitle, icon: Icon, color = "cyan" }) => (
-  <Card className="glass-card border-white/10 hover:border-cyan-500/30">
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1 sm:space-y-2">
-          <p className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-slate-500">{title}</p>
-          <p className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-white">{value}</p>
-          {subtitle && <p className="text-xs sm:text-sm text-slate-400">{subtitle}</p>}
+const STAT_CARD_TONES = {
+  cyan: { iconBg: "bg-cyan-500/10", iconText: "text-cyan-400" },
+  blue: { iconBg: "bg-blue-500/10", iconText: "text-blue-400" },
+  amber: { iconBg: "bg-amber-500/10", iconText: "text-amber-400" },
+  emerald: { iconBg: "bg-emerald-500/10", iconText: "text-emerald-400" },
+};
+
+const StatCard = ({ title, value, subtitle, icon: Icon, color = "cyan" }) => {
+  const tone = STAT_CARD_TONES[color] || STAT_CARD_TONES.cyan;
+  return (
+    <Card className="glass-card border-white/10 hover:border-cyan-500/30">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1 sm:space-y-2">
+            <p className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-slate-500">{title}</p>
+            <p className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-white">{value}</p>
+            {subtitle && <p className="text-xs sm:text-sm text-slate-400">{subtitle}</p>}
+          </div>
+          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${tone.iconBg} flex items-center justify-center`}>
+            <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${tone.iconText}`} />
+          </div>
         </div>
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-${color}-500/10 flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 text-${color}-400`} />
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
 // Gauge Chart Component
 const GaugeChart = ({ percentage, label }) => {
@@ -119,6 +129,8 @@ const Dashboard = () => {
   const [operationalStats, setOperationalStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("all");
+  const [selectedSupplier, setSelectedSupplier] = useState("all");
+  const [selectedMode, setSelectedMode] = useState("all");
 
   const fetchData = useCallback(async () => {
     try {
@@ -128,11 +140,17 @@ const Dashboard = () => {
         advancedParams.year = Number(year);
         advancedParams.month = Number(month);
       }
+      if (selectedMode && selectedMode !== "all") {
+        advancedParams.moda = selectedMode;
+      }
 
       const [statsRes, advancedRes, operationalRes] = await Promise.all([
         axios.get(`${API_URL}/api/dashboard/stats`, { headers: getAuthHeader() }),
         axios.get(`${API_URL}/api/dashboard/advanced`, { headers: getAuthHeader(), params: advancedParams }),
-        axios.get(`${API_URL}/api/dashboard/operational`, { headers: getAuthHeader(), params: { period: selectedPeriod } })
+        axios.get(`${API_URL}/api/dashboard/operational`, {
+          headers: getAuthHeader(),
+          params: { period: selectedPeriod, supplier: selectedSupplier, mode: selectedMode }
+        })
       ]);
       setStats(statsRes.data);
       setAdvancedStats(advancedRes.data);
@@ -143,7 +161,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeader, selectedPeriod]);
+  }, [getAuthHeader, selectedMode, selectedPeriod, selectedSupplier]);
 
   useEffect(() => {
     fetchData();
@@ -186,6 +204,7 @@ const Dashboard = () => {
   const arrivals = operationalStats?.arrivals || {};
   const disputes = operationalStats?.disputes || {};
   const realizedByMode = arrivals.realized_by_mode || [];
+  const supplierRisk = operationalStats?.supplier_risk || [];
   const upcomingSchedule = arrivals.upcoming_schedule || [];
   const atRiskSchedule = arrivals.at_risk_schedule || [];
   const recentDisputes = disputes.recent || [];
@@ -194,6 +213,14 @@ const Dashboard = () => {
     { value: "2026", label: "2026" },
     { value: "2025", label: "2025" },
     { value: "2024", label: "2024" }
+  ];
+  const supplierOptions = operationalStats?.available_suppliers || [{ value: "all", label: "Semua Supplier" }];
+  const modeOptions = operationalStats?.available_modes || [
+    { value: "all", label: "Semua Moda" },
+    { value: "vessel", label: "Vessel" },
+    { value: "barge", label: "Barge/Tongkang" },
+    { value: "trucking", label: "Trucking" },
+    { value: "biomassa", label: "Biomassa" }
   ];
   const stockStatusStyles = {
     critical: "border-red-500/50 bg-red-500/10 text-red-300",
@@ -206,12 +233,30 @@ const Dashboard = () => {
   const fulfillmentRate = arrivals.fulfillment_rate ?? 0;
   const tonnageFulfillmentRate = arrivals.tonnage_fulfillment_rate ?? 0;
   const primaryRiskCount = (disputes.critical_count || 0) + (disputes.umpire?.active || 0) + (arrivals.at_risk_count || 0);
-  const periodQuery = selectedPeriod && selectedPeriod !== "all" ? `?period=${encodeURIComponent(selectedPeriod)}` : "";
+  const supplierRiskStyles = {
+    high: "border-red-500/50 bg-red-500/10 text-red-300",
+    medium: "border-amber-500/50 bg-amber-500/10 text-amber-300",
+    low: "border-emerald-500/50 bg-emerald-500/10 text-emerald-300",
+  };
+  const drilldownParams = new URLSearchParams();
+  if (selectedPeriod && selectedPeriod !== "all") drilldownParams.set("period", selectedPeriod);
+  if (selectedSupplier && selectedSupplier !== "all") drilldownParams.set("supplier", selectedSupplier);
+  if (selectedMode && selectedMode !== "all") drilldownParams.set("mode", selectedMode);
+  const drilldownHref = (path, extraParams = {}) => {
+    const params = new URLSearchParams(drilldownParams);
+    Object.entries(extraParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "all" && value !== "") {
+        params.set(key, value);
+      }
+    });
+    const query = params.toString();
+    return query ? `${path}?${query}` : path;
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8" data-testid="dashboard-page">
       {/* Header with Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-xl sm:text-2xl lg:text-3xl text-white">
             Dashboard Operasional Bahan Bakar
@@ -220,9 +265,9 @@ const Dashboard = () => {
             Monitoring stok, kedatangan, dan dispute kualitas - UP Tenayan
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-[190px] bg-slate-900/50 border-slate-700 text-white" data-testid="dashboard-period-filter">
+            <SelectTrigger className="w-full sm:w-[170px] bg-slate-900/50 border-slate-700 text-white" data-testid="dashboard-period-filter">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Periode" />
             </SelectTrigger>
@@ -232,12 +277,34 @@ const Dashboard = () => {
               ))}
             </SelectContent>
           </Select>
+          <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+            <SelectTrigger className="w-full sm:w-[230px] bg-slate-900/50 border-slate-700 text-white" data-testid="dashboard-supplier-filter">
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Supplier" />
+            </SelectTrigger>
+            <SelectContent className="max-h-80 bg-[#0B1221] border-slate-800">
+              {supplierOptions.map(item => (
+                <SelectItem key={item.value} value={item.value} className="text-slate-300">{item.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedMode} onValueChange={setSelectedMode}>
+            <SelectTrigger className="w-full sm:w-[170px] bg-slate-900/50 border-slate-700 text-white" data-testid="dashboard-mode-filter">
+              <Anchor className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Moda" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0B1221] border-slate-800">
+              {modeOptions.map(item => (
+                <SelectItem key={item.value} value={item.value} className="text-slate-300">{item.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Operational First Viewport */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
-        <Card className="glass-card border-white/10 xl:col-span-5">
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="glass-card border-white/10">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-3">
               <CardTitle className="font-heading text-base text-white flex items-center gap-2">
@@ -265,7 +332,7 @@ const Dashboard = () => {
                 <p className="text-xs text-slate-500">Threshold reorder {stock.reorder_threshold_days || 14} hari</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-emerald-500/10 p-3">
                 <p className="text-xs text-emerald-300">Penerimaan</p>
                 <p className="text-base font-bold text-white">{formatNumber(stock.total_penerimaan || 0)} MT</p>
@@ -278,7 +345,7 @@ const Dashboard = () => {
                 <p className="text-xs text-blue-300">Burn rate</p>
                 <p className="text-base font-bold text-white">{formatNumber(stock.avg_daily_usage || 0)} MT/hari</p>
               </div>
-              <a href={`/smart-stock/sumber-penerimaan${periodQuery}`} className="rounded-lg bg-slate-900/50 p-3 hover:bg-slate-800/80">
+              <a href={drilldownHref("/smart-stock/sumber-penerimaan")} className="rounded-lg bg-slate-900/50 p-3 hover:bg-slate-800/80">
                 <p className="text-xs text-slate-400">Drilldown</p>
                 <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-cyan-300">Smart Stock <ArrowRight className="w-3 h-3" /></p>
               </a>
@@ -286,7 +353,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-white/10 xl:col-span-4">
+        <Card className="glass-card border-white/10">
           <CardHeader className="pb-3">
             <CardTitle className="font-heading text-base text-white flex items-center gap-2">
               <CalendarCheck className="w-5 h-5 text-blue-400" />
@@ -331,18 +398,28 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+            {realizedByMode.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {realizedByMode.slice(0, 4).map(item => (
+                  <div key={item.mode} className="rounded-lg bg-slate-900/50 px-3 py-2">
+                    <p className="text-[10px] uppercase text-slate-500">{item.mode}</p>
+                    <p className="text-sm font-semibold text-white">{item.count || 0} / {formatNumber(item.tonnage || 0)} MT</p>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
-              <a href={`/po-batubara${periodQuery}`} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-blue-300 hover:bg-slate-800/80">
+              <a href={drilldownHref("/po-batubara")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-blue-300 hover:bg-slate-800/80">
                 Jadwal PO <ArrowRight className="inline w-3 h-3" />
               </a>
-              <a href={`/laporan${periodQuery}`} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-emerald-300 hover:bg-slate-800/80">
+              <a href={drilldownHref("/laporan")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-emerald-300 hover:bg-slate-800/80">
                 Realisasi <ArrowRight className="inline w-3 h-3" />
               </a>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-white/10 xl:col-span-3">
+        <Card className="glass-card border-white/10">
           <CardHeader className="pb-3">
             <CardTitle className="font-heading text-base text-white flex items-center gap-2">
               <Scale className="w-5 h-5 text-red-400" />
@@ -387,9 +464,68 @@ const Dashboard = () => {
                 <p className="text-sm text-slate-500 py-4 text-center">Tidak ada dispute aktif</p>
               )}
             </div>
-            <a href={`/dispute-monitor${periodQuery}`} className="block rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-red-300 hover:bg-slate-800/80">
-              Buka dispute monitor <ArrowRight className="inline w-3 h-3" />
-            </a>
+            <div className="grid grid-cols-2 gap-2">
+              <a href={drilldownHref("/dispute-monitor")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-red-300 hover:bg-slate-800/80">
+                Dispute <ArrowRight className="inline w-3 h-3" />
+              </a>
+              <a href={drilldownHref("/coa-reconciliation")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-amber-300 hover:bg-slate-800/80">
+                COA <ArrowRight className="inline w-3 h-3" />
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-white/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-heading text-base text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-amber-400" />
+              Risiko Supplier
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {supplierRisk.length > 0 ? supplierRisk.slice(0, 5).map(item => {
+                const riskTone = supplierRiskStyles[item.risk_level] || supplierRiskStyles.low;
+                return (
+                  <div key={item.supplier} className="rounded-lg bg-slate-900/50 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-white truncate">{item.supplier}</p>
+                      <span className={`rounded border px-2 py-0.5 text-[10px] font-semibold uppercase ${riskTone}`}>
+                        {item.risk_level}
+                      </span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="text-slate-500">Score</p>
+                        <p className="font-semibold text-white">{Number(item.risk_score || 0).toFixed(0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Delta</p>
+                        <p className="font-semibold text-white">{item.avg_delta != null ? Number(item.avg_delta).toFixed(0) : "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Dispute</p>
+                        <p className="font-semibold text-white">{item.active_disputes || 0}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                      <span>{item.realized_count || 0}/{item.scheduled_count || 0} realisasi</span>
+                      <span>{item.timeliness_rate != null ? `${Number(item.timeliness_rate).toFixed(0)}% on-time` : "jadwal belum ada"}</span>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <p className="text-sm text-slate-500 py-6 text-center">Belum ada sinyal risiko supplier</p>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <a href={drilldownHref("/coa-reconciliation")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-amber-300 hover:bg-slate-800/80">
+                COA Reconcile <ArrowRight className="inline w-3 h-3" />
+              </a>
+              <a href={drilldownHref("/laporan")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-cyan-300 hover:bg-slate-800/80">
+                Report <ArrowRight className="inline w-3 h-3" />
+              </a>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -783,7 +919,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <p className="text-center text-slate-500 py-16">Belum ada data slagging/fouling</p>
-            )}}
+            )}
             {/* Risk Legend */}
             <div className="flex flex-wrap gap-3 mt-4 justify-center">
               {Object.entries(RISK_COLORS).filter(([k]) => k !== 'UNKNOWN').map(([label, color]) => (

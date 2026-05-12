@@ -21,8 +21,11 @@ def test_dashboard_operational_empty_shape(base_url, admin_headers):
 
     assert body["period"] == "all"
     assert isinstance(body["available_periods"], list)
+    assert isinstance(body["available_suppliers"], list)
+    assert isinstance(body["available_modes"], list)
     for section in ["stock", "arrivals", "disputes"]:
         assert section in body
+    assert "supplier_risk" in body
 
     for key in [
         "current_stock",
@@ -129,6 +132,34 @@ def test_dashboard_operational_period_filters_seeded_data(base_url, admin_header
         assert body["disputes"]["umpire"]["in_progress"] >= 1
         assert any(item["shipment"] == "DASH-COA-01" for item in body["disputes"]["recent"])
         assert all("aging_days" in item for item in body["disputes"]["recent"])
+
+        filtered = requests.get(
+            f"{base_url}/api/dashboard/operational",
+            headers=admin_headers,
+            params={"period": "2026-05", "supplier": "PT DASHBOARD TEST", "mode": "vessel"},
+            timeout=15,
+        )
+        assert filtered.status_code == 200, f"/dashboard/operational filtered: {filtered.status_code} {filtered.text[:300]}"
+        filtered_body = filtered.json()
+
+        assert filtered_body["filters"] == {
+            "period": "2026-05",
+            "supplier": "PT DASHBOARD TEST",
+            "mode": "vessel",
+        }
+        assert filtered_body["arrivals"]["scheduled_count"] >= 1
+        assert filtered_body["arrivals"]["realized_count"] >= 1
+        assert all(item["mode"] == "vessel" for item in filtered_body["arrivals"]["realized_by_mode"])
+        assert any(item["value"] == "PT DASHBOARD TEST" for item in filtered_body["available_suppliers"])
+        assert any(item["value"] == "vessel" for item in filtered_body["available_modes"])
+        supplier_risk = next(
+            (item for item in filtered_body["supplier_risk"] if item["supplier"] == "PT DASHBOARD TEST"),
+            None,
+        )
+        assert supplier_risk is not None
+        assert supplier_risk["critical_count"] >= 1
+        assert supplier_risk["active_disputes"] >= 1
+        assert supplier_risk["risk_level"] in {"low", "medium", "high"}
     finally:
         for collection in [db.smartstock, db.sumberpemakaian, db.po_batubara, db.vessels, db.coa_reconciliation]:
             collection.delete_many({"_marker": marker})

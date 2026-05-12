@@ -31,8 +31,8 @@ Make EMITS safer to operate as production software by automating backups, harden
 | 17 | Complete | Backup scheduler/settings/history/health shipped. |
 | 18 | Complete | COA preview/diff/history/rollback safeguards shipped. |
 | 19 | Complete | Service/runbook/smoke/repo hygiene shipped. |
-| 20 | Next | Dashboard v3 and React hook cleanup. |
-| 21 | Planned | Reports v2 and AI advisor v2. |
+| 20 | Complete | Dashboard command center filters, supplier risk, drilldowns, and hook-warning register shipped. |
+| 21 | Next | Reports v2 and AI advisor v2. |
 
 ## Phase Details
 
@@ -110,23 +110,23 @@ Make EMITS safer to operate as production software by automating backups, harden
 | COAIMP-01..06 | Phase 18 | Complete |
 | DEPLOY-01..05 | Phase 19 | Complete |
 | CLEANUP-02..03 | Phase 19 | Complete |
-| DASH3-01..05 | Phase 20 | Planned |
-| CLEANUP-01 | Phase 20 | Planned |
+| DASH3-01..05 | Phase 20 | Complete |
+| CLEANUP-01 | Phase 20 | Complete |
 | REPORT2-01..04 | Phase 21 | Planned |
 | AI2-01..04 | Phase 21 | Planned |
 
-Coverage: 32/32 active v1.2 requirements mapped.
+Coverage: 32/32 active v1.2 requirements mapped; 24/32 complete.
 
 ## Next Step
 
-Start execution with Phase 20:
+Start execution with Phase 21:
 
 ```bash
-$gsd-discuss-phase 20
+$gsd-discuss-phase 21
 ```
 
 or skip discussion and plan directly:
 
 ```bash
-$gsd-plan-phase 20
+$gsd-plan-phase 21
 ```
