@@ -54,7 +54,7 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 
 <!-- v1.2 scope. See REQUIREMENTS.md for full requirement text and ROADMAP.md for traceability. -->
 
-- [ ] BACKUP2-01..05: Scheduled backup automation, retention, history, restore validation, and backup health visibility.
+- [x] BACKUP2-01..05: Scheduled backup automation, retention, history, restore validation, and backup health visibility.
 - [ ] COAIMP-01..06: Safe COA workbook import preview, validation, diff/duplicate detection, history, rollback, and preservation of dispute workflow state.
 - [ ] DEPLOY-01..05: Production service hardening, env/secret runbook, health/smoke checks, repeatable deploy, and repository hygiene.
 - [ ] DASH3-01..05: Dashboard command center v3 for stock risk, arrival realization, COA dispute/umpire, supplier quality, and drilldowns.

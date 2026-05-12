@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Settings,
   Users,
@@ -47,7 +48,10 @@ import {
   DatabaseBackup,
   AlertTriangle,
   History,
-  RefreshCw
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -74,6 +78,17 @@ const SettingsPage = () => {
   });
   const [savingCOA, setSavingCOA] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [savingBackupSettings, setSavingBackupSettings] = useState(false);
+  const [managedBackupLoading, setManagedBackupLoading] = useState(false);
+  const [backupSettings, setBackupSettings] = useState({
+    enabled: false,
+    interval_hours: 24,
+    retention_days: 14,
+    max_backups: 7,
+    backup_dir: ""
+  });
+  const [backupHealth, setBackupHealth] = useState(null);
+  const [backupHistory, setBackupHistory] = useState([]);
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreFile, setRestoreFile] = useState(null);
   const [restoreConfirmation, setRestoreConfirmation] = useState("");
@@ -106,6 +121,7 @@ const SettingsPage = () => {
     fetchUsers();
     fetchAISettings();
     fetchCOASettings();
+    fetchBackupStatus();
     fetchAuditLogs();
     fetchAlertOverview();
   }, []);
@@ -295,6 +311,65 @@ const SettingsPage = () => {
     }
   };
 
+  const fetchBackupStatus = async () => {
+    try {
+      const [settingsResponse, historyResponse] = await Promise.all([
+        axios.get(`${API_URL}/api/admin/backup/settings`, { headers: getAuthHeader() }),
+        axios.get(`${API_URL}/api/admin/backup/history`, { headers: getAuthHeader(), params: { page_size: 5 } })
+      ]);
+      const settings = settingsResponse.data.settings || {};
+      setBackupSettings({
+        enabled: Boolean(settings.enabled),
+        interval_hours: settings.interval_hours || 24,
+        retention_days: settings.retention_days || 14,
+        max_backups: settings.max_backups || 7,
+        backup_dir: settings.backup_dir || ""
+      });
+      setBackupHealth(settingsResponse.data.health || null);
+      setBackupHistory(historyResponse.data.items || []);
+    } catch (error) {
+      console.log("Backup status not available");
+    }
+  };
+
+  const handleSaveBackupSettings = async () => {
+    setSavingBackupSettings(true);
+    try {
+      const response = await axios.put(
+        `${API_URL}/api/admin/backup/settings`,
+        {
+          enabled: backupSettings.enabled,
+          interval_hours: Number(backupSettings.interval_hours || 24),
+          retention_days: Number(backupSettings.retention_days || 14),
+          max_backups: Number(backupSettings.max_backups || 7),
+          backup_dir: backupSettings.backup_dir || null
+        },
+        { headers: getAuthHeader() }
+      );
+      setBackupHealth(response.data.health || null);
+      toast.success("Pengaturan backup otomatis disimpan");
+      fetchBackupStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal menyimpan pengaturan backup");
+    } finally {
+      setSavingBackupSettings(false);
+    }
+  };
+
+  const handleRunManagedBackup = async () => {
+    setManagedBackupLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/api/admin/backup/run`, {}, { headers: getAuthHeader() });
+      const docs = response.data.backup?.total_documents || 0;
+      toast.success(`Backup server berhasil: ${docs.toLocaleString("id-ID")} dokumen`);
+      fetchBackupStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Backup server gagal");
+    } finally {
+      setManagedBackupLoading(false);
+    }
+  };
+
   const handleValidateRestore = async () => {
     const backup = await readRestoreFile();
     if (!backup) return;
@@ -390,6 +465,23 @@ const SettingsPage = () => {
       hour: "2-digit",
       minute: "2-digit"
     });
+  };
+
+  const getBackupHealthBadge = () => {
+    const status = backupHealth?.status || "disabled";
+    const config = {
+      healthy: { icon: CheckCircle, text: "Sehat", className: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
+      warning: { icon: AlertTriangle, text: "Perhatian", className: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+      disabled: { icon: XCircle, text: "Nonaktif", className: "bg-slate-500/15 text-slate-300 border-slate-500/30" }
+    };
+    const item = config[status] || config.disabled;
+    const Icon = item.icon;
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border ${item.className}`}>
+        <Icon className="w-3.5 h-3.5" />
+        {item.text}
+      </span>
+    );
   };
 
   return (
@@ -782,6 +874,84 @@ const SettingsPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg border border-slate-700/70 bg-slate-900/40 px-4 py-3">
+              <div>
+                <p className="text-sm text-white font-medium">Backup Otomatis</p>
+                <p className="text-xs text-slate-500">{backupHealth?.reason || "Memuat status backup"}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {getBackupHealthBadge()}
+                <Switch
+                  checked={backupSettings.enabled}
+                  onCheckedChange={(checked) => setBackupSettings({ ...backupSettings, enabled: checked })}
+                  data-testid="backup-enabled-switch"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-400">Interval (jam)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="168"
+                  value={backupSettings.interval_hours}
+                  onChange={(e) => setBackupSettings({ ...backupSettings, interval_hours: e.target.value })}
+                  className="bg-slate-900/50 border-slate-700 text-white"
+                  data-testid="backup-interval-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-400">Retensi (hari)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={backupSettings.retention_days}
+                  onChange={(e) => setBackupSettings({ ...backupSettings, retention_days: e.target.value })}
+                  className="bg-slate-900/50 border-slate-700 text-white"
+                  data-testid="backup-retention-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-400">Maks. file</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={backupSettings.max_backups}
+                  onChange={(e) => setBackupSettings({ ...backupSettings, max_backups: e.target.value })}
+                  className="bg-slate-900/50 border-slate-700 text-white"
+                  data-testid="backup-max-input"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveBackupSettings}
+                disabled={savingBackupSettings || backupLoading || restoreLoading}
+                className="border-emerald-500/30 text-emerald-300"
+                data-testid="save-backup-settings-btn"
+              >
+                {savingBackupSettings ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                Simpan Jadwal
+              </Button>
+              <Button
+                type="button"
+                onClick={handleRunManagedBackup}
+                disabled={managedBackupLoading || restoreLoading}
+                className="bg-emerald-600 hover:bg-emerald-500"
+                data-testid="run-managed-backup-btn"
+              >
+                {managedBackupLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <DatabaseBackup className="w-4 h-4 mr-2" />}
+                Jalankan Backup
+              </Button>
+            </div>
+
             <div className="bg-emerald-500/10 rounded-lg p-4 border border-emerald-500/20">
               <p className="text-sm text-emerald-300 font-medium mb-2">Buat Backup</p>
               <p className="text-xs text-slate-400">
@@ -797,6 +967,47 @@ const SettingsPage = () => {
               {backupLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
               Download Backup JSON
             </Button>
+
+            <div className="rounded-lg border border-slate-700/70 bg-slate-900/30 overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-700/70 flex items-center justify-between">
+                <p className="text-sm text-white font-medium">Riwayat Backup</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={fetchBackupStatus}
+                  className="text-slate-400 hover:text-white"
+                  data-testid="refresh-backup-history-btn"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="divide-y divide-slate-800">
+                {backupHistory.length === 0 ? (
+                  <div className="px-4 py-4 text-sm text-slate-500">Belum ada riwayat backup server</div>
+                ) : (
+                  backupHistory.map((item) => (
+                    <div key={item.id} className="px-4 py-3 flex items-center justify-between gap-3" data-testid={`backup-history-${item.id}`}>
+                      <div className="min-w-0">
+                        <p className="text-sm text-slate-200 truncate">{item.filename || item.trigger || "backup"}</p>
+                        <p className="text-xs text-slate-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatAuditTime(item.created_at)}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={item.status === "success" ? "text-xs text-emerald-300" : "text-xs text-red-300"}>
+                          {item.status}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {(item.total_documents || 0).toLocaleString("id-ID")} dokumen
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">

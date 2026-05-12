@@ -13,11 +13,11 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 ### Backup Automation (BACKUP2)
 
-- [ ] **BACKUP2-01**: Admin can configure scheduled database/application backups without manual button clicks.
-- [ ] **BACKUP2-02**: Admin can view backup history with last success, file size, collection counts, duration, and failure reason.
-- [ ] **BACKUP2-03**: Admin can configure a retention policy and old backups are pruned safely without deleting the latest successful backup.
-- [ ] **BACKUP2-04**: Admin can run restore validation before restore writes any production data.
-- [ ] **BACKUP2-05**: Dashboard/settings surfaces show backup health status so stale or failed backups are visible.
+- [x] **BACKUP2-01**: Admin can configure scheduled database/application backups without manual button clicks.
+- [x] **BACKUP2-02**: Admin can view backup history with last success, file size, collection counts, duration, and failure reason.
+- [x] **BACKUP2-03**: Admin can configure a retention policy and old backups are pruned safely without deleting the latest successful backup.
+- [x] **BACKUP2-04**: Admin can run restore validation before restore writes any production data.
+- [x] **BACKUP2-05**: Dashboard/settings surfaces show backup health status so stale or failed backups are visible.
 
 ### COA Import Governance (COAIMP)
 
@@ -83,7 +83,7 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BACKUP2-01..05 | Phase 17 | Planned |
+| BACKUP2-01..05 | Phase 17 | Complete |
 | COAIMP-01..06 | Phase 18 | Planned |
 | DEPLOY-01..05 | Phase 19 | Planned |
 | CLEANUP-02..03 | Phase 19 | Planned |

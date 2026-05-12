@@ -24,6 +24,16 @@ Make EMITS safer to operate as production software by automating backups, harden
 | 20 | Dashboard Command Center v3 | Operators get a sharper first screen for stock risk, arrivals, disputes, supplier risk, and drilldowns. | DASH3-01..05, CLEANUP-01 | 5 |
 | 21 | Management Reports & AI Advisor v2 | Management summaries, supplier scorecards, and source-backed AI recommendations support decisions. | REPORT2-01..04, AI2-01..04 | 5 |
 
+## Phase Status
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| 17 | Complete | Backup scheduler/settings/history/health shipped. |
+| 18 | Next | COA import preview/diff/history/rollback safeguards. |
+| 19 | Planned | Deployment hardening and repo/test hygiene. |
+| 20 | Planned | Dashboard v3 and React hook cleanup. |
+| 21 | Planned | Reports v2 and AI advisor v2. |
+
 ## Phase Details
 
 ### Phase 17: Backup & Disaster Recovery Automation

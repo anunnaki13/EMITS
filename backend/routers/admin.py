@@ -1,31 +1,22 @@
 from datetime import datetime, timezone
-import json
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from services.backup_service import (
+    ACTIVE_BACKUP_COLLECTIONS,
+    build_backup_payload,
+    create_managed_backup,
+    get_backup_health,
+    get_backup_settings,
+    list_backup_history,
+    update_backup_settings,
+)
 from utils.auth import require_role
 from utils.database import db
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
-
-ACTIVE_BACKUP_COLLECTIONS = [
-    "users",
-    "user_settings",
-    "audit_logs",
-    "vessels",
-    "barges",
-    "trucking",
-    "biomassa",
-    "po_batubara",
-    "merit_order",
-    "smartstock",
-    "sumberpemakaian",
-    "coa_reconciliation",
-    "app_settings",
-    "ai_chat_history",
-]
 
 
 class RestoreRequest(BaseModel):
@@ -34,8 +25,12 @@ class RestoreRequest(BaseModel):
     dry_run: bool = False
 
 
-def _json_safe(data: Any) -> Any:
-    return json.loads(json.dumps(data, default=str))
+class BackupSettingsUpdate(BaseModel):
+    enabled: bool = False
+    interval_hours: int = Field(24, ge=1, le=168)
+    retention_days: int = Field(14, ge=1, le=365)
+    max_backups: int = Field(7, ge=1, le=100)
+    backup_dir: Optional[str] = None
 
 
 def _validate_backup_payload(backup: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
@@ -80,26 +75,47 @@ def _validate_backup_payload(backup: Dict[str, Any]) -> Dict[str, List[Dict[str,
 
 @router.post("/backup")
 async def create_admin_backup(user: dict = Depends(require_role(["admin"]))):
-    generated_at = datetime.now(timezone.utc).isoformat()
-    backup = {
-        "schema_version": 1,
-        "application": "emits-pltu-tenayan",
-        "generated_at": generated_at,
-        "generated_by": {
-            "id": user.get("id"),
-            "email": user.get("email"),
-            "name": user.get("name"),
-        },
-        "collections": {},
-        "counts": {},
+    return await build_backup_payload(user)
+
+
+@router.get("/backup/settings")
+async def get_admin_backup_settings(user: dict = Depends(require_role(["admin"]))):
+    settings = await get_backup_settings()
+    return {
+        "settings": settings,
+        "health": await get_backup_health(settings),
     }
 
-    for collection_name in ACTIVE_BACKUP_COLLECTIONS:
-        documents = await db[collection_name].find({}, {"_id": 0}).to_list(length=None)
-        backup["collections"][collection_name] = documents
-        backup["counts"][collection_name] = len(documents)
 
-    return _json_safe(backup)
+@router.put("/backup/settings")
+async def update_admin_backup_settings(data: BackupSettingsUpdate, user: dict = Depends(require_role(["admin"]))):
+    settings = await update_backup_settings(data.dict(), user)
+    return {
+        "message": "Pengaturan backup berhasil disimpan",
+        "settings": settings,
+        "health": await get_backup_health(settings),
+    }
+
+
+@router.post("/backup/run")
+async def run_admin_managed_backup(user: dict = Depends(require_role(["admin"]))):
+    result = await create_managed_backup(user, trigger="manual")
+    if result.get("status") == "failed":
+        raise HTTPException(status_code=500, detail=result.get("error") or "Backup gagal")
+    return {
+        "message": "Backup server berhasil dibuat",
+        "backup": result,
+        "health": await get_backup_health(),
+    }
+
+
+@router.get("/backup/history")
+async def get_admin_backup_history(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    user: dict = Depends(require_role(["admin"])),
+):
+    return await list_backup_history(page=page, page_size=page_size)
 
 
 @router.get("/audit-logs")

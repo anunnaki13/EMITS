@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+import asyncio
 import os
 import logging
 from pathlib import Path
@@ -24,6 +25,7 @@ from routers.dashboard import router as dashboard_router
 from routers.planning_data import router as planning_data_router
 from routers.reports import router as reports_router
 from routers.smart_stock import router as smart_stock_router
+from services.backup_service import backup_scheduler_loop
 from utils.auth import get_current_user, require_role
 from utils.filters import build_rekap_query
 
@@ -103,6 +105,7 @@ AUDIT_RESOURCE_PREFIXES = {
     "coa-reconciliation": "coa",
     "settings": "settings",
     "ai/settings": "settings",
+    "admin/backup": "settings",
     "admin/restore": "settings",
     "auth/register": "users",
     "users": "users",
@@ -228,6 +231,22 @@ async def audit_mutations(request: Request, call_next):
             logger.warning("audit log write failed: %s", exc)
 
     return response
+
+
+@app.on_event("startup")
+async def start_backup_scheduler():
+    app.state.backup_scheduler_task = asyncio.create_task(backup_scheduler_loop())
+
+
+@app.on_event("shutdown")
+async def stop_backup_scheduler():
+    task = getattr(app.state, "backup_scheduler_task", None)
+    if task:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 # ==================== MODELS ====================
 
