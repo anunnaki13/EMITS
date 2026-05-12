@@ -1,36 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: milestone
-status: milestone_archived
-stopped_at: "v1.1 milestone archived, committed, and tagged: inner app tag v1.1 points to 99799ed (operational upgrades plus backup manifest); outer planning HEAD archives v1.1 milestone; annotated tag v1.1 exists in both repos."
-last_updated: "2026-05-12T11:55:00+07:00"
-last_activity: 2026-05-12
+milestone: v1.2
+milestone_name: Operational Reliability & Data Governance
+status: ready_to_plan
+last_updated: "2026-05-13T01:05:00+07:00"
+last_activity: 2026-05-13
 progress:
-  total_phases: 16
-  completed_phases: 16
-  total_plans: 49
-  completed_plans: 49
-  percent: 100
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-10)
+See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** define next milestone
+**Current focus:** v1.2 operational reliability and data governance
 
 ## Current Position
 
-Phase: v1.1 archive — COMPLETE
-Plan: milestone closeout
-Status: Archived, ready for next milestone planning
-Last activity: 2026-05-12
-
-Progress: [██████████] 100%
+Phase: 17 — Backup & Disaster Recovery Automation
+Plan: —
+Status: Requirements and roadmap defined; ready to discuss/plan Phase 17
+Last activity: 2026-05-13 — Milestone v1.2 initialized
 
 ## Performance Metrics
 
@@ -100,23 +97,26 @@ None yet.
 
 ### Blockers/Concerns
 
-- Login bug repro CAPTURED (Phase 1 plan 01-04) — see `pltu-tenayan-full-backup/docs/audit/LOGIN_BUG.md`. Backend layer is healthy (login 200/401/422, register 200/400). Suspect: Radix role-select on register tab (Login.js:186-197). UI-side observation deferred to operator playbook (no headless browser on VPS). Phase 2 owns the fix.
-- 3 audit-probe-* synthetic users inserted into live `users` collection during 01-04 register repro — cleanup filter `db.users.deleteMany({email: /^audit-probe-/})` documented in LOGIN_BUG.md and `.work/register-backend.txt`. Phase 2 regression test setup or Phase 5 cleanup may remove them.
-- CONS-auth-header divergence flagged (Phase 1 plan 01-04) — backend returns 422 for malformed body, spec says 400. Phase 2 / Phase 3 to reconcile.
-- Smart Blending AI degraded (origin: ingest) — Universal LLM Key budget exhausted; Phase 6 unblocks.
-- Excel parser verification pending (origin: ingest) — awaiting real `total penerimaan.xlsx` sample; Phase 6 closes.
-- Cross-reference cycle warning (origin: ingest) — when regenerating cross_refs, drop the DOC→PRD back-reference direction.
+- No active v1.2 blocker identified.
+- Production safety concern: backup automation is still manual/ad hoc until Phase 17 ships.
+- Data governance concern: combined COA workbook import currently supports direct import; recurring monthly operations need preview/diff/history/rollback safeguards in Phase 18.
+- Deployment concern: runtime is live on VPS, but service definitions, env handling, rollback, and smoke checks need hardening in Phase 19.
+- UI quality concern: React build passes but existing `react-hooks/exhaustive-deps` warnings remain; Phase 20 owns cleanup or intentional documentation.
+- Repository hygiene concern: local `.env`, `.emergent`, `README.md` deletion, and `backend/emergentintegrations/` remain uncommitted local artifacts; Phase 19 owns cleanup/ignore policy.
 
 ## Deferred Items
 
-Items acknowledged and carried forward — none from a prior milestone (this is the first planning round).
+Items acknowledged and carried forward into v1.2.
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| Backup | Scheduled backup automation and retention | Planned in Phase 17 | v1.1 archive |
+| Cleanup | React hook dependency warnings | Planned in Phase 20 | v1.1 archive |
+| Cleanup | Focused pytest credential loading | Planned in Phase 19 | v1.1 archive |
+| Cleanup | Repository/local artifact hygiene | Planned in Phase 19 | v1.1 archive |
 
 ## Session Continuity
 
-Last session: 2026-05-12T11:50:00+07:00
-Stopped at: v1.1 milestone archived. Next step is to run `$gsd-new-milestone` or choose which backlog seeds become v1.2.
-Resume file: .planning/MILESTONES.md
+Last session: 2026-05-13T01:05:00+07:00
+Stopped at: v1.2 requirements and roadmap initialized. Next step is `$gsd-discuss-phase 17` or `$gsd-plan-phase 17`.
+Resume file: .planning/ROADMAP.md

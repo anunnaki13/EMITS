@@ -2,24 +2,28 @@
 
 ## What This Is
 
-EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestone v1.1 is shipped and audit-passed.
+EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestone v1.1 is shipped and audit-passed; v1.2 focuses on operational reliability and safer data governance.
 
 ## Current State
 
 **Shipped version:** v1.1, completed 2026-05-12.
+**Current milestone:** v1.2 — Operational Reliability & Data Governance.
 
 v1.1 delivered production audit/onboarding, authentication stabilization, documentation/test stabilization, collection naming cleanup, OpenRouter/AI chat operational unblocks, backend refactor foundation, advanced filters, dashboard control room, alerts, formal dispute/umpire workflow, Excel import preview, audit trail v2, management reports, and contextual AI.
 
 **Audit status:** passed. See `.planning/v1.1-MILESTONE-AUDIT.md`.
 
-## Next Milestone Goals
+## Current Milestone: v1.2 Operational Reliability & Data Governance
 
-Not yet defined. Candidate seeds:
+**Goal:** Make EMITS safer to operate as production software by automating backups, hardening deployment, making COA data imports reversible/validated, and polishing the control-room experience.
 
-- Scheduled backup automation and retention management.
-- React hook dependency warning cleanup.
-- Local test credential/runbook hardening.
-- Repository layout hygiene.
+**Target features:**
+- Scheduled database/application backup with retention, history, restore validation, and operator-visible status.
+- COA workbook import governance with preview, validation, duplicate detection, import history, and rollback-safe behavior.
+- Production deployment hardening for repeatable service restart, env/secret handling, health checks, and smoke verification.
+- Dashboard command center v3 with clearer stock risk, arrival realization, dispute/umpire, and supplier quality signals.
+- Management report and AI advisor v2 with source-backed executive summaries, supplier scorecards, and recommended next actions.
+- Engineering cleanup for React hook warnings, focused test credential loading, and repository layout hygiene.
 
 ## Core Value
 
@@ -48,23 +52,15 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 
 ### Active
 
-<!-- Stabilization-first scope. v1 of THIS planning round. -->
+<!-- v1.2 scope. See REQUIREMENTS.md for full requirement text and ROADMAP.md for traceability. -->
 
-- [ ] STAB-01: Production system audit — every endpoint surface, page, and collection cross-referenced against PRD/SPEC and live data.
-- [ ] STAB-02: Login/auth bug investigated, root-caused, fixed, and regression-tested.
-- [ ] STAB-03: Documentation refresh — README, documentation.md, API_REFERENCE, DATABASE_SCHEMA, DEPLOYMENT_GUIDE, Smart_Blending_AI_Formula brought back into sync with the live VPS install.
-- [x] STAB-04: IMPLICIT-001..008 promoted to formal locked ADRs (so future ingests have authoritative anchors).
-- [ ] STAB-05: Backend test suite green end-to-end (auth, pagination, Excel upload, COA KPI/export, AI endpoints mocked, dashboard advanced).
-- [x] STAB-06: AI conversation memory frontend integration completed (REQ-ai-conversation-memory tail).
-- [ ] DEBT-01: Collection naming standardization — pick winners and migrate `smartstock`/`smart_stock`, `sumber_pemakaian`/`sumberpemakaian`, `app_settings`/`settings`, `ai_chat_history`/`ai_conversations`.
-- [ ] DEBT-02: `server.py` modular refactor continued (auth, laporan/dashboard, COA, smart-stock routers; models split out).
-- [x] OPS-01: Smart Blending AI timeout fix — operational unblock (Universal Key budget + retry/backoff).
-- [x] OPS-02: Excel parser verification with real `total penerimaan.xlsx` sample.
-- [ ] FEAT-01: Advanced filtering and date-range support across modules (P2 from PRD).
-- [ ] POLISH-01: Dashboard period filter (P3).
-- [ ] POLISH-02: Dark/Light mode toggle (P3).
-- [ ] POLISH-03: Application-level data backup & restore (P3).
-- [ ] POLISH-04: Audit trail / activity log (P3).
+- [ ] BACKUP2-01..05: Scheduled backup automation, retention, history, restore validation, and backup health visibility.
+- [ ] COAIMP-01..06: Safe COA workbook import preview, validation, diff/duplicate detection, history, rollback, and preservation of dispute workflow state.
+- [ ] DEPLOY-01..05: Production service hardening, env/secret runbook, health/smoke checks, repeatable deploy, and repository hygiene.
+- [ ] DASH3-01..05: Dashboard command center v3 for stock risk, arrival realization, COA dispute/umpire, supplier quality, and drilldowns.
+- [ ] REPORT2-01..04: Management reporting v2 with monthly executive summary, supplier scorecard, PDF/Excel export, and source traceability.
+- [ ] AI2-01..04: AI advisor v2 with bounded source citations, recommended next actions, draft memo support, and guardrails.
+- [ ] CLEANUP-01..03: React hook warning cleanup, focused pytest credential loading without committed secrets, and local artifact hygiene.
 
 ### Out of Scope
 
@@ -86,7 +82,7 @@ Live data inventory (snapshot at planning time):
 |----------------------|---------|----------------------------------------|
 | vessels              | 111     |                                        |
 | trucking             | 461     | largest receipt collection             |
-| coa_reconciliation   | 721     | largest collection overall             |
+| coa_reconciliation   | 754     | updated via combined COA workbook import through 2026-04-27 |
 | biomassa             | 45      |                                        |
 | smartstock           | 207     | active read target (legacy: smart_stock)|
 | po_batubara          | 301     |                                        |
@@ -95,7 +91,7 @@ Live data inventory (snapshot at planning time):
 | ai_chat_history      | 10      | (legacy of: ai_conversations)          |
 | users                | 7       | admin/operator/viewer mix              |
 
-Operational situation: Smart Blending AI is degraded — code path is correct, but Universal LLM Key budget is exhausted, so live calls fail with `BudgetExceededError`. Login has a known bug that has not yet been investigated. The user (project owner) is currently in a "learn the system before upgrading it" mode — every artifact should make existing surface understandable before any new build.
+Operational situation: v1.1 is shipped and running. The combined COA workbook update has been imported locally and pushed as code/docs support. v1.2 should prioritize safer production operations over broad feature expansion: backups, import governance, deployment repeatability, and clearer management/operator decision surfaces.
 
 Test credentials: present in upstream PRD but explicitly NOT committed. See local `memory/test_credentials.md` (gitignored).
 
@@ -126,9 +122,10 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 | Defer LLM provider abstraction to backlog | Single-provider Gemini-via-emergentintegrations is documented and working; multi-provider is enterprise-tier scope creep | — Pending (out of scope this round) |
 | Treat collection naming debt as a tracked phase, not a silent migration | SPEC explicitly flags it; silent migration risks data loss against 721-row COA + 461-row trucking | — Pending (Phase 5) |
 | Single-host VPS topology stays | Production is already there with real data; horizontal split is not justified at current load | — Pending (revisit if RAM/IO bottleneck shows up) |
+| v1.2 starts with operational reliability over new domain sprawl | EMITS is now live enough that backup, import safety, deployment repeatability, and auditability reduce more risk than adding unrelated modules | ✓ Applied (v1.2 roadmap) |
 
 ---
-*Last updated: 2026-05-12 after v1.1 milestone archive.*
+*Last updated: 2026-05-13 after v1.2 milestone initialization.*
 
 
 ## ADR Cross-Links (Phase-3 lock-in)
