@@ -119,8 +119,14 @@ Coverage: 32/32 active v1.2 requirements mapped; 32/32 complete.
 
 ## Next Step
 
-Run milestone audit before archiving v1.2:
+Milestone audit completed with `tech_debt` status and no product blockers:
+
+- Audit report: `.planning/v1.2-MILESTONE-AUDIT.md`
+- Requirements: 32/32 satisfied
+- Validation sweep: 13 focused tests passing, frontend build passing, smoke check 10/10 passing
+
+Complete/archive v1.2 if the listed non-blocking tech debt is accepted:
 
 ```bash
-$gsd-audit-milestone
+$gsd-complete-milestone v1.2
 ```
