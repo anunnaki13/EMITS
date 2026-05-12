@@ -31,6 +31,10 @@ class TokenResponse(BaseModel):
 class COASettingsUpdate(BaseModel):
     price_per_kcal_per_ton: float
 
+class COAImportCommitRequest(BaseModel):
+    mode: str = "merge"
+    confirm_replace_all: bool = False
+
 class UmpireProposal(BaseModel):
     reconciliation_id: str
     sample_number: str

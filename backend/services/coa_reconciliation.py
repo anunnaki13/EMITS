@@ -6,8 +6,9 @@ Handles data parsing and comparison between Loading, Unloading, and Lab Internal
 import io
 import re
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -135,6 +136,298 @@ def _optional_str(val):
 
 def _shipment_key(val: str) -> str:
     return safe_shipment(val).upper().replace(" ", "")
+
+
+COA_COMPARE_FIELDS = [
+    "shipment",
+    "periode",
+    "suppliers",
+    "tb",
+    "bg",
+    "ds_mt",
+    "completed_unloading",
+    "loading_gcv_arb",
+    "loading_tm_arb",
+    "loading_ash_arb",
+    "loading_ts_arb",
+    "loading_surveyor",
+    "loading_no_coa",
+    "unloading_gcv_arb",
+    "unloading_tm_arb",
+    "unloading_ash_arb",
+    "unloading_ts_arb",
+    "unloading_surveyor",
+    "unloading_slagging",
+    "unloading_fouling",
+    "internal_gcv_arb",
+    "internal_tm_arb",
+    "internal_ash_arb",
+    "internal_ts_arb",
+    "umpire_status",
+    "umpire_sample_number",
+    "umpire_gcv_arb",
+    "umpire_tm_arb",
+    "umpire_ash_arb",
+    "umpire_ts_arb",
+    "umpire_lab_name",
+    "umpire_result_date",
+]
+
+COA_DISPUTE_PRESERVE_FIELDS = [
+    "dispute_history",
+    "dispute_notes",
+    "dispute_attachments",
+    "dispute_resolution",
+    "dispute_closure_notes",
+    "dispute_closed_at",
+    "dispute_closed_by",
+    "umpire_notes",
+    "umpire_result_notes",
+    "umpire_started_at",
+    "umpire_started_by",
+    "umpire_proposed_by",
+    "umpire_completed_by",
+]
+
+COA_UMPIRE_FIELDS = [
+    "umpire_status",
+    "umpire_sample_number",
+    "umpire_proposed_at",
+    "umpire_completed_at",
+    "umpire_gcv_arb",
+    "umpire_tm_arb",
+    "umpire_ash_arb",
+    "umpire_ts_arb",
+    "umpire_hgi",
+    "umpire_lab_name",
+    "umpire_result_date",
+    "umpire_raw_status",
+    "umpire_request_letter",
+    "umpire_response_letter",
+    "umpire_parameters",
+]
+
+
+def normalize_coa_shipment(val: Any) -> str:
+    return _shipment_key(safe_shipment(val))
+
+
+def _has_value(value: Any) -> bool:
+    return value not in (None, "", [], {})
+
+
+def has_dispute_state(record: Optional[Dict]) -> bool:
+    if not record:
+        return False
+    if record.get("umpire_status") not in (None, "", "none"):
+        return True
+    return any(_has_value(record.get(field)) for field in COA_DISPUTE_PRESERVE_FIELDS)
+
+
+def _umpire_rank(status: Optional[str]) -> int:
+    return {"none": 0, "proposed": 1, "in_progress": 2, "completed": 3}.get(status or "none", 0)
+
+
+def _values_equal(left: Any, right: Any) -> bool:
+    if left in ("", None) and right in ("", None):
+        return True
+    if isinstance(left, (int, float)) or isinstance(right, (int, float)):
+        try:
+            return abs(float(left) - float(right)) < 0.0001
+        except Exception:
+            return False
+    return str(left) == str(right)
+
+
+def coa_records_differ(import_record: Dict, existing_record: Optional[Dict]) -> bool:
+    if not existing_record:
+        return True
+    return any(
+        not _values_equal(import_record.get(field), existing_record.get(field))
+        for field in COA_COMPARE_FIELDS
+    )
+
+
+def apply_preserved_coa_fields(import_record: Dict, existing_record: Optional[Dict]) -> Dict:
+    """Preserve local dispute workflow metadata while allowing workbook quality data to update."""
+    record = dict(import_record)
+    if not existing_record:
+        return record
+
+    record["id"] = existing_record.get("id") or record.get("id")
+    record["created_at"] = existing_record.get("created_at") or record.get("created_at")
+
+    for field in COA_DISPUTE_PRESERVE_FIELDS:
+        if _has_value(existing_record.get(field)):
+            record[field] = existing_record[field]
+
+    imported_status = record.get("umpire_status") or "none"
+    existing_status = existing_record.get("umpire_status") or "none"
+    if _umpire_rank(existing_status) > _umpire_rank(imported_status):
+        record["umpire_status"] = existing_status
+
+    for field in COA_UMPIRE_FIELDS:
+        if not _has_value(record.get(field)) and _has_value(existing_record.get(field)):
+            record[field] = existing_record[field]
+
+    if has_dispute_state(existing_record):
+        record["import_preserved_dispute"] = True
+    return record
+
+
+def build_combined_coa_import_preview(
+    records: List[Dict],
+    source_counts: Dict,
+    existing_records: List[Dict],
+) -> Dict:
+    """Build validation, source coverage, diff, and preservation summary for a COA workbook import."""
+    issues = []
+    imported_groups = defaultdict(list)
+    existing_groups = defaultdict(list)
+
+    for index, record in enumerate(records, start=1):
+        key = normalize_coa_shipment(record.get("shipment"))
+        row = record.get("source_row") or index
+        if not key:
+            issues.append({
+                "row": row,
+                "field": "shipment",
+                "type": "missing_key",
+                "severity": "critical",
+                "message": "Shipment kosong atau tidak terbaca",
+            })
+            continue
+        imported_groups[key].append((row, record))
+
+        if not record.get("suppliers"):
+            issues.append({
+                "row": row,
+                "field": "suppliers",
+                "type": "missing_supplier",
+                "severity": "warning",
+                "message": f"Supplier kosong untuk shipment {record.get('shipment')}",
+            })
+        if not record.get("completed_unloading"):
+            issues.append({
+                "row": row,
+                "field": "completed_unloading",
+                "type": "missing_completed_unloading",
+                "severity": "critical",
+                "message": f"Tanggal completed unloading kosong untuk shipment {record.get('shipment')}",
+            })
+        for field, label in [
+            ("loading_gcv_arb", "Loading GCV"),
+            ("unloading_gcv_arb", "Unloading GCV"),
+            ("internal_gcv_arb", "Internal GCV"),
+        ]:
+            if record.get(field) is None:
+                issues.append({
+                    "row": row,
+                    "field": field,
+                    "type": "missing_quality_value",
+                    "severity": "warning",
+                    "message": f"{label} kosong untuk shipment {record.get('shipment')}",
+                })
+
+    for key, items in imported_groups.items():
+        if len(items) > 1:
+            first_row = items[0][0]
+            for row, record in items[1:]:
+                issues.append({
+                    "row": row,
+                    "field": "shipment",
+                    "type": "duplicate_in_file",
+                    "severity": "critical",
+                    "message": f"Shipment {record.get('shipment')} duplikat dengan row {first_row}",
+                })
+
+    for existing in existing_records:
+        key = normalize_coa_shipment(existing.get("shipment"))
+        if key:
+            existing_groups[key].append(existing)
+
+    for key, items in existing_groups.items():
+        if len(items) > 1:
+            issues.append({
+                "row": None,
+                "field": "shipment",
+                "type": "duplicate_existing",
+                "severity": "warning",
+                "message": f"Database memiliki {len(items)} record untuk shipment key {key}",
+            })
+
+    imported_by_key = {key: items[0][1] for key, items in imported_groups.items() if items}
+    existing_by_key = {key: items[0] for key, items in existing_groups.items() if items}
+
+    inserted_keys = sorted(set(imported_by_key) - set(existing_by_key))
+    common_keys = sorted(set(imported_by_key) & set(existing_by_key))
+    removed_keys = sorted(set(existing_by_key) - set(imported_by_key))
+    updated_keys = []
+    unchanged = 0
+    samples = []
+
+    for key in common_keys:
+        imported = imported_by_key[key]
+        existing = existing_by_key[key]
+        changed_fields = [
+            field for field in COA_COMPARE_FIELDS
+            if not _values_equal(imported.get(field), existing.get(field))
+        ]
+        if changed_fields:
+            updated_keys.append(key)
+            if len(samples) < 10:
+                samples.append({
+                    "shipment": imported.get("shipment") or existing.get("shipment"),
+                    "supplier_before": existing.get("suppliers"),
+                    "supplier_after": imported.get("suppliers"),
+                    "changed_fields": changed_fields[:8],
+                    "before": {field: existing.get(field) for field in changed_fields[:5]},
+                    "after": {field: imported.get(field) for field in changed_fields[:5]},
+                })
+        else:
+            unchanged += 1
+
+    critical_count = sum(1 for issue in issues if issue.get("severity") == "critical")
+    warning_count = sum(1 for issue in issues if issue.get("severity") == "warning")
+    common_with_dispute = sum(1 for key in common_keys if has_dispute_state(existing_by_key.get(key)))
+    removed_with_dispute = sum(1 for key in removed_keys if has_dispute_state(existing_by_key.get(key)))
+
+    return {
+        "source_counts": source_counts,
+        "validation_summary": {
+            "total_issues": len(issues),
+            "critical": critical_count,
+            "warning": warning_count,
+            "status": "blocked" if critical_count else "ready",
+        },
+        "issues": issues,
+        "diff_summary": {
+            "existing_total": len(existing_records),
+            "incoming_total": len(records),
+            "inserted": len(inserted_keys),
+            "updated": len(updated_keys),
+            "unchanged": unchanged,
+            "removed_if_replace": len(removed_keys),
+            "sample_changes": samples,
+        },
+        "preservation_summary": {
+            "matched_records_with_dispute": common_with_dispute,
+            "removed_records_with_dispute_if_replace": removed_with_dispute,
+            "preserved_fields": COA_DISPUTE_PRESERVE_FIELDS,
+            "notes": [
+                "Catatan dispute, attachment, history, dan metadata workflow lokal dipertahankan untuk shipment yang tetap ada.",
+                "Mode replace-all akan menghapus shipment lama yang tidak ada di workbook baru; jumlah yang memiliki dispute dilaporkan sebelum commit.",
+            ],
+        },
+        "coverage": {
+            "loading": source_counts.get("loading", 0),
+            "unloading": source_counts.get("unloading", 0),
+            "internal": source_counts.get("internal", 0),
+            "umpire": source_counts.get("umpire", 0),
+            "date_min": source_counts.get("completed_unloading_min"),
+            "date_max": source_counts.get("completed_unloading_max"),
+        },
+    }
 
 
 def _status_from_delta(delta_loading_internal: Optional[float]) -> str:
@@ -334,7 +627,7 @@ def parse_combined_coa_workbook(file_contents: bytes) -> Tuple[List[Dict], Dict]
     umpire_by_shipment = _parse_umpire_sheet(file_contents)
 
     records = []
-    for _, row in df.iterrows():
+    for row_index, row in df.iterrows():
         shipment = safe_shipment(row.get("Shipment"))
         completed_unloading = safe_datetime(row.get("Completed Unloading"))
         if not shipment or shipment.upper().startswith("KET") or not completed_unloading:
@@ -390,6 +683,7 @@ def parse_combined_coa_workbook(file_contents: bytes) -> Tuple[List[Dict], Dict]
             "umpire_completed_at": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "input_method": "combined_workbook",
+            "source_row": int(row_index) + 3,
         }
 
         umpire_data = umpire_by_shipment.get(_shipment_key(shipment)) or _parse_inline_umpire(row)

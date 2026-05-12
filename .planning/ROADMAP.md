@@ -19,7 +19,7 @@ Make EMITS safer to operate as production software by automating backups, harden
 | # | Phase | Goal | Requirements | Success Criteria |
 |---|-------|------|--------------|------------------|
 | 17 | Backup & Disaster Recovery Automation | Scheduled backups, retention, backup health, and restore validation are available to admins. | BACKUP2-01..05 | 5 |
-| 18 | COA Import Governance v2 | Combined COA workbook imports become previewable, validated, traceable, and rollback-safe. | COAIMP-01..06 | 5 |
+| 18 | COA Import Governance v2 | Combined COA workbook imports become previewable, validated, traceable, and rollback-safe. | COAIMP-01..06 | 6 |
 | 19 | Production Deployment Hardening | Running/deploying EMITS is repeatable, documented, and cleanly separated from local artifacts/secrets. | DEPLOY-01..05, CLEANUP-02..03 | 5 |
 | 20 | Dashboard Command Center v3 | Operators get a sharper first screen for stock risk, arrivals, disputes, supplier risk, and drilldowns. | DASH3-01..05, CLEANUP-01 | 5 |
 | 21 | Management Reports & AI Advisor v2 | Management summaries, supplier scorecards, and source-backed AI recommendations support decisions. | REPORT2-01..04, AI2-01..04 | 5 |
@@ -29,8 +29,8 @@ Make EMITS safer to operate as production software by automating backups, harden
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 17 | Complete | Backup scheduler/settings/history/health shipped. |
-| 18 | Next | COA import preview/diff/history/rollback safeguards. |
-| 19 | Planned | Deployment hardening and repo/test hygiene. |
+| 18 | Complete | COA preview/diff/history/rollback safeguards shipped. |
+| 19 | Next | Deployment hardening and repo/test hygiene. |
 | 20 | Planned | Dashboard v3 and React hook cleanup. |
 | 21 | Planned | Reports v2 and AI advisor v2. |
 
@@ -61,6 +61,7 @@ Make EMITS safer to operate as production software by automating backups, harden
 3. Preview shows before/after diff against existing shipments.
 4. Commit requires explicit mode selection and confirmation for replace-all behavior.
 5. Import history captures actor, filename, timestamp, counts, mode, validation summary, and preservation/overwrite notes.
+6. Rollback snapshot can restore the `coa_reconciliation` state from before a committed import.
 
 ### Phase 19: Production Deployment Hardening
 
@@ -105,8 +106,8 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 | Requirement Group | Covered By | Status |
 |-------------------|------------|--------|
-| BACKUP2-01..05 | Phase 17 | Planned |
-| COAIMP-01..06 | Phase 18 | Planned |
+| BACKUP2-01..05 | Phase 17 | Complete |
+| COAIMP-01..06 | Phase 18 | Complete |
 | DEPLOY-01..05 | Phase 19 | Planned |
 | CLEANUP-02..03 | Phase 19 | Planned |
 | DASH3-01..05 | Phase 20 | Planned |
@@ -118,14 +119,14 @@ Coverage: 32/32 active v1.2 requirements mapped.
 
 ## Next Step
 
-Start execution with Phase 17:
+Start execution with Phase 19:
 
 ```bash
-$gsd-discuss-phase 17
+$gsd-discuss-phase 19
 ```
 
 or skip discussion and plan directly:
 
 ```bash
-$gsd-plan-phase 17
+$gsd-plan-phase 19
 ```

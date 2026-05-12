@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from services.coa_reconciliation import calculate_kpis, parse_combined_coa_workbook
+from services.coa_reconciliation import (
+    apply_preserved_coa_fields,
+    build_combined_coa_import_preview,
+    calculate_kpis,
+    parse_combined_coa_workbook,
+)
 
 
 WORKBOOK = (
@@ -43,3 +48,101 @@ def test_parse_latest_combined_coa_workbook_indonesian_period_and_kpi_total():
     kpis = calculate_kpis(records)
     assert kpis["umpire_status"]["completed"] == 201
     assert kpis["umpire_status"]["total"] == 201
+
+
+def test_combined_coa_preview_reports_diff_duplicates_and_preservation():
+    records = [
+        {
+            "id": "incoming-1",
+            "shipment": "LOT 1",
+            "source_row": 3,
+            "suppliers": "PT BARU",
+            "completed_unloading": "2026-03-01T00:00:00",
+            "loading_gcv_arb": 4300,
+            "unloading_gcv_arb": 4280,
+            "internal_gcv_arb": 4200,
+            "umpire_status": "none",
+        },
+        {
+            "id": "incoming-dup",
+            "shipment": "LOT 1",
+            "source_row": 4,
+            "suppliers": "PT BARU",
+            "completed_unloading": "2026-03-01T00:00:00",
+            "loading_gcv_arb": 4300,
+            "unloading_gcv_arb": 4280,
+            "internal_gcv_arb": 4200,
+            "umpire_status": "none",
+        },
+        {
+            "id": "incoming-2",
+            "shipment": "LOT 2",
+            "source_row": 5,
+            "suppliers": "PT BARU 2",
+            "completed_unloading": "2026-03-02T00:00:00",
+            "loading_gcv_arb": 4400,
+            "unloading_gcv_arb": 4380,
+            "internal_gcv_arb": 4350,
+            "umpire_status": "none",
+        },
+    ]
+    existing = [
+        {
+            "id": "existing-1",
+            "shipment": "LOT 1",
+            "suppliers": "PT LAMA",
+            "completed_unloading": "2026-02-01T00:00:00",
+            "loading_gcv_arb": 4100,
+            "unloading_gcv_arb": 4080,
+            "internal_gcv_arb": 4000,
+            "umpire_status": "proposed",
+            "dispute_notes": [{"note": "jangan hilang"}],
+        },
+        {
+            "id": "existing-removed",
+            "shipment": "LOT 99",
+            "umpire_status": "completed",
+            "dispute_attachments": [{"filename": "roa.pdf"}],
+        },
+    ]
+
+    preview = build_combined_coa_import_preview(
+        records,
+        {"records": 3, "loading": 3, "unloading": 3, "internal": 3, "umpire": 0},
+        existing,
+    )
+
+    assert preview["validation_summary"]["critical"] == 1
+    assert any(issue["type"] == "duplicate_in_file" for issue in preview["issues"])
+    assert preview["diff_summary"]["inserted"] == 1
+    assert preview["diff_summary"]["updated"] == 1
+    assert preview["diff_summary"]["removed_if_replace"] == 1
+    assert preview["preservation_summary"]["matched_records_with_dispute"] == 1
+    assert preview["preservation_summary"]["removed_records_with_dispute_if_replace"] == 1
+
+
+def test_apply_preserved_coa_fields_keeps_dispute_workflow_and_existing_id():
+    imported = {
+        "id": "new-id",
+        "shipment": "LOT 7",
+        "created_at": "2026-05-01T00:00:00",
+        "umpire_status": "none",
+        "internal_gcv_arb": 4200,
+    }
+    existing = {
+        "id": "existing-id",
+        "shipment": "LOT 7",
+        "created_at": "2026-04-01T00:00:00",
+        "umpire_status": "in_progress",
+        "umpire_sample_number": "S-7",
+        "dispute_notes": [{"note": "preserve"}],
+    }
+
+    merged = apply_preserved_coa_fields(imported, existing)
+
+    assert merged["id"] == "existing-id"
+    assert merged["created_at"] == "2026-04-01T00:00:00"
+    assert merged["umpire_status"] == "in_progress"
+    assert merged["umpire_sample_number"] == "S-7"
+    assert merged["dispute_notes"] == [{"note": "preserve"}]
+    assert merged["import_preserved_dispute"] is True

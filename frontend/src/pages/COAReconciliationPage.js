@@ -41,7 +41,6 @@ import {
   Upload,
   Loader2,
   RefreshCw,
-  FileWarning,
   DollarSign,
   AlertCircle,
   BarChart3,
@@ -50,13 +49,15 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  ChevronDown,
   Plus,
   Trash2,
   FileSpreadsheet,
   ArrowRight,
-  Download,
-  FileText
+  FileText,
+  History,
+  GitCompare,
+  RotateCcw,
+  ShieldCheck
 } from "lucide-react";
 import {
   LineChart,
@@ -98,7 +99,13 @@ const COAReconciliationPage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showImportPreviewDialog, setShowImportPreviewDialog] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importHistory, setImportHistory] = useState([]);
+  const [importMode, setImportMode] = useState("merge");
+  const [confirmReplaceAll, setConfirmReplaceAll] = useState(false);
+  const [committingImport, setCommittingImport] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [fileMapping, setFileMapping] = useState({
@@ -192,11 +199,24 @@ const COAReconciliationPage = () => {
     }
   }, [getAuthHeader]);
 
+  const fetchImportHistory = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/coa-reconciliation/import-history`, {
+        headers: getAuthHeader(),
+        params: { page_size: 5 }
+      });
+      setImportHistory(response.data.items || []);
+    } catch (error) {
+      console.error("Failed to fetch COA import history:", error);
+    }
+  }, [getAuthHeader]);
+
   useEffect(() => {
     fetchData(1);
     fetchKPIs();
     fetchTrendData();
     fetchSupplierData();
+    fetchImportHistory();
   }, []);
 
   useEffect(() => {
@@ -213,7 +233,7 @@ const COAReconciliationPage = () => {
 
     try {
       const response = await axios.post(
-        `${API_URL}/api/coa-reconciliation/upload-combined`,
+        `${API_URL}/api/coa-reconciliation/preview-combined`,
         formData,
         {
           headers: {
@@ -222,15 +242,68 @@ const COAReconciliationPage = () => {
           },
         }
       );
-      toast.success(response.data.message);
+      setImportPreview(response.data);
+      setImportMode("merge");
+      setConfirmReplaceAll(false);
+      setShowImportPreviewDialog(true);
+      fetchImportHistory();
+      toast.success("Preview import COA siap diperiksa");
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal preview workbook gabungan");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const commitImportPreview = async () => {
+    if (!importPreview?.preview_id) return;
+    if (importMode === "replace" && !confirmReplaceAll) {
+      toast.error("Konfirmasi replace-all wajib dicentang");
+      return;
+    }
+
+    setCommittingImport(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/coa-reconciliation/import-preview/${importPreview.preview_id}/commit`,
+        { mode: importMode, confirm_replace_all: confirmReplaceAll },
+        { headers: getAuthHeader() }
+      );
+      toast.success(response.data.message || "Import COA berhasil dicommit");
+      setShowImportPreviewDialog(false);
+      setImportPreview(null);
+      setConfirmReplaceAll(false);
       fetchData(1);
       fetchKPIs();
       fetchTrendData();
       fetchSupplierData();
+      fetchImportHistory();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Gagal upload workbook gabungan");
+      toast.error(error.response?.data?.detail || "Gagal commit import COA");
     } finally {
-      setUploading(false);
+      setCommittingImport(false);
+    }
+  };
+
+  const rollbackImport = async (historyItem) => {
+    if (!historyItem?.id) return;
+    const ok = window.confirm(`Rollback import ${historyItem.filename}? Data COA akan dikembalikan ke snapshot sebelum import ini.`);
+    if (!ok) return;
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/coa-reconciliation/import-history/${historyItem.id}/rollback`,
+        {},
+        { headers: getAuthHeader() }
+      );
+      toast.success(response.data.message || "Rollback import COA berhasil");
+      fetchData(1);
+      fetchKPIs();
+      fetchTrendData();
+      fetchSupplierData();
+      fetchImportHistory();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal rollback import COA");
     }
   };
 
@@ -497,6 +570,27 @@ const COAReconciliationPage = () => {
     return `Rp ${num.toLocaleString("id-ID")}`;
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    return new Date(value).toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  const getValidationBadge = (summary) => {
+    if (!summary) return null;
+    const blocked = summary.status === "blocked" || summary.critical > 0;
+    return (
+      <Badge className={`${blocked ? "bg-red-500/20 text-red-300 border-red-500/30" : "bg-green-500/20 text-green-300 border-green-500/30"} border`}>
+        {blocked ? "Blocked" : "Ready"}
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -681,6 +775,79 @@ const COAReconciliationPage = () => {
           </div>
         </Card>
       )}
+
+      {/* Import Governance */}
+      <Card className="bg-[#0B1221] border-white/5 p-4">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              Governance Import COA
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Workbook gabungan dipreview, dibandingkan dengan database, lalu dicommit dengan mode eksplisit.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchImportHistory}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            <History className="w-4 h-4 mr-2" />
+            Muat Riwayat
+          </Button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-3">
+          {importHistory.length === 0 ? (
+            <div className="lg:col-span-5 rounded-lg border border-dashed border-slate-700 p-4 text-sm text-slate-500">
+              Belum ada riwayat commit import COA dari alur preview baru.
+            </div>
+          ) : (
+            importHistory.map((item) => (
+              <div key={item.id} className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs text-slate-400 truncate">{item.filename || "Workbook COA"}</p>
+                    <p className="text-[11px] text-slate-600">{formatDateTime(item.created_at)}</p>
+                  </div>
+                  <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/20 border uppercase">
+                    {item.mode}
+                  </Badge>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{item.row_count || 0}</p>
+                    <p className="text-[10px] text-slate-500">rows</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-300">{item.inserted || 0}</p>
+                    <p className="text-[10px] text-slate-500">insert</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-300">{item.updated || 0}</p>
+                    <p className="text-[10px] text-slate-500">update</p>
+                  </div>
+                </div>
+                {item.rolled_back_at ? (
+                  <p className="mt-3 text-[11px] text-red-300">Rollback: {formatDateTime(item.rolled_back_at)}</p>
+                ) : user?.role === "admin" && item.snapshot_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => rollbackImport(item)}
+                    className="mt-2 h-7 px-2 text-red-300 hover:text-red-200 hover:bg-red-500/10"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Rollback
+                  </Button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1325,6 +1492,192 @@ const COAReconciliationPage = () => {
                 <Trash2 className="w-4 h-4 mr-2" />
               )}
               Ya, Hapus Semua
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Combined Workbook Preview Dialog */}
+      <Dialog open={showImportPreviewDialog} onOpenChange={(open) => {
+        if (!open && !committingImport) {
+          setShowImportPreviewDialog(false);
+          setImportPreview(null);
+          setConfirmReplaceAll(false);
+        }
+      }}>
+        <DialogContent className="bg-[#0B1221] border-white/10 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitCompare className="w-5 h-5 text-cyan-400" />
+              Preview Import COA
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {importPreview?.filename || "Workbook gabungan"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {importPreview && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                  <p className="text-xs text-slate-500">Records</p>
+                  <p className="text-2xl font-bold text-white">{formatNumber(importPreview.row_count)}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                  <p className="text-xs text-slate-500">Coverage</p>
+                  <p className="text-sm font-semibold text-emerald-300 mt-1">
+                    L {formatNumber(importPreview.coverage?.loading)} / U {formatNumber(importPreview.coverage?.unloading)} / I {formatNumber(importPreview.coverage?.internal)}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">Umpire {formatNumber(importPreview.coverage?.umpire)}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                  <p className="text-xs text-slate-500">Periode</p>
+                  <p className="text-sm font-semibold text-white mt-1">{importPreview.coverage?.date_min || "-"} - {importPreview.coverage?.date_max || "-"}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                  <p className="text-xs text-slate-500">Validasi</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getValidationBadge(importPreview.validation_summary)}
+                    <span className="text-xs text-slate-400">
+                      {importPreview.validation_summary?.critical || 0} critical, {importPreview.validation_summary?.warning || 0} warning
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {[
+                  ["Insert", importPreview.diff_summary?.inserted, "text-emerald-300"],
+                  ["Update", importPreview.diff_summary?.updated, "text-amber-300"],
+                  ["Unchanged", importPreview.diff_summary?.unchanged, "text-slate-300"],
+                  ["Remove jika replace", importPreview.diff_summary?.removed_if_replace, "text-red-300"],
+                  ["Dispute preserve", importPreview.preservation_summary?.matched_records_with_dispute, "text-cyan-300"]
+                ].map(([label, value, color]) => (
+                  <div key={label} className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                    <p className="text-xs text-slate-500">{label}</p>
+                    <p className={`text-xl font-bold mt-1 ${color}`}>{formatNumber(value || 0)}</p>
+                  </div>
+                ))}
+              </div>
+
+              {importPreview.preservation_summary?.removed_records_with_dispute_if_replace > 0 && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  <AlertTriangle className="w-4 h-4 inline mr-2" />
+                  Replace-all akan menghapus {importPreview.preservation_summary.removed_records_with_dispute_if_replace} shipment lama yang memiliki state dispute.
+                </div>
+              )}
+
+              {importPreview.issues?.length > 0 && (
+                <div className="rounded-lg border border-white/10 overflow-hidden">
+                  <div className="px-3 py-2 bg-slate-900/60 border-b border-white/10 flex items-center justify-between">
+                    <p className="text-sm font-medium text-white">Validation Issues</p>
+                    <span className="text-xs text-slate-500">{importPreview.issue_count} total</span>
+                  </div>
+                  <div className="max-h-44 overflow-y-auto divide-y divide-white/5">
+                    {importPreview.issues.slice(0, 20).map((issue, index) => (
+                      <div key={`${issue.type}-${index}`} className="px-3 py-2 flex items-start gap-3 text-xs">
+                        <Badge className={`${issue.severity === "critical" ? "bg-red-500/20 text-red-300 border-red-500/30" : "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"} border`}>
+                          {issue.severity}
+                        </Badge>
+                        <div>
+                          <p className="text-slate-200">{issue.message}</p>
+                          <p className="text-slate-500">Row {issue.row || "-"} / {issue.field}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {importPreview.diff_summary?.sample_changes?.length > 0 && (
+                <div className="rounded-lg border border-white/10 overflow-hidden">
+                  <div className="px-3 py-2 bg-slate-900/60 border-b border-white/10">
+                    <p className="text-sm font-medium text-white">Sample Diff</p>
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {importPreview.diff_summary.sample_changes.slice(0, 5).map((change) => (
+                      <div key={change.shipment} className="px-3 py-2 text-xs">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-mono text-white">{change.shipment}</p>
+                          <p className="text-slate-500">{change.changed_fields?.slice(0, 4).join(", ")}</p>
+                        </div>
+                        <p className="text-slate-500 mt-1">
+                          {change.supplier_before || "-"} <ArrowRight className="w-3 h-3 inline mx-1" /> {change.supplier_after || "-"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-lg border border-white/10 bg-slate-900/40 p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mode Commit</Label>
+                    <Select value={importMode} onValueChange={(value) => {
+                      setImportMode(value);
+                      setConfirmReplaceAll(false);
+                    }}>
+                      <SelectTrigger className="bg-slate-900/80 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0B1221] border-slate-700">
+                        <SelectItem value="merge">Merge / update shipment</SelectItem>
+                        <SelectItem value="replace">Replace-all</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status Commit</Label>
+                    <p className="text-sm text-slate-300">
+                      {importMode === "merge"
+                        ? "Shipment existing diupdate, shipment baru ditambahkan."
+                        : "Seluruh data COA diganti dengan isi workbook ini."}
+                    </p>
+                  </div>
+                </div>
+
+                {importMode === "replace" && (
+                  <label className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={confirmReplaceAll}
+                      onChange={(e) => setConfirmReplaceAll(e.target.checked)}
+                      className="mt-1"
+                    />
+                    <span className="text-sm text-red-100">
+                      Saya konfirmasi replace-all untuk {formatNumber(pagination.total)} data COA existing.
+                    </span>
+                  </label>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowImportPreviewDialog(false)}
+              disabled={committingImport}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={commitImportPreview}
+              disabled={
+                committingImport ||
+                !importPreview ||
+                importPreview.validation_summary?.critical > 0 ||
+                (importMode === "replace" && !confirmReplaceAll)
+              }
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
+              {committingImport ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="w-4 h-4 mr-2" />
+              )}
+              Commit Import
             </Button>
           </DialogFooter>
         </DialogContent>

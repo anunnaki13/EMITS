@@ -21,12 +21,12 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 ### COA Import Governance (COAIMP)
 
-- [ ] **COAIMP-01**: Admin/operator can upload one combined COA workbook and preview parsed records before committing.
-- [ ] **COAIMP-02**: Preview shows record counts, date range, source coverage, critical/warning deltas, and row-level validation issues.
-- [ ] **COAIMP-03**: Preview detects duplicate shipments and differences against existing `coa_reconciliation` records.
-- [ ] **COAIMP-04**: Commit supports explicit modes for replace-all and merge/update, with clear confirmation copy for destructive operations.
-- [ ] **COAIMP-05**: Import history records filename, actor, timestamp, counts, mode, validation summary, and before/after totals.
-- [ ] **COAIMP-06**: Existing dispute/umpire workflow notes and attachments are preserved or explicitly reported when an import would overwrite them.
+- [x] **COAIMP-01**: Admin/operator can upload one combined COA workbook and preview parsed records before committing.
+- [x] **COAIMP-02**: Preview shows record counts, date range, source coverage, critical/warning deltas, and row-level validation issues.
+- [x] **COAIMP-03**: Preview detects duplicate shipments and differences against existing `coa_reconciliation` records.
+- [x] **COAIMP-04**: Commit supports explicit modes for replace-all and merge/update, with clear confirmation copy for destructive operations.
+- [x] **COAIMP-05**: Import history records filename, actor, timestamp, counts, mode, validation summary, and before/after totals.
+- [x] **COAIMP-06**: Existing dispute/umpire workflow notes and attachments are preserved or explicitly reported when an import would overwrite them.
 
 ### Deployment Hardening (DEPLOY)
 
@@ -84,7 +84,7 @@ Make EMITS safer to operate as production software by automating backups, harden
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BACKUP2-01..05 | Phase 17 | Complete |
-| COAIMP-01..06 | Phase 18 | Planned |
+| COAIMP-01..06 | Phase 18 | Complete |
 | DEPLOY-01..05 | Phase 19 | Planned |
 | CLEANUP-02..03 | Phase 19 | Planned |
 | DASH3-01..05 | Phase 20 | Planned |

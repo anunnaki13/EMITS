@@ -4,9 +4,10 @@ import logging
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Response, UploadFile
 
 from models import (
+    COAImportCommitRequest,
     COAManualInput,
     COASettingsUpdate,
     DisputeAttachmentInput,
@@ -16,10 +17,14 @@ from models import (
     UmpireResultInput,
 )
 from services.coa_reconciliation import (
+    apply_preserved_coa_fields,
+    build_combined_coa_import_preview,
     calculate_kpis,
+    coa_records_differ,
     get_gcv_trend_data,
     get_radar_chart_data,
     merge_coa_data,
+    normalize_coa_shipment,
     parse_combined_coa_workbook,
     parse_coa_excel,
 )
@@ -61,6 +66,143 @@ def _workflow_summary(record: dict) -> dict:
         "note_count": len(notes),
         "attachment_count": len(attachments),
     }
+
+
+def _existing_by_shipment(records: list[dict]) -> dict[str, dict]:
+    by_key = {}
+    for record in records:
+        key = normalize_coa_shipment(record.get("shipment"))
+        if key and key not in by_key:
+            by_key[key] = record
+    return by_key
+
+
+def _has_critical_import_issues(preview: dict) -> bool:
+    return any(issue.get("severity") == "critical" for issue in preview.get("issues") or [])
+
+
+def _public_preview_response(preview: dict) -> dict:
+    return {
+        "preview_id": preview["id"],
+        "dataset": preview["dataset"],
+        "filename": preview.get("filename"),
+        "row_count": len(preview.get("records") or []),
+        "source_counts": preview.get("source_counts") or {},
+        "coverage": preview.get("coverage") or {},
+        "validation_summary": preview.get("validation_summary") or {},
+        "issue_count": len(preview.get("issues") or []),
+        "issues": (preview.get("issues") or [])[:100],
+        "diff_summary": preview.get("diff_summary") or {},
+        "preservation_summary": preview.get("preservation_summary") or {},
+        "preview_rows": (preview.get("records") or [])[:10],
+        "allowed_modes": ["merge", "replace"],
+        "status": preview.get("status"),
+        "created_at": preview.get("created_at"),
+        "created_by": preview.get("created_by"),
+    }
+
+
+async def _commit_combined_coa_preview(preview: dict, mode: str, confirm_replace_all: bool, user: dict) -> dict:
+    if mode not in {"merge", "replace"}:
+        raise HTTPException(status_code=400, detail="Mode import COA harus merge atau replace")
+    if mode == "replace" and not confirm_replace_all:
+        raise HTTPException(status_code=400, detail="Replace-all wajib dikonfirmasi eksplisit")
+    if _has_critical_import_issues(preview):
+        raise HTTPException(status_code=400, detail="Preview masih memiliki isu critical. Perbaiki workbook sebelum commit.")
+
+    records = preview.get("records") or []
+    existing_records = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(50000)
+    existing_by_key = _existing_by_shipment(existing_records)
+    now = datetime.now(timezone.utc).isoformat()
+
+    prepared_records = []
+    for record in records:
+        key = normalize_coa_shipment(record.get("shipment"))
+        prepared = apply_preserved_coa_fields(record, existing_by_key.get(key))
+        prepared.update({
+            "uploaded_by": user["id"],
+            "uploaded_at": now,
+            "updated_at": now,
+            "import_source": preview.get("filename"),
+            "import_preview_id": preview["id"],
+        })
+        prepared_records.append(prepared)
+
+    snapshot_id = str(uuid.uuid4())
+    await db.coa_import_snapshots.insert_one({
+        "id": snapshot_id,
+        "preview_id": preview["id"],
+        "dataset": "coa-reconciliation",
+        "mode": mode,
+        "filename": preview.get("filename"),
+        "records": existing_records,
+        "record_count": len(existing_records),
+        "created_at": now,
+        "created_by": user["id"],
+    })
+
+    inserted = updated = deleted = unchanged = 0
+    if mode == "replace":
+        deleted = (await db.coa_reconciliation.delete_many({})).deleted_count
+        if prepared_records:
+            await db.coa_reconciliation.insert_many(prepared_records)
+            inserted = len(prepared_records)
+    else:
+        for record in prepared_records:
+            key = normalize_coa_shipment(record.get("shipment"))
+            existing = existing_by_key.get(key)
+            if existing and existing.get("id"):
+                if not coa_records_differ(record, existing):
+                    unchanged += 1
+                    continue
+                result = await db.coa_reconciliation.replace_one({"id": existing["id"]}, record)
+                updated += result.modified_count or 1
+            elif record.get("shipment"):
+                result = await db.coa_reconciliation.update_one(
+                    {"shipment": record["shipment"]},
+                    {"$set": record},
+                    upsert=True,
+                )
+                if result.upserted_id:
+                    inserted += 1
+                else:
+                    updated += result.modified_count or 1
+
+    after_total = await db.coa_reconciliation.count_documents({})
+    history = {
+        "id": str(uuid.uuid4()),
+        "preview_id": preview["id"],
+        "dataset": "coa-reconciliation",
+        "filename": preview.get("filename"),
+        "mode": mode,
+        "row_count": len(records),
+        "source_counts": preview.get("source_counts") or {},
+        "validation_summary": preview.get("validation_summary") or {},
+        "diff_summary": preview.get("diff_summary") or {},
+        "preservation_summary": preview.get("preservation_summary") or {},
+        "before_total": len(existing_records),
+        "after_total": after_total,
+        "inserted": inserted,
+        "updated": updated,
+        "unchanged": unchanged,
+        "deleted": deleted,
+        "snapshot_id": snapshot_id,
+        "created_at": now,
+        "created_by": user["id"],
+        "created_by_name": user.get("name"),
+    }
+    await db.import_history.insert_one(history)
+    await db.import_previews.update_one(
+        {"id": preview["id"]},
+        {"$set": {
+            "status": "committed",
+            "committed_at": now,
+            "committed_by": user["id"],
+            "commit_mode": mode,
+            "history_id": history["id"],
+        }},
+    )
+    return {key: value for key, value in history.items() if key != "_id"}
 
 
 @router.get("/settings/coa")
@@ -209,6 +351,122 @@ async def get_dispute_monitor(
         "page_size": page_size,
         "total_pages": (total + page_size - 1) // page_size,
         "summary": summary
+    }
+
+
+@router.post("/coa-reconciliation/preview-combined")
+async def preview_combined_coa_file(
+    file: UploadFile = File(..., description="Workbook gabungan Rekapitulasi CoA"),
+    user: dict = Depends(require_role(["admin", "operator"]))
+):
+    """Preview one combined COA workbook without mutating coa_reconciliation."""
+    try:
+        contents = await file.read()
+        merged_data, source_counts = parse_combined_coa_workbook(contents)
+        existing_records = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(50000)
+        preview = build_combined_coa_import_preview(merged_data, source_counts, existing_records)
+        preview_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        preview_doc = {
+            "id": preview_id,
+            "dataset": "coa-reconciliation",
+            "filename": file.filename or "coa-combined.xlsx",
+            "records": merged_data,
+            "source_counts": source_counts,
+            "coverage": preview["coverage"],
+            "issues": preview["issues"],
+            "validation_summary": preview["validation_summary"],
+            "diff_summary": preview["diff_summary"],
+            "preservation_summary": preview["preservation_summary"],
+            "status": "previewed",
+            "created_at": now,
+            "created_by": user["id"],
+            "created_by_name": user.get("name"),
+        }
+        await db.import_previews.insert_one(preview_doc)
+        return _public_preview_response(preview_doc)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error previewing combined COA workbook: {e}")
+        raise HTTPException(status_code=400, detail=f"Gagal preview workbook gabungan: {str(e)}")
+
+
+@router.get("/coa-reconciliation/import-preview/{preview_id}")
+async def get_coa_import_preview(preview_id: str, user: dict = Depends(get_current_user)):
+    """Get a stored COA import preview."""
+    preview = await db.import_previews.find_one({"id": preview_id, "dataset": "coa-reconciliation"}, {"_id": 0})
+    if not preview:
+        raise HTTPException(status_code=404, detail="Preview import COA tidak ditemukan")
+    return _public_preview_response(preview)
+
+
+@router.post("/coa-reconciliation/import-preview/{preview_id}/commit")
+async def commit_coa_import_preview(
+    preview_id: str,
+    request: COAImportCommitRequest = Body(default_factory=COAImportCommitRequest),
+    user: dict = Depends(require_role(["admin", "operator"]))
+):
+    """Commit a previously previewed COA workbook using merge or confirmed replace-all mode."""
+    preview = await db.import_previews.find_one({"id": preview_id, "dataset": "coa-reconciliation"}, {"_id": 0})
+    if not preview:
+        raise HTTPException(status_code=404, detail="Preview import COA tidak ditemukan")
+    if preview.get("status") == "committed":
+        raise HTTPException(status_code=400, detail="Preview import COA sudah pernah dicommit")
+
+    result = await _commit_combined_coa_preview(preview, request.mode, request.confirm_replace_all, user)
+    return {"message": "Import COA berhasil dicommit", **result}
+
+
+@router.get("/coa-reconciliation/import-history")
+async def get_coa_import_history(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    user: dict = Depends(get_current_user)
+):
+    """Get COA import commit history."""
+    query = {"dataset": "coa-reconciliation"}
+    skip = (page - 1) * page_size
+    total = await db.import_history.count_documents(query)
+    items = await db.import_history.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(page_size).to_list(page_size)
+    return {"items": items, "total": total, "page": page, "page_size": page_size, "total_pages": (total + page_size - 1) // page_size}
+
+
+@router.post("/coa-reconciliation/import-history/{history_id}/rollback")
+async def rollback_coa_import(history_id: str, user: dict = Depends(require_role(["admin"]))):
+    """Rollback a COA import using the snapshot captured immediately before commit."""
+    history = await db.import_history.find_one({"id": history_id, "dataset": "coa-reconciliation"}, {"_id": 0})
+    if not history:
+        raise HTTPException(status_code=404, detail="Riwayat import COA tidak ditemukan")
+    if history.get("rolled_back_at"):
+        raise HTTPException(status_code=400, detail="Import ini sudah pernah di-rollback")
+
+    snapshot_id = history.get("snapshot_id")
+    snapshot = await db.coa_import_snapshots.find_one({"id": snapshot_id}, {"_id": 0})
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="Snapshot rollback tidak ditemukan")
+
+    before_total = await db.coa_reconciliation.count_documents({})
+    await db.coa_reconciliation.delete_many({})
+    snapshot_records = snapshot.get("records") or []
+    if snapshot_records:
+        await db.coa_reconciliation.insert_many(snapshot_records)
+    after_total = await db.coa_reconciliation.count_documents({})
+    now = datetime.now(timezone.utc).isoformat()
+    await db.import_history.update_one(
+        {"id": history_id},
+        {"$set": {
+            "rolled_back_at": now,
+            "rolled_back_by": user["id"],
+            "rollback_before_total": before_total,
+            "rollback_after_total": after_total,
+        }},
+    )
+    return {
+        "message": "Rollback import COA berhasil",
+        "history_id": history_id,
+        "before_total": before_total,
+        "after_total": after_total,
     }
 
 
