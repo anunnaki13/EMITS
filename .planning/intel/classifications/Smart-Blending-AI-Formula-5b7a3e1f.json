@@ -1,0 +1,23 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/frontend/public/docs/Smart_Blending_AI_Formula.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "DOKUMENTASI FORMULA SMART BLENDING AI",
+  "summary": "Technical specification of the Smart Blending AI feature: blending formulas, input constraints, data sources, optimization criteria, and AI JSON output schema for PLTU Tenayan coal blending.",
+  "scope": [
+    "Smart Blending AI",
+    "coal blending formulas",
+    "GCV/Ash/Sulphur/Moisture/VM/FC parameters",
+    "constraint validation",
+    "inventory data sources (Vessel/Barge/Trucking)",
+    "Smart Stock",
+    "Merit Order",
+    "AI JSON output schema",
+    "Google Gemini integration"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Mixed SPEC/DOC signals. Chose SPEC because the document defines explicit contracts the system must honor: parameter ranges/defaults table, constraint validation inequalities, data field names (gcv_arb, ash_arb, etc.), and the AI response JSON schema. Tutorial-style sections (worked example, glossary) push toward DOC, but per ambiguity rule SPEC wins over DOC."
+}

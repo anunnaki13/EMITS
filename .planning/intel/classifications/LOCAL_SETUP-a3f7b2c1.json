@@ -1,0 +1,29 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/LOCAL_SETUP.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "LOCAL_SETUP.md",
+  "summary": "Setup and runbook guide for restoring and running the PLTU Tenayan Fuel Management System backup on a local machine.",
+  "scope": [
+    "local development setup",
+    "MongoDB restore",
+    "backend (FastAPI/uvicorn)",
+    "frontend (React/Yarn)",
+    "environment configuration",
+    "troubleshooting",
+    "test credentials"
+  ],
+  "cross_refs": [
+    "backend/.env",
+    "frontend/.env.example",
+    "frontend/.env",
+    "database_backup.zip",
+    "database_backup/metadata/summary.json",
+    "/app/memory/test_credentials.md",
+    "backend/requirements.txt"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

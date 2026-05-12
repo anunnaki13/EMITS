@@ -1,0 +1,32 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/readme.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "PLTU Tenayan Fuel Management System",
+  "summary": "Project README for PLTU Tenayan fuel management system describing features, architecture, tech stack, environment variables, run instructions, and pointers to detailed documentation.",
+  "scope": [
+    "PLTU Tenayan Fuel Management System",
+    "Frontend (React)",
+    "Backend (FastAPI)",
+    "MongoDB",
+    "Authentication (JWT)",
+    "Smart Stock",
+    "Smart Blending AI",
+    "AI Intelligence Agent",
+    "COA Reconciliation",
+    "Dispute Monitor",
+    "Reporting and Export",
+    "System Settings"
+  ],
+  "cross_refs": [
+    "./documentation.md",
+    "./API_REFERENCE.md",
+    "./DATABASE_SCHEMA.md",
+    "./DEPLOYMENT_GUIDE.md",
+    "./frontend/public/docs/Smart_Blending_AI_Formula.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

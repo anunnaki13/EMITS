@@ -1,0 +1,34 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/API_REFERENCE.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "API Reference",
+  "summary": "Backend API contract reference for the PLTU Tenayan Fuel Management System covering auth, pagination, modules (vessels, barges, trucking, biomassa, PO, merit order, AI, smart stock, blending, COA reconciliation).",
+  "scope": [
+    "PLTU Tenayan Fuel Management System",
+    "REST API /api/*",
+    "Authentication (JWT, roles admin/operator/viewer)",
+    "Pagination conventions",
+    "Vessel endpoints",
+    "Barge endpoints",
+    "Trucking endpoints",
+    "Biomassa endpoints",
+    "Purchase Order Batubara endpoints",
+    "Merit Order endpoints",
+    "Supplier and Dashboard endpoints",
+    "AI Intelligence endpoints",
+    "Smart Stock and Sumber Pemakaian endpoints",
+    "Smart Blending endpoint",
+    "Settings (COA) endpoints",
+    "COA Reconciliation endpoints",
+    "Excel/PDF export endpoints",
+    "Multipart upload endpoints"
+  ],
+  "cross_refs": [
+    "server.py",
+    "routers/"
+  ],
+  "locked": false,
+  "precedence": null
+}

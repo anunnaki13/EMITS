@@ -1,0 +1,25 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/DEPLOYMENT_GUIDE.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Deployment Guide (VPS)",
+  "summary": "Step-by-step manual VPS deployment runbook for the PLTU Tenayan Fuel Management System using Nginx, systemd FastAPI, React static build, and MongoDB.",
+  "scope": [
+    "VPS deployment",
+    "Nginx reverse proxy",
+    "FastAPI backend systemd service",
+    "React frontend static build",
+    "MongoDB setup",
+    "Certbot SSL",
+    "Backup strategy",
+    "Hardening and firewall",
+    "Monitoring and logging",
+    "Troubleshooting",
+    "Update procedure"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

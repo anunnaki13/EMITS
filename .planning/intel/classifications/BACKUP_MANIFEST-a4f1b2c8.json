@@ -1,0 +1,28 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/BACKUP_MANIFEST.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "BACKUP_MANIFEST.md",
+  "summary": "Manifest listing the contents and exclusions of a full application snapshot backup for the PLTU Tenayan project.",
+  "scope": [
+    "application backup",
+    "frontend source",
+    "backend source",
+    "environment files",
+    "database_backup.zip",
+    "mongodump BSON export",
+    "project documentation"
+  ],
+  "cross_refs": [
+    "backend/.env",
+    "frontend/.env.example",
+    "frontend/.env",
+    "database_backup.zip",
+    "LOCAL_SETUP.md",
+    ".emergent"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

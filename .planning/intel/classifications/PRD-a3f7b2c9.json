@@ -1,0 +1,38 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/memory/PRD.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "PRD: Sistem Manajemen Bahan Bakar Digital PLTU Tenayan",
+  "summary": "Product requirements for PLTU Tenayan digital fuel management system covering coal/biomass receipt tracking, AI Intelligence Agent, Smart Stock, and COA Reconciliation modules.",
+  "scope": [
+    "PLTU Tenayan fuel management system",
+    "Coal and biomass receipt recap",
+    "Vessel TNY",
+    "Barge TNY",
+    "Trucking TNY",
+    "Biomassa TNY",
+    "Purchase Order Batubara",
+    "Merit Order",
+    "AI Intelligence Agent",
+    "Smart Stock module",
+    "Smart Blending AI",
+    "COA Reconciliation & Dispute Monitor",
+    "Role-based access control",
+    "Dashboard with advanced visualizations",
+    "Excel/PDF export"
+  ],
+  "cross_refs": [
+    "README.md",
+    "documentation.md",
+    "API_REFERENCE.md",
+    "DATABASE_SCHEMA.md",
+    "DEPLOYMENT_GUIDE.md",
+    "pltu-tenayan-source-review.zip",
+    "total penerimaan.xlsx",
+    "server.py"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

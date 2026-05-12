@@ -1,0 +1,31 @@
+{
+  "source_path": "/home/damnation/emits/pltu-tenayan-full-backup/DATABASE_SCHEMA.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Database Schema",
+  "summary": "MongoDB database schema specification documenting collections, fields, types, logical relations, query patterns, and recommended indexes for a coal/biomass receiving and analytics application.",
+  "scope": [
+    "MongoDB",
+    "users",
+    "user_settings",
+    "vessels",
+    "barges",
+    "trucking",
+    "biomassa",
+    "po_batubara",
+    "merit_order",
+    "smartstock",
+    "sumber_pemakaian",
+    "coa_reconciliation",
+    "app_settings",
+    "ai_chat_history",
+    "ai_conversations",
+    "indexing",
+    "schema governance"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}
