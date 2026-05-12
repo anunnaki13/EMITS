@@ -22,4 +22,4 @@ Verdict: PASS
 ## Runtime State
 
 - Backend is running locally on port `8013`.
-- COA import history now contains smoke-test merge commits for the latest workbook.
+- COA import history contains one smoke-test no-op merge commit for the latest workbook.
