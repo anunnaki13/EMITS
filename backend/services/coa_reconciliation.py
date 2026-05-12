@@ -3,11 +3,13 @@ COA Reconciliation Service
 Handles data parsing and comparison between Loading, Unloading, and Lab Internal data
 """
 
-import pandas as pd
 import io
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timezone
+import re
 import uuid
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Tuple
+
+import pandas as pd
 
 
 def safe_float(val):
@@ -44,6 +46,20 @@ def clean_column_name(col):
     return col
 
 
+def safe_shipment(val):
+    """Normalize shipment identifiers without losing Lot-style labels."""
+    if pd.isna(val) or val is None:
+        return ""
+    if isinstance(val, (int,)):
+        return str(val)
+    if isinstance(val, float) and val.is_integer():
+        return str(int(val))
+    text = str(val).strip()
+    if re.fullmatch(r"\d+\.0", text):
+        return text[:-2]
+    return text
+
+
 def safe_datetime(val):
     """Safely convert value to ISO datetime string"""
     if pd.isna(val) or val is None or val == '':
@@ -57,6 +73,84 @@ def safe_datetime(val):
         return pd.to_datetime(val).isoformat()
     except:
         return None
+
+
+_ID_MONTHS = {
+    "jan": 1,
+    "januari": 1,
+    "feb": 2,
+    "februari": 2,
+    "mar": 3,
+    "maret": 3,
+    "apr": 4,
+    "april": 4,
+    "mei": 5,
+    "jun": 6,
+    "juni": 6,
+    "jul": 7,
+    "juli": 7,
+    "agu": 8,
+    "ags": 8,
+    "agustus": 8,
+    "sep": 9,
+    "sept": 9,
+    "september": 9,
+    "okt": 10,
+    "oktober": 10,
+    "nov": 11,
+    "november": 11,
+    "des": 12,
+    "desember": 12,
+}
+
+
+def _coerce_period(val, fallback_datetime=None) -> str:
+    """Return a YYYY-MM-DD string for Excel period cells, including Indonesian month labels."""
+    if pd.notna(val) and val not in ("", "-"):
+        try:
+            return pd.to_datetime(val).date().isoformat()
+        except Exception:
+            text = str(val).strip()
+            match = re.fullmatch(r"([A-Za-z]+)-(\d{2,4})", text)
+            if match:
+                month_name, year_text = match.groups()
+                month = _ID_MONTHS.get(month_name.lower())
+                if month:
+                    year = int(year_text)
+                    if year < 100:
+                        year += 2000
+                    return datetime(year, month, 1).date().isoformat()
+
+    fallback_iso = safe_datetime(fallback_datetime)
+    if fallback_iso:
+        dt = pd.to_datetime(fallback_iso)
+        return datetime(dt.year, dt.month, 1).date().isoformat()
+    return safe_str(val)
+
+
+def _optional_str(val):
+    text = safe_str(val)
+    return "" if text in {"-", "nan", "NaN"} else text
+
+
+def _shipment_key(val: str) -> str:
+    return safe_shipment(val).upper().replace(" ", "")
+
+
+def _status_from_delta(delta_loading_internal: Optional[float]) -> str:
+    status = "normal"
+    if delta_loading_internal is not None:
+        if delta_loading_internal > 150:
+            status = "critical"
+        elif delta_loading_internal > 100:
+            status = "warning"
+    return status
+
+
+def _delta(left: Optional[float], right: Optional[float]) -> Optional[float]:
+    if left is None or right is None:
+        return None
+    return left - right
 
 
 def parse_coa_excel(file_contents: bytes, source_type: str) -> List[Dict]:
@@ -75,7 +169,7 @@ def parse_coa_excel(file_contents: bytes, source_type: str) -> List[Dict]:
         shipment_raw = row.get("Shipment")
         if pd.isna(shipment_raw) or shipment_raw is None or shipment_raw == '':
             continue
-        shipment = safe_str(shipment_raw)  # Keep as string!
+        shipment = safe_shipment(shipment_raw)  # Keep as string!
         if not shipment:
             continue
             
@@ -160,22 +254,14 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
         delta_unloading_internal = None
         delta_loading_unloading = None
         
-        if loading_gcv and internal_gcv:
-            delta_loading_internal = loading_gcv - internal_gcv
-        if unloading_gcv and internal_gcv:
-            delta_unloading_internal = unloading_gcv - internal_gcv
-        if loading_gcv and unloading_gcv:
-            delta_loading_unloading = loading_gcv - unloading_gcv
+        delta_loading_internal = _delta(loading_gcv, internal_gcv)
+        delta_unloading_internal = _delta(unloading_gcv, internal_gcv)
+        delta_loading_unloading = _delta(loading_gcv, unloading_gcv)
         
         # Determine status based on delta (Loading vs Internal)
         # KRITIS: Loading > Internal (supplier overclaim, Anda RUGI)
         # NORMAL: Loading <= Internal (supplier underclaim atau sama, Anda UNTUNG/OK)
-        status = "normal"
-        if delta_loading_internal is not None:
-            if delta_loading_internal > 150:  # Hanya positif = Loading > Internal = RUGI
-                status = "critical"
-            elif delta_loading_internal > 100:  # Warning jika selisih > 100 tapi <= 150
-                status = "warning"
+        status = _status_from_delta(delta_loading_internal)
         
         # Build merged record
         record = {
@@ -234,6 +320,178 @@ def merge_coa_data(loading_data: List[Dict], unloading_data: List[Dict], interna
     merged_records.sort(key=lambda x: x.get("completed_unloading") or "", reverse=True)
     
     return merged_records
+
+
+def parse_combined_coa_workbook(file_contents: bytes) -> Tuple[List[Dict], Dict]:
+    """
+    Parse the 2026 combined COA workbook.
+
+    The latest source workbook has one "Rekapitulasi CoA" sheet with common
+    shipment data followed by UNLOADING, LOADING, INTERNAL, and UMPIRE blocks,
+    plus a "Data Umpire Batubara" sheet with richer umpire results.
+    """
+    df = pd.read_excel(io.BytesIO(file_contents), sheet_name="Rekapitulasi CoA", header=1)
+    umpire_by_shipment = _parse_umpire_sheet(file_contents)
+
+    records = []
+    for _, row in df.iterrows():
+        shipment = safe_shipment(row.get("Shipment"))
+        completed_unloading = safe_datetime(row.get("Completed Unloading"))
+        if not shipment or shipment.upper().startswith("KET") or not completed_unloading:
+            continue
+
+        loading_gcv = safe_float(row.get("GCV (Kcal/Kg)\nARB.1"))
+        unloading_gcv = safe_float(row.get("GCV (Kcal/Kg)\nARB"))
+        internal_gcv = safe_float(row.get("GCV (Kcal/Kg)\nARB.2"))
+
+        delta_loading_internal = _delta(loading_gcv, internal_gcv)
+        delta_unloading_internal = _delta(unloading_gcv, internal_gcv)
+        delta_loading_unloading = _delta(loading_gcv, unloading_gcv)
+
+        record = {
+            "id": str(uuid.uuid4()),
+            "shipment": shipment,
+            "periode": _coerce_period(row.get("Periode"), row.get("Completed Unloading")),
+            "suppliers": _optional_str(row.get("Suppliers")),
+            "tb": _optional_str(row.get("TB")),
+            "bg": _optional_str(row.get("BG")),
+            "ds_mt": safe_float(row.get("DS (MT)")),
+            "completed_unloading": completed_unloading,
+            "loading_gcv_arb": loading_gcv,
+            "loading_tm_arb": safe_float(row.get("TM (%wt)\nARB.1")),
+            "loading_ash_arb": safe_float(row.get("Ash \nContent (%wt) \nARB.1")),
+            "loading_ts_arb": safe_float(row.get("Total Sulphur (%wt)\nARB.1")),
+            "loading_surveyor": _optional_str(row.get("Surveyor Loading")),
+            "loading_no_coa": _optional_str(row.get("NO.COA")),
+            "unloading_gcv_arb": unloading_gcv,
+            "unloading_tm_arb": safe_float(row.get("TM (%wt)\nARB")),
+            "unloading_ash_arb": safe_float(row.get("Ash \nContent (%wt) \nARB")),
+            "unloading_ts_arb": safe_float(row.get("Total Sulphur (%wt)\nARB")),
+            "unloading_surveyor": _optional_str(row.get("Surveyor Unloading")),
+            "unloading_slagging": _optional_str(row.get("Slagging (Index)")),
+            "unloading_fouling": _optional_str(row.get("Fouling (Index)")),
+            "internal_gcv_arb": internal_gcv,
+            "internal_tm_arb": safe_float(row.get("TM (%wt)\nARB.2")),
+            "internal_ash_arb": safe_float(row.get("Ash \nContent (%wt) \nARB.2")),
+            "internal_ts_arb": safe_float(row.get("Total Sulphur (%wt)\nARB.2")),
+            "umpire_gcv_arb": None,
+            "umpire_tm_arb": None,
+            "umpire_ash_arb": None,
+            "umpire_ts_arb": None,
+            "umpire_lab_name": None,
+            "umpire_result_date": None,
+            "delta_loading_internal": delta_loading_internal,
+            "delta_unloading_internal": delta_unloading_internal,
+            "delta_loading_unloading": delta_loading_unloading,
+            "status": _status_from_delta(delta_loading_internal),
+            "umpire_status": "none",
+            "umpire_sample_number": None,
+            "umpire_proposed_at": None,
+            "umpire_completed_at": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "input_method": "combined_workbook",
+        }
+
+        umpire_data = umpire_by_shipment.get(_shipment_key(shipment)) or _parse_inline_umpire(row)
+        if umpire_data:
+            record.update(umpire_data)
+
+        records.append(record)
+
+    records.sort(key=lambda x: x.get("completed_unloading") or "", reverse=True)
+    source_counts = {
+        "records": len(records),
+        "loading": sum(1 for r in records if r.get("loading_gcv_arb") is not None),
+        "unloading": sum(1 for r in records if r.get("unloading_gcv_arb") is not None),
+        "internal": sum(1 for r in records if r.get("internal_gcv_arb") is not None),
+        "umpire": sum(1 for r in records if r.get("umpire_status") != "none"),
+        "umpire_completed": sum(1 for r in records if r.get("umpire_status") == "completed"),
+    }
+    if records:
+        source_counts["completed_unloading_min"] = min(r["completed_unloading"] for r in records if r.get("completed_unloading"))[:10]
+        source_counts["completed_unloading_max"] = max(r["completed_unloading"] for r in records if r.get("completed_unloading"))[:10]
+
+    return records, source_counts
+
+
+def _parse_umpire_sheet(file_contents: bytes) -> Dict[str, Dict]:
+    try:
+        df = pd.read_excel(io.BytesIO(file_contents), sheet_name="Data Umpire Batubara", header=1)
+    except ValueError:
+        return {}
+
+    records = {}
+    for _, row in df.iterrows():
+        shipment = safe_shipment(row.get("SHIPMENT"))
+        if not shipment:
+            continue
+
+        no_value = safe_float(row.get("NO"))
+        finish_date = safe_datetime(row.get("FINISH UNLOADING"))
+        if no_value is None or not finish_date:
+            continue
+
+        raw_status = safe_str(row.get("STATUS")).upper()
+        proposed_at = safe_datetime(row.get("TANGGAL PENGAJUAN UMPIRE"))
+        result_date = safe_datetime(row.get("TANGGAL TERBIT ROA "))
+        completed_at = result_date or safe_datetime(row.get("TANGGAL PELAKSANAAN "))
+
+        lab_name = _optional_str(row.get("LAB UMPIRE"))
+        gcv = safe_float(row.get("GCV (Ar).1"))
+        tm = safe_float(row.get("TM (Ar).1"))
+        ash = safe_float(row.get("ASH (Ar).1"))
+        ts = safe_float(row.get("TS (Ar).1"))
+
+        has_result = any(value is not None for value in [gcv, tm, ash, ts]) or bool(lab_name)
+        if raw_status == "CANCEL":
+            umpire_status = "none"
+        elif raw_status == "SELESAI" or has_result:
+            umpire_status = "completed"
+        elif proposed_at:
+            umpire_status = "proposed"
+        else:
+            umpire_status = "none"
+
+        records[_shipment_key(shipment)] = {
+            "umpire_status": umpire_status,
+            "umpire_sample_number": _optional_str(row.get("NO ID / SEGEL SURVEYOR INDEPENDENT / SEGEL PJB")),
+            "umpire_proposed_at": proposed_at,
+            "umpire_completed_at": completed_at if umpire_status == "completed" else None,
+            "umpire_gcv_arb": gcv,
+            "umpire_tm_arb": tm,
+            "umpire_ash_arb": ash,
+            "umpire_ts_arb": ts,
+            "umpire_hgi": safe_float(row.get("HGI.1")),
+            "umpire_lab_name": lab_name or None,
+            "umpire_result_date": result_date,
+            "umpire_raw_status": raw_status,
+            "umpire_request_letter": _optional_str(row.get("NO SURAT PENGAJUAN UMPIRE DARI SUPPLIER / DARI UNIT")),
+            "umpire_response_letter": _optional_str(row.get("NO SURAT BALASAN/PERSETUJUAN ")),
+            "umpire_parameters": _optional_str(row.get("PARAMETER YANG DI UJI")),
+        }
+
+    return records
+
+
+def _parse_inline_umpire(row) -> Optional[Dict]:
+    gcv = safe_float(row.get("GCV (Ar)"))
+    tm = safe_float(row.get("TM (Ar)"))
+    ash = safe_float(row.get("ASH (Ar)"))
+    ts = safe_float(row.get("TS (Ar)"))
+    lab_name = _optional_str(row.get("Surveyor Umpire"))
+    if not any(value is not None for value in [gcv, tm, ash, ts]) and not lab_name:
+        return None
+
+    return {
+        "umpire_status": "completed",
+        "umpire_gcv_arb": gcv,
+        "umpire_tm_arb": tm,
+        "umpire_ash_arb": ash,
+        "umpire_ts_arb": ts,
+        "umpire_hgi": safe_float(row.get("HGI")),
+        "umpire_lab_name": lab_name or None,
+        "umpire_raw_status": "INLINE",
+    }
 
 
 def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None) -> Dict:
@@ -326,7 +584,7 @@ def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None
             "proposed": umpire_proposed,
             "in_progress": umpire_in_progress,
             "completed": umpire_completed,
-            "total": umpire_proposed + umpire_in_progress
+            "total": umpire_proposed + umpire_in_progress + umpire_completed
         },
         "supplier_deviations": supplier_deviations[:10],  # Top 10 worst
         "worst_supplier": worst_supplier,

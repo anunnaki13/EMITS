@@ -20,6 +20,7 @@ from services.coa_reconciliation import (
     get_gcv_trend_data,
     get_radar_chart_data,
     merge_coa_data,
+    parse_combined_coa_workbook,
     parse_coa_excel,
 )
 from utils.auth import get_current_user, require_role
@@ -431,6 +432,35 @@ async def upload_coa_files(
     except Exception as e:
         logger.error(f"Error processing COA files: {e}")
         raise HTTPException(status_code=400, detail=f"Gagal memproses file: {str(e)}")
+
+
+@router.post("/coa-reconciliation/upload-combined")
+async def upload_combined_coa_file(
+    file: UploadFile = File(..., description="Workbook gabungan Rekapitulasi CoA"),
+    user: dict = Depends(require_role(["admin", "operator"]))
+):
+    """Upload and process one combined COA workbook with Loading, Unloading, Internal, and Umpire data."""
+    try:
+        contents = await file.read()
+        merged_data, source_counts = parse_combined_coa_workbook(contents)
+
+        if merged_data:
+            await db.coa_reconciliation.delete_many({})
+            uploaded_at = datetime.now(timezone.utc).isoformat()
+            for record in merged_data:
+                record["uploaded_by"] = user["id"]
+                record["uploaded_at"] = uploaded_at
+                record["import_source"] = file.filename
+            await db.coa_reconciliation.insert_many(merged_data)
+
+        return {
+            "message": f"Berhasil memproses workbook gabungan dan menyimpan {len(merged_data)} data rekonsiliasi COA",
+            "count": len(merged_data),
+            "sources": source_counts,
+        }
+    except Exception as e:
+        logger.error(f"Error processing combined COA workbook: {e}")
+        raise HTTPException(status_code=400, detail=f"Gagal memproses workbook gabungan: {str(e)}")
 
 
 @router.delete("/coa-reconciliation")

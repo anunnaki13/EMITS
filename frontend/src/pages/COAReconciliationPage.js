@@ -206,10 +206,38 @@ const COAReconciliationPage = () => {
     return () => clearTimeout(debounceTimer);
   }, [search, statusFilter, dateFrom, dateTo, fetchData]);
 
+  const processCombinedWorkbook = async (file) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/coa-reconciliation/upload-combined`,
+        formData,
+        {
+          headers: {
+            ...getAuthHeader(),
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      toast.success(response.data.message);
+      fetchData(1);
+      fetchKPIs();
+      fetchTrendData();
+      fetchSupplierData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal upload workbook gabungan");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    if (files.length !== 3) {
-      toast.error("Harap upload tepat 3 file Excel");
+    if (![1, 3].includes(files.length)) {
+      toast.error("Upload 1 workbook gabungan atau tepat 3 file Excel");
       e.target.value = "";
       return;
     }
@@ -219,6 +247,12 @@ const COAReconciliationPage = () => {
     const invalidFiles = files.filter(f => !validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
     if (invalidFiles.length > 0) {
       toast.error("Semua file harus berformat Excel (.xlsx atau .xls)");
+      e.target.value = "";
+      return;
+    }
+
+    if (files.length === 1) {
+      await processCombinedWorkbook(files[0]);
       e.target.value = "";
       return;
     }
@@ -514,7 +548,7 @@ const COAReconciliationPage = () => {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                Upload 3 File COA
+                Upload File COA
               </span>
             </Button>
           </label>
