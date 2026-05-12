@@ -24,7 +24,14 @@ import {
   Gauge,
   PieChart as PieChartIcon,
   LineChart as LineChartIcon,
-  Filter
+  Filter,
+  Package,
+  CalendarCheck,
+  Scale,
+  ShieldCheck,
+  Clock3,
+  ArrowRight,
+  CircleAlert
 } from "lucide-react";
 import {
   BarChart,
@@ -109,25 +116,34 @@ const Dashboard = () => {
   const { getAuthHeader } = useAuth();
   const [stats, setStats] = useState(null);
   const [advancedStats, setAdvancedStats] = useState(null);
+  const [operationalStats, setOperationalStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("all");
-  const [selectedModa, setSelectedModa] = useState("all");
 
   const fetchData = useCallback(async () => {
     try {
-      const [statsRes, advancedRes] = await Promise.all([
+      const advancedParams = {};
+      if (selectedPeriod && selectedPeriod !== "all" && selectedPeriod.length === 7) {
+        const [year, month] = selectedPeriod.split("-");
+        advancedParams.year = Number(year);
+        advancedParams.month = Number(month);
+      }
+
+      const [statsRes, advancedRes, operationalRes] = await Promise.all([
         axios.get(`${API_URL}/api/dashboard/stats`, { headers: getAuthHeader() }),
-        axios.get(`${API_URL}/api/dashboard/advanced`, { headers: getAuthHeader() })
+        axios.get(`${API_URL}/api/dashboard/advanced`, { headers: getAuthHeader(), params: advancedParams }),
+        axios.get(`${API_URL}/api/dashboard/operational`, { headers: getAuthHeader(), params: { period: selectedPeriod } })
       ]);
       setStats(statsRes.data);
       setAdvancedStats(advancedRes.data);
+      setOperationalStats(operationalRes.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
       toast.error("Gagal memuat statistik");
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeader]);
+  }, [getAuthHeader, selectedPeriod]);
 
   useEffect(() => {
     fetchData();
@@ -166,6 +182,31 @@ const Dashboard = () => {
   const gcvTrend = advancedStats?.gcv_trend || [];
   const supplierEconomy = advancedStats?.supplier_economy || [];
   const slaggingMatrix = advancedStats?.slagging_matrix || [];
+  const stock = operationalStats?.stock || {};
+  const arrivals = operationalStats?.arrivals || {};
+  const disputes = operationalStats?.disputes || {};
+  const realizedByMode = arrivals.realized_by_mode || [];
+  const upcomingSchedule = arrivals.upcoming_schedule || [];
+  const atRiskSchedule = arrivals.at_risk_schedule || [];
+  const recentDisputes = disputes.recent || [];
+  const periodOptions = operationalStats?.available_periods || [
+    { value: "all", label: "Semua Periode" },
+    { value: "2026", label: "2026" },
+    { value: "2025", label: "2025" },
+    { value: "2024", label: "2024" }
+  ];
+  const stockStatusStyles = {
+    critical: "border-red-500/50 bg-red-500/10 text-red-300",
+    warning: "border-amber-500/50 bg-amber-500/10 text-amber-300",
+    watch: "border-blue-500/50 bg-blue-500/10 text-blue-300",
+    healthy: "border-emerald-500/50 bg-emerald-500/10 text-emerald-300",
+    unknown: "border-slate-500/50 bg-slate-500/10 text-slate-300"
+  };
+  const stockTone = stockStatusStyles[stock.status] || stockStatusStyles.unknown;
+  const fulfillmentRate = arrivals.fulfillment_rate ?? 0;
+  const tonnageFulfillmentRate = arrivals.tonnage_fulfillment_rate ?? 0;
+  const primaryRiskCount = (disputes.critical_count || 0) + (disputes.umpire?.active || 0) + (arrivals.at_risk_count || 0);
+  const periodQuery = selectedPeriod && selectedPeriod !== "all" ? `?period=${encodeURIComponent(selectedPeriod)}` : "";
 
   return (
     <div className="space-y-6 sm:space-y-8" data-testid="dashboard-page">
@@ -173,27 +214,231 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading font-bold text-xl sm:text-2xl lg:text-3xl text-white">
-            Dashboard Ringkasan Penerimaan Bahan Bakar
+            Dashboard Operasional Bahan Bakar
           </h1>
           <p className="text-slate-400 mt-1 text-sm sm:text-base">
-            Data 6 bulan terakhir - UP Tenayan
+            Monitoring stok, kedatangan, dan dispute kualitas - UP Tenayan
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Select value={selectedModa} onValueChange={setSelectedModa}>
-            <SelectTrigger className="w-[140px] bg-slate-900/50 border-slate-700 text-white" data-testid="filter-moda">
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-[190px] bg-slate-900/50 border-slate-700 text-white" data-testid="dashboard-period-filter">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Moda" />
+              <SelectValue placeholder="Periode" />
             </SelectTrigger>
             <SelectContent className="bg-[#0B1221] border-slate-800">
-              <SelectItem value="all" className="text-slate-300">Semua Moda</SelectItem>
-              {advancedStats?.available_moda?.map(m => (
-                <SelectItem key={m} value={m} className="text-slate-300">{m}</SelectItem>
+              {periodOptions.map(period => (
+                <SelectItem key={period.value} value={period.value} className="text-slate-300">{period.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {/* Operational First Viewport */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
+        <Card className="glass-card border-white/10 xl:col-span-5">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <CardTitle className="font-heading text-base text-white flex items-center gap-2">
+                <Package className="w-5 h-5 text-cyan-400" />
+                Monitoring Stock Batubara
+              </CardTitle>
+              <span className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${stockTone}`}>
+                {stock.label || "Belum ada status"}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-[1.2fr_0.8fr] gap-4">
+              <div>
+                <p className="text-[10px] font-mono uppercase text-slate-500">Stok Saat Ini</p>
+                <p className="font-heading text-4xl font-bold text-white">{formatNumber(stock.current_stock || 0)} MT</p>
+                <p className="text-xs text-slate-500">Update stok: {stock.latest_stock_date || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-slate-900/50 p-3">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs">Projected supply</span>
+                </div>
+                <p className="mt-2 font-heading text-3xl font-bold text-white">{stock.days_of_supply ?? "-"} hari</p>
+                <p className="text-xs text-slate-500">Threshold reorder {stock.reorder_threshold_days || 14} hari</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="rounded-lg bg-emerald-500/10 p-3">
+                <p className="text-xs text-emerald-300">Penerimaan</p>
+                <p className="text-base font-bold text-white">{formatNumber(stock.total_penerimaan || 0)} MT</p>
+              </div>
+              <div className="rounded-lg bg-amber-500/10 p-3">
+                <p className="text-xs text-amber-300">Pemakaian</p>
+                <p className="text-base font-bold text-white">{formatNumber(stock.total_pemakaian || 0)} MT</p>
+              </div>
+              <div className="rounded-lg bg-blue-500/10 p-3">
+                <p className="text-xs text-blue-300">Burn rate</p>
+                <p className="text-base font-bold text-white">{formatNumber(stock.avg_daily_usage || 0)} MT/hari</p>
+              </div>
+              <a href={`/smart-stock/sumber-penerimaan${periodQuery}`} className="rounded-lg bg-slate-900/50 p-3 hover:bg-slate-800/80">
+                <p className="text-xs text-slate-400">Drilldown</p>
+                <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-cyan-300">Smart Stock <ArrowRight className="w-3 h-3" /></p>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-white/10 xl:col-span-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-heading text-base text-white flex items-center gap-2">
+              <CalendarCheck className="w-5 h-5 text-blue-400" />
+              Jadwal vs Realisasi
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-blue-500/10 p-3">
+                <p className="text-xs text-blue-300">Jadwal</p>
+                <p className="text-2xl font-bold text-white">{arrivals.scheduled_count || 0}</p>
+                <p className="text-xs text-slate-500">{formatNumber(arrivals.scheduled_tonnage || 0)} MT</p>
+              </div>
+              <div className="rounded-lg bg-emerald-500/10 p-3">
+                <p className="text-xs text-emerald-300">Realisasi</p>
+                <p className="text-2xl font-bold text-white">{arrivals.realized_count || 0}</p>
+                <p className="text-xs text-slate-500">{formatNumber(arrivals.realized_tonnage || 0)} MT</p>
+              </div>
+              <div className="rounded-lg bg-red-500/10 p-3">
+                <p className="text-xs text-red-300">At-risk</p>
+                <p className="text-2xl font-bold text-white">{arrivals.at_risk_count || 0}</p>
+                <p className="text-xs text-slate-500">jadwal</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div>
+                <div className="mb-1 flex justify-between text-xs">
+                  <span className="text-slate-400">Fulfilment jumlah</span>
+                  <span className="font-mono text-white">{fulfillmentRate.toFixed(0)}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-800">
+                  <div className="h-2 rounded-full bg-blue-400" style={{ width: `${Math.min(fulfillmentRate, 100)}%` }} />
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 flex justify-between text-xs">
+                  <span className="text-slate-400">Fulfilment tonase</span>
+                  <span className="font-mono text-white">{tonnageFulfillmentRate.toFixed(0)}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-800">
+                  <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${Math.min(tonnageFulfillmentRate, 100)}%` }} />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <a href={`/po-batubara${periodQuery}`} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-blue-300 hover:bg-slate-800/80">
+                Jadwal PO <ArrowRight className="inline w-3 h-3" />
+              </a>
+              <a href={`/laporan${periodQuery}`} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-emerald-300 hover:bg-slate-800/80">
+                Realisasi <ArrowRight className="inline w-3 h-3" />
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-white/10 xl:col-span-3">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-heading text-base text-white flex items-center gap-2">
+              <Scale className="w-5 h-5 text-red-400" />
+              Dispute / Umpire
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+              <div className="flex items-center justify-between">
+                <p className="flex items-center gap-2 text-sm text-red-200"><CircleAlert className="w-4 h-4" /> Prioritas</p>
+                <p className="font-heading text-3xl font-bold text-white">{primaryRiskCount}</p>
+              </div>
+              <p className="text-xs text-slate-400">Critical, umpire aktif, dan jadwal at-risk</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg bg-red-500/10 p-2">
+                <p className="text-xs text-red-300">Critical</p>
+                <p className="text-xl font-bold text-white">{disputes.critical_count || 0}</p>
+              </div>
+              <div className="rounded-lg bg-amber-500/10 p-2">
+                <p className="text-xs text-amber-300">Warning</p>
+                <p className="text-xl font-bold text-white">{disputes.warning_count || 0}</p>
+              </div>
+              <div className="rounded-lg bg-blue-500/10 p-2">
+                <p className="text-xs text-blue-300">Umpire</p>
+                <p className="text-xl font-bold text-white">{disputes.umpire?.active || 0}</p>
+              </div>
+            </div>
+            <div className="space-y-2 max-h-36 overflow-y-auto">
+              {recentDisputes.length > 0 ? recentDisputes.slice(0, 4).map(item => (
+                <div key={item.id || item.shipment} className="rounded-lg bg-slate-900/50 p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-white truncate">{item.shipment || "-"}</p>
+                    <span className="text-[10px] uppercase text-slate-400">{item.umpire_status || item.status || "-"}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-slate-500 truncate">{item.suppliers || "-"}</p>
+                    <span className="text-[10px] text-slate-500">{item.aging_days ?? "-"} hari</span>
+                  </div>
+                </div>
+              )) : (
+                <p className="text-sm text-slate-500 py-4 text-center">Tidak ada dispute aktif</p>
+              )}
+            </div>
+            <a href={`/dispute-monitor${periodQuery}`} className="block rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-red-300 hover:bg-slate-800/80">
+              Buka dispute monitor <ArrowRight className="inline w-3 h-3" />
+            </a>
+          </CardContent>
+        </Card>
+      </div>
+
+      {(atRiskSchedule.length > 0 || upcomingSchedule.length > 0) && (
+        <Card className="glass-card border-white/10">
+          <CardHeader>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="font-heading text-sm sm:text-base text-white flex items-center gap-2">
+                <Clock3 className="w-5 h-5 text-blue-400" />
+                Monitoring Jadwal Kedatangan
+              </CardTitle>
+              <span className="text-xs text-slate-500">At-risk ditampilkan lebih dulu</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800">
+                    <th className="text-left py-2 text-slate-500 font-medium">Status</th>
+                    <th className="text-left py-2 text-slate-500 font-medium">No Jadwal</th>
+                    <th className="text-left py-2 text-slate-500 font-medium">Supplier</th>
+                    <th className="text-left py-2 text-slate-500 font-medium">Moda</th>
+                    <th className="text-right py-2 text-slate-500 font-medium">ETA</th>
+                    <th className="text-right py-2 text-slate-500 font-medium">Tonase</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...atRiskSchedule.map(item => ({ ...item, _status: "At-risk" })), ...upcomingSchedule.map(item => ({ ...item, _status: "Terjadwal" }))].slice(0, 10).map((row, idx) => (
+                    <tr key={`${row._status}-${row.no_jadwal || idx}-${idx}`} className="border-b border-slate-800/50">
+                      <td className="py-2">
+                        <span className={`rounded px-2 py-1 text-[10px] font-semibold ${row._status === "At-risk" ? "bg-red-500/10 text-red-300" : "bg-blue-500/10 text-blue-300"}`}>
+                          {row._status}
+                        </span>
+                      </td>
+                      <td className="py-2 text-white">{row.no_jadwal || "-"}</td>
+                      <td className="py-2 text-slate-300 max-w-[220px] truncate">{row.supplier_name || "-"}</td>
+                      <td className="py-2 text-slate-300">{row.moda || "-"}</td>
+                      <td className="py-2 text-right text-slate-400">{row.time_arrival || "-"}</td>
+                      <td className="py-2 text-right text-white font-mono">{formatNumber(row.tonase_po || 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Row 1: Contract Monitoring Gauge + Summary Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">

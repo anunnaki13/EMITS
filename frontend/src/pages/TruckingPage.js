@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, Plus, Search, Upload, MoreHorizontal, Edit, Trash2, Loader2, FileSpreadsheet, AlertTriangle, Eye } from "lucide-react";
+import { Truck, Plus, Search, Upload, MoreHorizontal, Edit, Trash2, Loader2, FileSpreadsheet, AlertTriangle, Eye, RotateCcw } from "lucide-react";
 import Pagination from "@/components/Pagination";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -23,6 +23,9 @@ const TruckingPage = () => {
   const [trucking, setTrucking] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [supplier, setSupplier] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editingTrucking, setEditingTrucking] = useState(null);
@@ -51,12 +54,15 @@ const TruckingPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchTrucking(); setCurrentPage(1); }, [search]);
+  useEffect(() => { fetchTrucking(); setCurrentPage(1); }, [search, supplier, dateFrom, dateTo]);
 
   const fetchTrucking = async () => {
     try {
       const params = { page: 1, page_size: 10000 };
       if (search) params.search = search;
+      if (supplier) params.supplier = supplier;
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
       const response = await axios.get(`${API_URL}/api/trucking`, { headers: getAuthHeader(), params });
       const data = response.data.items || response.data;
       const sortedData = Array.isArray(data) ? data.reverse() : [];
@@ -66,6 +72,14 @@ const TruckingPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetFilters = () => {
+    setSearch("");
+    setSupplier("");
+    setDateFrom("");
+    setDateTo("");
+    setCurrentPage(1);
   };
 
   const parseFloat2 = (val) => val ? parseFloat(val) : null;
@@ -410,9 +424,28 @@ const TruckingPage = () => {
         )}
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-        <Input placeholder="Cari shipment code, supplier, transportasi..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 bg-slate-950/50 border-slate-800 text-white placeholder:text-slate-600" data-testid="trucking-search-input" />
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_180px_160px_160px_auto] gap-3 items-end">
+        <div className="relative">
+          <Label className="text-slate-400 text-xs">Cari</Label>
+          <Search className="absolute left-3 bottom-3 w-4 h-4 text-slate-500" />
+          <Input placeholder="Shipment, supplier, transportasi" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 bg-slate-950/50 border-slate-800 text-white placeholder:text-slate-600" data-testid="trucking-search-input" />
+        </div>
+        <div>
+          <Label className="text-slate-400 text-xs">Supplier</Label>
+          <Input placeholder="Nama supplier" value={supplier} onChange={(e) => setSupplier(e.target.value)} className="bg-slate-950/50 border-slate-800 text-white placeholder:text-slate-600" data-testid="trucking-supplier-filter" />
+        </div>
+        <div>
+          <Label className="text-slate-400 text-xs">Dari</Label>
+          <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-slate-950/50 border-slate-800 text-white" data-testid="trucking-date-from-filter" />
+        </div>
+        <div>
+          <Label className="text-slate-400 text-xs">Sampai</Label>
+          <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-slate-950/50 border-slate-800 text-white" data-testid="trucking-date-to-filter" />
+        </div>
+        <Button type="button" variant="outline" onClick={resetFilters} className="border-slate-700 text-slate-300 hover:bg-slate-800" data-testid="trucking-reset-filters">
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset
+        </Button>
       </div>
 
       <Card className="glass-card border-white/10 overflow-hidden">

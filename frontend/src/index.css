@@ -32,6 +32,28 @@
         --chart-4: 160 84% 39%;
         --chart-5: 0 84% 60%;
     }
+
+    .light {
+        --background: 210 40% 96%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+        --primary: 189 94% 36%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217 91% 54%;
+        --secondary-foreground: 0 0% 100%;
+        --muted: 214 32% 91%;
+        --muted-foreground: 215 16% 35%;
+        --accent: 210 40% 92%;
+        --accent-foreground: 222 47% 11%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 32% 82%;
+        --input: 214 32% 82%;
+        --ring: 189 94% 36%;
+    }
 }
 
 body {
@@ -41,6 +63,11 @@ body {
     -moz-osx-font-smoothing: grayscale;
     background-color: hsl(224 71% 4%);
     color: hsl(213 31% 91%);
+}
+
+.light body {
+    background-color: hsl(210 40% 96%);
+    color: hsl(222 47% 11%);
 }
 
 code {
@@ -69,6 +96,22 @@ code {
 }
 
 /* Glassmorphism card */
+.app-shell {
+    background-color: #02040A;
+    color: #e2e8f0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-sidebar {
+    background-color: rgba(11, 18, 33, 0.95);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.app-header {
+    background-color: rgba(11, 18, 33, 0.8);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
 .glass-card {
     @apply bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -96,6 +139,97 @@ code {
     background-size: 24px 24px;
 }
 
+.light .app-shell {
+    background-color: #f4f7fb;
+    color: #0f172a;
+}
+
+.light .app-sidebar {
+    background-color: rgba(255, 255, 255, 0.96);
+    border-color: rgba(15, 23, 42, 0.12);
+    box-shadow: 16px 0 40px -36px rgba(15, 23, 42, 0.55);
+}
+
+.light .app-header {
+    background-color: rgba(255, 255, 255, 0.88);
+    border-color: rgba(15, 23, 42, 0.1);
+}
+
+.light .glass-card {
+    background-color: rgba(255, 255, 255, 0.86) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 22px 50px -30px rgba(15, 23, 42, 0.45);
+}
+
+.light .glass-card:hover {
+    background-color: rgba(248, 250, 252, 0.96) !important;
+    border-color: rgba(8, 145, 178, 0.35) !important;
+}
+
+.light .grid-bg {
+    background-image:
+        linear-gradient(to right, rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+}
+
+.light .text-white,
+.light .text-slate-100,
+.light .text-slate-200 {
+    color: #0f172a !important;
+}
+
+.light .text-slate-300 {
+    color: #334155 !important;
+}
+
+.light .text-slate-400 {
+    color: #475569 !important;
+}
+
+.light .text-slate-500,
+.light .text-slate-600 {
+    color: #64748b !important;
+}
+
+.light .border-white\/5,
+.light .border-white\/10 {
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-white\/5,
+.light .hover\:bg-white\/5:hover,
+.light .focus\:bg-white\/5:focus {
+    background-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+.light .bg-\[\#0B1221\],
+.light .bg-\[\#0B1221\]\/80,
+.light .bg-\[\#0B1221\]\/95,
+.light .bg-slate-950\/40,
+.light .bg-slate-950\/50,
+.light .bg-slate-900\/50,
+.light .bg-slate-900\/60,
+.light .bg-slate-900\/80 {
+    background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.light .data-table-header {
+    background-color: rgba(226, 232, 240, 0.8) !important;
+    color: #475569 !important;
+}
+
+.light .data-table-row {
+    border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+.light .data-table-row:hover {
+    background-color: rgba(15, 23, 42, 0.04) !important;
+}
+
+.light .data-table-cell {
+    color: #334155 !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
@@ -113,6 +247,14 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
     background: hsl(189 94% 43%);
+}
+
+.light ::-webkit-scrollbar-track {
+    background: hsl(210 40% 92%);
+}
+
+.light ::-webkit-scrollbar-thumb {
+    background: hsl(215 20% 70%);
 }
 
 /* Animations */

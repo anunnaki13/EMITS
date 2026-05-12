@@ -33,6 +33,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -81,6 +88,8 @@ const POBatubaraPage = () => {
   const [viewingPO, setViewingPO] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importMode, setImportMode] = useState("append");
   const [expandedYears, setExpandedYears] = useState({});
   const [expandedMonths, setExpandedMonths] = useState({});
   const [selectedYear, setSelectedYear] = useState(null);
@@ -260,19 +269,39 @@ const POBatubaraPage = () => {
     formDataUpload.append("file", file);
     setSubmitting(true);
     try {
-      const response = await axios.post(`${API_URL}/api/upload/po-batubara`, formDataUpload, {
+      const response = await axios.post(`${API_URL}/api/import-preview/po-batubara`, formDataUpload, {
         headers: { ...getAuthHeader(), "Content-Type": "multipart/form-data" }
       });
-      toast.success(response.data.message);
+      setImportPreview(response.data);
+      toast.success(`Preview selesai: ${response.data.row_count} baris`);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal preview file");
+    } finally {
+      setSubmitting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const commitImportPreview = async () => {
+    if (!importPreview?.preview_id) return;
+    setSubmitting(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/import-preview/${importPreview.preview_id}/commit`,
+        { mode: importMode },
+        { headers: getAuthHeader() }
+      );
+      toast.success(`Import selesai: ${response.data.inserted || 0} tambah, ${response.data.updated || 0} update`);
       setUploadDialogOpen(false);
+      setImportPreview(null);
+      setImportMode("append");
       fetchYearsData();
       setExpandedMonths({});
       setPoData({});
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Gagal mengupload file");
+      toast.error(error.response?.data?.detail || "Gagal commit import");
     } finally {
       setSubmitting(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -349,13 +378,13 @@ const POBatubaraPage = () => {
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+            <Dialog open={uploadDialogOpen} onOpenChange={(open) => { setUploadDialogOpen(open); if (!open) { setImportPreview(null); setImportMode("append"); } }}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800" data-testid="upload-excel-po-btn">
                   <Upload className="w-4 h-4 mr-2" />Upload Excel
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#0B1221] border-white/10 max-w-md">
+              <DialogContent className="bg-[#0B1221] border-white/10 max-w-3xl">
                 <DialogHeader><DialogTitle className="text-white font-heading">Upload Data Excel PO Batubara</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-amber-500/50 transition-colors">
@@ -364,9 +393,68 @@ const POBatubaraPage = () => {
                     <p className="text-slate-500 text-xs mb-4">Kolom "Completed" menentukan bulan/tahun data</p>
                     <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
                     <Button onClick={() => fileInputRef.current?.click()} disabled={submitting} className="bg-amber-600 hover:bg-amber-500">
-                      {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Pilih File
+                      {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Preview File
                     </Button>
                   </div>
+                  {importPreview && (
+                    <div className="space-y-4 rounded-xl border border-white/10 bg-slate-950/40 p-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-lg bg-amber-500/10 p-3">
+                          <p className="text-xs text-amber-300">Rows</p>
+                          <p className="text-2xl font-bold text-white">{importPreview.row_count}</p>
+                        </div>
+                        <div className="rounded-lg bg-red-500/10 p-3">
+                          <p className="text-xs text-red-300">Issues</p>
+                          <p className="text-2xl font-bold text-white">{importPreview.issue_count}</p>
+                        </div>
+                        <div className="rounded-lg bg-blue-500/10 p-3">
+                          <p className="text-xs text-blue-300">Mode</p>
+                          <Select value={importMode} onValueChange={setImportMode}>
+                            <SelectTrigger className="mt-1 h-8 bg-slate-900/70 border-slate-700 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#0B1221] border-slate-700">
+                              <SelectItem value="append">Append</SelectItem>
+                              <SelectItem value="merge">Merge</SelectItem>
+                              <SelectItem value="replace">Replace</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {importPreview.issues?.length > 0 && (
+                        <div className="max-h-28 overflow-y-auto rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                          {importPreview.issues.slice(0, 5).map((issue, idx) => (
+                            <p key={idx} className="text-xs text-red-200">{issue.type}: {issue.message}</p>
+                          ))}
+                        </div>
+                      )}
+                      <div className="max-h-44 overflow-auto rounded-lg border border-white/10">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-white/10">
+                              <TableHead className="text-slate-400">PO</TableHead>
+                              <TableHead className="text-slate-400">Supplier</TableHead>
+                              <TableHead className="text-slate-400 text-right">Tonase</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {importPreview.preview_rows?.map((row, idx) => (
+                              <TableRow key={idx} className="border-white/5">
+                                <TableCell className="text-white">{row.po_number || "-"}</TableCell>
+                                <TableCell className="text-slate-300">{row.supplier_name || "-"}</TableCell>
+                                <TableCell className="text-right text-white">{formatNumber(row.tonase_po)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button onClick={commitImportPreview} disabled={submitting || importPreview.issue_count > 0} className="bg-amber-600 hover:bg-amber-500">
+                          {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Commit Import
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>

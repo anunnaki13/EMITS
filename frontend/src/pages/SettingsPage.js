@@ -41,7 +41,13 @@ import {
   Key,
   Save,
   Scale,
-  DollarSign
+  DollarSign,
+  Download,
+  Upload,
+  DatabaseBackup,
+  AlertTriangle,
+  History,
+  RefreshCw
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -67,6 +73,27 @@ const SettingsPage = () => {
     price_per_kcal_per_ton: ""
   });
   const [savingCOA, setSavingCOA] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreFile, setRestoreFile] = useState(null);
+  const [restoreConfirmation, setRestoreConfirmation] = useState("");
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditFilters, setAuditFilters] = useState({
+    category: "all",
+    action: "all",
+    severity: "all",
+    actor: "",
+    record_id: "",
+    date_from: "",
+    date_to: ""
+  });
+  const [alertOverview, setAlertOverview] = useState({
+    open_count: 0,
+    critical_count: 0,
+    warning_count: 0,
+    rule_config: {}
+  });
   
   const [newUser, setNewUser] = useState({
     name: "",
@@ -79,7 +106,23 @@ const SettingsPage = () => {
     fetchUsers();
     fetchAISettings();
     fetchCOASettings();
+    fetchAuditLogs();
+    fetchAlertOverview();
   }, []);
+
+  const fetchAlertOverview = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/alerts?status=open&limit=5`, { headers: getAuthHeader() });
+      setAlertOverview({
+        open_count: response.data.open_count || 0,
+        critical_count: response.data.critical_count || 0,
+        warning_count: response.data.warning_count || 0,
+        rule_config: response.data.rule_config || {}
+      });
+    } catch (error) {
+      console.log("Alert overview not available");
+    }
+  };
 
   const fetchCOASettings = async () => {
     try {
@@ -104,6 +147,7 @@ const SettingsPage = () => {
       }, { headers: getAuthHeader() });
       toast.success("Pengaturan COA berhasil disimpan");
       fetchCOASettings();
+      fetchAuditLogs();
     } catch (error) {
       toast.error("Gagal menyimpan pengaturan COA");
     } finally {
@@ -135,6 +179,7 @@ const SettingsPage = () => {
       }, { headers: getAuthHeader() });
       toast.success("Pengaturan AI berhasil disimpan");
       fetchAISettings();
+      fetchAuditLogs();
     } catch (error) {
       toast.error("Gagal menyimpan pengaturan AI");
     } finally {
@@ -155,6 +200,47 @@ const SettingsPage = () => {
     }
   };
 
+  const fetchAuditLogs = async () => {
+    setAuditLoading(true);
+    try {
+      const params = { page_size: 25 };
+      Object.entries(auditFilters).forEach(([key, value]) => {
+        if (value && value !== "all") params[key] = value;
+      });
+      const response = await axios.get(`${API_URL}/api/admin/audit-logs`, { headers: getAuthHeader(), params });
+      setAuditLogs(response.data.items || []);
+    } catch (error) {
+      console.log("Audit logs endpoint not available");
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  const exportAuditLogs = async () => {
+    try {
+      const params = {};
+      Object.entries(auditFilters).forEach(([key, value]) => {
+        if (value && value !== "all") params[key] = value;
+      });
+      const response = await axios.get(`${API_URL}/api/admin/audit-logs/export`, {
+        headers: getAuthHeader(),
+        params,
+        responseType: "blob"
+      });
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `emits-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Audit log diekspor");
+    } catch (error) {
+      toast.error("Gagal export audit log");
+    }
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -164,10 +250,99 @@ const SettingsPage = () => {
       setDialogOpen(false);
       setNewUser({ name: "", email: "", password: "", role: "operator" });
       fetchUsers();
+      fetchAuditLogs();
     } catch (error) {
       toast.error(error.response?.data?.detail || "Gagal menambahkan user");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const readRestoreFile = async () => {
+    if (!restoreFile) {
+      toast.error("Pilih file backup terlebih dahulu");
+      return null;
+    }
+
+    try {
+      const text = await restoreFile.text();
+      return JSON.parse(text);
+    } catch (error) {
+      toast.error("File backup tidak valid");
+      return null;
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/api/admin/backup`, {}, { headers: getAuthHeader() });
+      const generatedAt = response.data.generated_at?.replace(/[:.]/g, "-") || new Date().toISOString().replace(/[:.]/g, "-");
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `emits-backup-${generatedAt}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Backup berhasil dibuat");
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Gagal membuat backup");
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleValidateRestore = async () => {
+    const backup = await readRestoreFile();
+    if (!backup) return;
+
+    setRestoreLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/admin/restore`,
+        { confirmation: "RESTORE", backup, dry_run: true },
+        { headers: getAuthHeader() }
+      );
+      const totalRows = Object.values(response.data.counts || {}).reduce((sum, count) => sum + Number(count || 0), 0);
+      toast.success(`File valid: ${totalRows.toLocaleString("id-ID")} dokumen siap direstore`);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Validasi restore gagal");
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    if (restoreConfirmation !== "RESTORE") {
+      toast.error("Ketik RESTORE untuk konfirmasi");
+      return;
+    }
+
+    const backup = await readRestoreFile();
+    if (!backup) return;
+
+    setRestoreLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/admin/restore`,
+        { confirmation: restoreConfirmation, backup, dry_run: false },
+        { headers: getAuthHeader() }
+      );
+      const totalRows = Object.values(response.data.restored || {}).reduce((sum, count) => sum + Number(count || 0), 0);
+      toast.success(`Restore berhasil: ${totalRows.toLocaleString("id-ID")} dokumen dipulihkan`);
+      setRestoreFile(null);
+      setRestoreConfirmation("");
+      fetchUsers();
+      fetchAISettings();
+      fetchCOASettings();
+      fetchAuditLogs();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Restore backup gagal");
+    } finally {
+      setRestoreLoading(false);
     }
   };
 
@@ -189,6 +364,32 @@ const SettingsPage = () => {
         {roleInfo.label}
       </span>
     );
+  };
+
+  const actionLabels = {
+    create: "Tambah",
+    update: "Ubah",
+    delete: "Hapus",
+    restore: "Restore"
+  };
+
+  const categoryLabels = {
+    rekap: "Rekap",
+    coa: "COA",
+    settings: "Settings",
+    users: "Users"
+  };
+
+  const formatAuditTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   };
 
   return (
@@ -348,6 +549,48 @@ const SettingsPage = () => {
           </div>
         </Card>
       </div>
+
+      <Card className="glass-card border-white/5 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-medium">Alert Operasional</h3>
+              <p className="text-slate-500 text-sm">Low stock, keterlambatan kedatangan, delta COA tinggi, dan dispute stale</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={fetchAlertOverview}
+            className="border-slate-700 text-slate-300 hover:bg-white/5"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Alert
+          </Button>
+        </div>
+        <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-lg bg-slate-900/50 p-4">
+            <p className="text-xs text-slate-500">Open</p>
+            <p className="font-heading text-3xl font-bold text-white">{alertOverview.open_count}</p>
+          </div>
+          <div className="rounded-lg bg-red-500/10 p-4">
+            <p className="text-xs text-red-300">Critical</p>
+            <p className="font-heading text-3xl font-bold text-white">{alertOverview.critical_count}</p>
+          </div>
+          <div className="rounded-lg bg-amber-500/10 p-4">
+            <p className="text-xs text-amber-300">Warning</p>
+            <p className="font-heading text-3xl font-bold text-white">{alertOverview.warning_count}</p>
+          </div>
+          <div className="rounded-lg bg-blue-500/10 p-4">
+            <p className="text-xs text-blue-300">Rule Config</p>
+            <p className="text-sm text-white">Stock {alertOverview.rule_config.low_stock_days || 14} hari</p>
+            <p className="text-xs text-slate-500">COA delta {alertOverview.rule_config.high_coa_delta || 100}</p>
+          </div>
+        </div>
+      </Card>
 
       {/* COA Settings Card */}
       <Card className="glass-card border-white/5 p-6">
@@ -520,6 +763,260 @@ const SettingsPage = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </Card>
+
+      {/* Backup & Restore Card */}
+      <Card className="glass-card border-white/5 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <DatabaseBackup className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-white font-medium">Backup & Restore Data</h3>
+            <p className="text-slate-500 text-sm">
+              Backup seluruh koleksi aktif dan restore dengan konfirmasi admin
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="bg-emerald-500/10 rounded-lg p-4 border border-emerald-500/20">
+              <p className="text-sm text-emerald-300 font-medium mb-2">Buat Backup</p>
+              <p className="text-xs text-slate-400">
+                File JSON berisi users, rekap penerimaan, smart stock, COA, pengaturan, dan riwayat AI.
+              </p>
+            </div>
+            <Button
+              onClick={handleCreateBackup}
+              disabled={backupLoading || restoreLoading}
+              className="w-full bg-emerald-600 hover:bg-emerald-500"
+              data-testid="create-backup-btn"
+            >
+              {backupLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+              Download Backup JSON
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/20">
+              <p className="text-sm text-red-300 font-medium mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Restore Mengganti Data Aktif
+              </p>
+              <p className="text-xs text-slate-400">
+                Restore akan mengosongkan koleksi aktif lalu mengisi ulang dari file backup yang valid.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-sm flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                File Backup JSON
+              </Label>
+              <Input
+                type="file"
+                accept="application/json,.json"
+                onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
+                className="bg-slate-900/50 border-slate-700 text-white file:text-slate-300"
+                data-testid="restore-file-input"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300 text-sm">Ketik RESTORE untuk konfirmasi</Label>
+              <Input
+                value={restoreConfirmation}
+                onChange={(e) => setRestoreConfirmation(e.target.value)}
+                placeholder="RESTORE"
+                className="bg-slate-900/50 border-slate-700 text-white"
+                data-testid="restore-confirmation-input"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleValidateRestore}
+                disabled={!restoreFile || restoreLoading || backupLoading}
+                className="border-slate-700 text-slate-300"
+                data-testid="validate-restore-btn"
+              >
+                {restoreLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Validasi File
+              </Button>
+              <Button
+                type="button"
+                onClick={handleRestoreBackup}
+                disabled={!restoreFile || restoreConfirmation !== "RESTORE" || restoreLoading || backupLoading}
+                className="bg-red-600 hover:bg-red-500"
+                data-testid="restore-backup-btn"
+              >
+                {restoreLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                Restore
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Audit Trail Card */}
+      <Card className="glass-card border-white/5 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+              <History className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-medium">Audit Trail Admin</h3>
+              <p className="text-slate-500 text-sm">
+                Riwayat create, update, delete, dan restore pada data penting
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={fetchAuditLogs}
+            disabled={auditLoading}
+            className="border-slate-700 text-slate-300"
+            data-testid="refresh-audit-logs-btn"
+          >
+            {auditLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            Refresh
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={exportAuditLogs}
+            className="border-slate-700 text-slate-300"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <Select value={auditFilters.category} onValueChange={(value) => setAuditFilters({ ...auditFilters, category: value })}>
+            <SelectTrigger className="bg-slate-900/50 border-slate-700 text-white">
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0B1221] border-slate-700">
+              <SelectItem value="all">Semua Kategori</SelectItem>
+              <SelectItem value="rekap">Rekap</SelectItem>
+              <SelectItem value="coa">COA</SelectItem>
+              <SelectItem value="settings">Settings</SelectItem>
+              <SelectItem value="users">Users</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={auditFilters.action} onValueChange={(value) => setAuditFilters({ ...auditFilters, action: value })}>
+            <SelectTrigger className="bg-slate-900/50 border-slate-700 text-white">
+              <SelectValue placeholder="Aksi" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0B1221] border-slate-700">
+              <SelectItem value="all">Semua Aksi</SelectItem>
+              <SelectItem value="create">Create</SelectItem>
+              <SelectItem value="update">Update</SelectItem>
+              <SelectItem value="delete">Delete</SelectItem>
+              <SelectItem value="restore">Restore</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={auditFilters.severity} onValueChange={(value) => setAuditFilters({ ...auditFilters, severity: value })}>
+            <SelectTrigger className="bg-slate-900/50 border-slate-700 text-white">
+              <SelectValue placeholder="Severity" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0B1221] border-slate-700">
+              <SelectItem value="all">Semua Severity</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            value={auditFilters.actor}
+            onChange={(e) => setAuditFilters({ ...auditFilters, actor: e.target.value })}
+            placeholder="Actor/email"
+            className="bg-slate-900/50 border-slate-700 text-white"
+          />
+          <Input
+            value={auditFilters.record_id}
+            onChange={(e) => setAuditFilters({ ...auditFilters, record_id: e.target.value })}
+            placeholder="Record ID"
+            className="bg-slate-900/50 border-slate-700 text-white"
+          />
+          <Input
+            type="date"
+            value={auditFilters.date_from}
+            onChange={(e) => setAuditFilters({ ...auditFilters, date_from: e.target.value })}
+            className="bg-slate-900/50 border-slate-700 text-white"
+          />
+          <Input
+            type="date"
+            value={auditFilters.date_to}
+            onChange={(e) => setAuditFilters({ ...auditFilters, date_to: e.target.value })}
+            className="bg-slate-900/50 border-slate-700 text-white"
+          />
+          <Button type="button" onClick={fetchAuditLogs} className="bg-blue-600 hover:bg-blue-500">
+            Terapkan Filter
+          </Button>
+        </div>
+
+        <div className="rounded-lg border border-white/5 overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-white/5 hover:bg-transparent">
+                <TableHead className="text-slate-400 font-mono text-xs">Waktu</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">Severity</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">Aksi</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">Kategori</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">Resource</TableHead>
+                <TableHead className="text-slate-400 font-mono text-xs">Admin</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {auditLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-400 mx-auto" />
+                  </TableCell>
+                </TableRow>
+              ) : auditLogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                    Belum ada audit log
+                  </TableCell>
+                </TableRow>
+              ) : (
+                auditLogs.map((log) => (
+                  <TableRow key={log.id} className="border-white/5 hover:bg-slate-900/50" data-testid={`audit-row-${log.id}`}>
+                    <TableCell className="text-slate-300 text-xs">{formatAuditTime(log.created_at)}</TableCell>
+                    <TableCell className="text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        log.severity === "high" ? "bg-red-500/20 text-red-300" :
+                        log.severity === "medium" ? "bg-amber-500/20 text-amber-300" :
+                        "bg-slate-500/20 text-slate-300"
+                      }`}>
+                        {log.severity || "low"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-white text-sm">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">
+                        {actionLabels[log.action] || log.action}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-slate-300 text-sm">{categoryLabels[log.category] || log.category}</TableCell>
+                    <TableCell className="text-slate-300 text-sm">
+                      {log.resource}
+                      {log.record_id ? <span className="text-slate-500"> / {log.record_id}</span> : null}
+                    </TableCell>
+                    <TableCell className="text-slate-400 text-sm">{log.actor_email || "-"}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </Card>
 

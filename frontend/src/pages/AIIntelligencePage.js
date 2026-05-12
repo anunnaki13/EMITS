@@ -88,6 +88,7 @@ const AIIntelligencePage = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [quickData, setQuickData] = useState({});
+  const [contextualPrompts, setContextualPrompts] = useState([]);
   const [loadingQuick, setLoadingQuick] = useState(true);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -117,13 +118,14 @@ const AIIntelligencePage = () => {
 
   const fetchQuickData = async () => {
     try {
-      const [blending, boiler, contract, logistics, smartStock, coa] = await Promise.all([
+      const [blending, boiler, contract, logistics, smartStock, coa, prompts] = await Promise.all([
         axios.get(`${API_URL}/api/ai/quick/blending-suggestion`, { headers: getAuthHeader() }),
         axios.get(`${API_URL}/api/ai/quick/boiler-alerts`, { headers: getAuthHeader() }),
         axios.get(`${API_URL}/api/ai/quick/contract-status`, { headers: getAuthHeader() }),
         axios.get(`${API_URL}/api/ai/quick/logistics-losses`, { headers: getAuthHeader() }),
         axios.get(`${API_URL}/api/ai/quick/smart-stock`, { headers: getAuthHeader() }),
-        axios.get(`${API_URL}/api/ai/quick/coa-alerts`, { headers: getAuthHeader() })
+        axios.get(`${API_URL}/api/ai/quick/coa-alerts`, { headers: getAuthHeader() }),
+        axios.get(`${API_URL}/api/ai/quick/contextual-prompts`, { headers: getAuthHeader() })
       ]);
       setQuickData({
         blending: blending.data,
@@ -133,6 +135,7 @@ const AIIntelligencePage = () => {
         smartStock: smartStock.data,
         coa: coa.data
       });
+      setContextualPrompts(prompts.data.items || []);
     } catch (error) {
       console.error("Error fetching quick data:", error);
     } finally {
@@ -171,6 +174,7 @@ const AIIntelligencePage = () => {
         id: Date.now() + 1,
         response: response.data.response,
         module: activeModule,
+        context_slices: response.data.context_slices || [],
         isUser: false,
         created_at: new Date().toISOString()
       };
@@ -244,6 +248,23 @@ const AIIntelligencePage = () => {
       {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
     </button>
   );
+
+  const ContextSliceBadges = ({ slices = [] }) => {
+    if (!slices.length) return null;
+    return (
+      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-700/60">
+        {slices.map((slice) => (
+          <span
+            key={`${slice.name}-${slice.record_count}`}
+            className="text-[10px] px-2 py-1 rounded bg-slate-900/80 border border-slate-700 text-slate-400"
+            title={(slice.collections || []).join(", ")}
+          >
+            {slice.name}: {slice.record_count} record
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6" data-testid="ai-intelligence-page">
@@ -339,6 +360,27 @@ const AIIntelligencePage = () => {
                   />
                 </>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-white/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-white flex items-center gap-2">
+                <FileText className="w-4 h-4 text-cyan-400" />
+                Prompt Operasional
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {contextualPrompts.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleQuickQuery(item.module, item.prompt)}
+                  className="w-full p-3 rounded-lg bg-slate-900/50 border border-slate-800 hover:border-cyan-500/40 text-left transition-all"
+                >
+                  <p className="text-sm text-white font-medium">{item.title}</p>
+                  <p className="text-xs text-slate-500 mt-1">{item.prompt}</p>
+                </button>
+              ))}
             </CardContent>
           </Card>
         </div>
@@ -553,6 +595,7 @@ const AIIntelligencePage = () => {
                           <p className="text-[10px] mt-2 opacity-50">
                             {new Date(msg.created_at).toLocaleString('id-ID')}
                           </p>
+                          <ContextSliceBadges slices={msg.context_slices || []} />
                         </div>
                       )}
                     </div>

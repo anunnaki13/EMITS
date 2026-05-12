@@ -70,7 +70,11 @@ const DisputeMonitorPage = () => {
   const [radarData, setRadarData] = useState([]);
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showNoteDialog, setShowNoteDialog] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [noteForm, setNoteForm] = useState({ note: "", visibility: "internal" });
+  const [closeForm, setCloseForm] = useState({ resolution: "accepted_umpire", closure_notes: "" });
   const [resultForm, setResultForm] = useState({
     umpire_gcv_arb: "",
     umpire_tm_arb: "",
@@ -154,6 +158,62 @@ const DisputeMonitorPage = () => {
     setShowResultDialog(true);
   };
 
+  const handleAddNote = (record) => {
+    setSelectedRecord(record);
+    setNoteForm({ note: "", visibility: "internal" });
+    setShowNoteDialog(true);
+  };
+
+  const submitDisputeNote = async () => {
+    if (!noteForm.note.trim()) {
+      toast.error("Catatan wajib diisi");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await axios.post(
+        `${API_URL}/api/coa-reconciliation/${selectedRecord.id}/dispute-notes`,
+        noteForm,
+        { headers: getAuthHeader() }
+      );
+      toast.success("Catatan dispute ditambahkan");
+      setShowNoteDialog(false);
+      fetchData(pagination.page);
+    } catch (error) {
+      toast.error("Gagal menambahkan catatan");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCloseDispute = (record) => {
+    setSelectedRecord(record);
+    setCloseForm({ resolution: "accepted_umpire", closure_notes: "" });
+    setShowCloseDialog(true);
+  };
+
+  const submitCloseDispute = async () => {
+    if (!closeForm.resolution) {
+      toast.error("Resolusi wajib dipilih");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await axios.post(
+        `${API_URL}/api/coa-reconciliation/${selectedRecord.id}/close-dispute`,
+        closeForm,
+        { headers: getAuthHeader() }
+      );
+      toast.success("Dispute berhasil ditutup");
+      setShowCloseDialog(false);
+      fetchData(pagination.page);
+    } catch (error) {
+      toast.error("Gagal menutup dispute");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const submitUmpireResult = async () => {
     if (!resultForm.umpire_gcv_arb || !resultForm.umpire_lab_name || !resultForm.umpire_result_date) {
       toast.error("GCV, Nama Lab, dan Tanggal Hasil wajib diisi");
@@ -218,6 +278,17 @@ const DisputeMonitorPage = () => {
     } catch {
       return dateStr;
     }
+  };
+
+  const workflowOf = (record) => record?.dispute_workflow || {
+    history: record?.dispute_history || [],
+    notes: record?.dispute_notes || [],
+    attachments: record?.dispute_attachments || [],
+    note_count: record?.dispute_notes?.length || 0,
+    attachment_count: record?.dispute_attachments?.length || 0,
+    history_count: record?.dispute_history?.length || 0,
+    resolution: record?.dispute_resolution,
+    closure_notes: record?.dispute_closure_notes
   };
 
   // Check if record has umpire data for 4-way comparison
@@ -322,6 +393,7 @@ const DisputeMonitorPage = () => {
                 <TableHead className="text-slate-400 text-xs">Delta GCV</TableHead>
                 <TableHead className="text-slate-400 text-xs text-center">Status</TableHead>
                 <TableHead className="text-slate-400 text-xs">Tgl Diajukan</TableHead>
+                <TableHead className="text-slate-400 text-xs">Workflow</TableHead>
                 <TableHead className="text-slate-400 text-xs">Lab Umpire</TableHead>
                 <TableHead className="text-slate-400 text-xs text-center">Aksi</TableHead>
               </TableRow>
@@ -357,6 +429,12 @@ const DisputeMonitorPage = () => {
                     </TableCell>
                     <TableCell className="text-center">{getStatusBadge(row.umpire_status)}</TableCell>
                     <TableCell className="text-slate-400 text-sm">{formatDate(row.umpire_proposed_at)}</TableCell>
+                    <TableCell className="text-slate-400 text-xs">
+                      <div className="flex flex-col gap-1">
+                        <span>{workflowOf(row).history_count || 0} event</span>
+                        <span>{workflowOf(row).note_count || 0} note / {workflowOf(row).attachment_count || 0} doc</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-slate-300 text-sm">{row.umpire_lab_name || "-"}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -392,6 +470,26 @@ const DisputeMonitorPage = () => {
                             <Send className="w-3 h-3" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAddNote(row)}
+                          className="h-7 px-2 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                          title="Tambah Catatan"
+                        >
+                          <FileCheck className="w-3 h-3" />
+                        </Button>
+                        {row.umpire_status !== "completed" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCloseDispute(row)}
+                            className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                            title="Tutup Dispute"
+                          >
+                            <CheckCircle className="w-3 h-3" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -423,7 +521,7 @@ const DisputeMonitorPage = () => {
           {selectedRecord && (
             <div className="space-y-4">
               {/* Status Info */}
-              <div className="flex items-center gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <p className="text-xs text-slate-500">Status Umpire</p>
                   {getStatusBadge(selectedRecord.umpire_status)}
@@ -434,7 +532,25 @@ const DisputeMonitorPage = () => {
                     <p className="text-sm text-white">{selectedRecord.umpire_lab_name}</p>
                   </div>
                 )}
+                <div>
+                  <p className="text-xs text-slate-500">Catatan</p>
+                  <p className="text-sm text-white">{workflowOf(selectedRecord).note_count || 0}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Dokumen</p>
+                  <p className="text-sm text-white">{workflowOf(selectedRecord).attachment_count || 0}</p>
+                </div>
               </div>
+
+              {workflowOf(selectedRecord).resolution && (
+                <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-3">
+                  <p className="text-xs text-green-300">Resolusi</p>
+                  <p className="text-sm text-white">{workflowOf(selectedRecord).resolution}</p>
+                  {workflowOf(selectedRecord).closure_notes && (
+                    <p className="mt-1 text-xs text-slate-400">{workflowOf(selectedRecord).closure_notes}</p>
+                  )}
+                </div>
+              )}
 
               {/* Radar Chart */}
               <div className="bg-slate-900/50 rounded-lg p-4">
@@ -490,6 +606,43 @@ const DisputeMonitorPage = () => {
                     <p>S: {selectedRecord.umpire_ts_arb || "-"}%</p>
                   </div>
                 )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <p className="text-sm font-medium text-white mb-2">Timeline Workflow</p>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {workflowOf(selectedRecord).history?.length ? workflowOf(selectedRecord).history.map(event => (
+                      <div key={event.id} className="border-l border-purple-500/40 pl-3">
+                        <p className="text-xs text-white">{event.action} / {event.status}</p>
+                        <p className="text-[10px] text-slate-500">{formatDate(event.created_at)} - {event.actor_name || event.actor_id || "-"}</p>
+                        {event.notes && <p className="text-xs text-slate-400">{event.notes}</p>}
+                      </div>
+                    )) : (
+                      <p className="text-xs text-slate-500">Belum ada timeline workflow</p>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <p className="text-sm font-medium text-white mb-2">Catatan & Dokumen</p>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {workflowOf(selectedRecord).notes?.map(note => (
+                      <div key={note.id} className="rounded bg-white/5 p-2">
+                        <p className="text-xs text-slate-300">{note.note}</p>
+                        <p className="text-[10px] text-slate-500">{formatDate(note.created_at)}</p>
+                      </div>
+                    ))}
+                    {workflowOf(selectedRecord).attachments?.map(file => (
+                      <div key={file.id} className="rounded bg-blue-500/10 p-2">
+                        <p className="text-xs text-blue-300">{file.filename}</p>
+                        {file.description && <p className="text-[10px] text-slate-500">{file.description}</p>}
+                      </div>
+                    ))}
+                    {!workflowOf(selectedRecord).notes?.length && !workflowOf(selectedRecord).attachments?.length && (
+                      <p className="text-xs text-slate-500">Belum ada catatan atau dokumen</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -618,6 +771,92 @@ const DisputeMonitorPage = () => {
                 <CheckCircle className="w-4 h-4 mr-2" />
               )}
               Simpan Hasil
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNoteDialog} onOpenChange={setShowNoteDialog}>
+        <DialogContent className="bg-[#0B1221] border-white/10 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Tambah Catatan Dispute</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Shipment {selectedRecord?.shipment} - {selectedRecord?.suppliers}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Catatan *</Label>
+              <Textarea
+                value={noteForm.note}
+                onChange={(e) => setNoteForm({ ...noteForm, note: e.target.value })}
+                placeholder="Contoh: Sampel sudah diterima lab, menunggu hasil resmi..."
+                className="bg-slate-900/50 border-slate-700"
+                rows={4}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Visibilitas</Label>
+              <Select value={noteForm.visibility} onValueChange={(value) => setNoteForm({ ...noteForm, visibility: value })}>
+                <SelectTrigger className="bg-slate-900/50 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0B1221] border-slate-700">
+                  <SelectItem value="internal">Internal</SelectItem>
+                  <SelectItem value="management">Management</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowNoteDialog(false)} disabled={submitting}>Batal</Button>
+            <Button onClick={submitDisputeNote} className="bg-amber-600 hover:bg-amber-700" disabled={submitting}>
+              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileCheck className="w-4 h-4 mr-2" />}
+              Simpan Catatan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+        <DialogContent className="bg-[#0B1221] border-white/10 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Tutup Dispute</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Closure akan menyimpan resolusi final untuk shipment {selectedRecord?.shipment}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Resolusi *</Label>
+              <Select value={closeForm.resolution} onValueChange={(value) => setCloseForm({ ...closeForm, resolution: value })}>
+                <SelectTrigger className="bg-slate-900/50 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0B1221] border-slate-700">
+                  <SelectItem value="accepted_umpire">Terima hasil umpire</SelectItem>
+                  <SelectItem value="accepted_internal">Terima hasil internal</SelectItem>
+                  <SelectItem value="commercial_adjustment">Commercial adjustment</SelectItem>
+                  <SelectItem value="no_action">Tidak ada tindak lanjut</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Catatan Closure</Label>
+              <Textarea
+                value={closeForm.closure_notes}
+                onChange={(e) => setCloseForm({ ...closeForm, closure_notes: e.target.value })}
+                placeholder="Ringkasan keputusan akhir..."
+                className="bg-slate-900/50 border-slate-700"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCloseDialog(false)} disabled={submitting}>Batal</Button>
+            <Button onClick={submitCloseDispute} className="bg-green-600 hover:bg-green-700" disabled={submitting}>
+              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+              Tutup Dispute
             </Button>
           </DialogFooter>
         </DialogContent>

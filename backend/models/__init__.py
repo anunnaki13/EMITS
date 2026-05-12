@@ -26,6 +26,60 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+# ==================== COA MODELS ====================
+
+class COASettingsUpdate(BaseModel):
+    price_per_kcal_per_ton: float
+
+class UmpireProposal(BaseModel):
+    reconciliation_id: str
+    sample_number: str
+    notes: Optional[str] = None
+
+class UmpireResultInput(BaseModel):
+    reconciliation_id: str
+    umpire_gcv_arb: float
+    umpire_tm_arb: Optional[float] = None
+    umpire_ash_arb: Optional[float] = None
+    umpire_ts_arb: Optional[float] = None
+    umpire_lab_name: str
+    umpire_result_date: str
+    notes: Optional[str] = None
+
+class DisputeNoteInput(BaseModel):
+    note: str
+    visibility: str = "internal"
+
+class DisputeAttachmentInput(BaseModel):
+    filename: str
+    url: Optional[str] = None
+    description: Optional[str] = None
+
+class DisputeCloseInput(BaseModel):
+    resolution: str
+    closure_notes: Optional[str] = None
+
+class COAManualInput(BaseModel):
+    shipment: str
+    suppliers: str
+    periode: Optional[str] = None
+    tb: Optional[str] = None
+    bg: Optional[str] = None
+    ds_mt: Optional[float] = None
+    completed_unloading: Optional[str] = None
+    loading_gcv_arb: Optional[float] = None
+    loading_tm_arb: Optional[float] = None
+    loading_ash_arb: Optional[float] = None
+    loading_ts_arb: Optional[float] = None
+    unloading_gcv_arb: Optional[float] = None
+    unloading_tm_arb: Optional[float] = None
+    unloading_ash_arb: Optional[float] = None
+    unloading_ts_arb: Optional[float] = None
+    internal_gcv_arb: Optional[float] = None
+    internal_tm_arb: Optional[float] = None
+    internal_ash_arb: Optional[float] = None
+    internal_ts_arb: Optional[float] = None
+
 # ==================== VESSEL MODELS ====================
 
 class VesselTNYCreate(BaseModel):
@@ -244,6 +298,20 @@ class MeritOrderResponse(MeritOrderCreate):
     created_at: str
     created_by: str
 
+# ==================== DASHBOARD MODELS ====================
+
+class DashboardStats(BaseModel):
+    total_vessel: int
+    total_barge: int
+    total_trucking: int
+    total_biomassa: int
+    total_tonase_batubara: float
+    total_tonase_biomassa: float
+    avg_gcv: float
+    recent_shipments: List[dict]
+    monthly_trend: List[dict]
+    supplier_stats: List[dict]
+
 # ==================== SMART STOCK MODELS ====================
 
 class SmartStockCreate(BaseModel):
@@ -258,6 +326,12 @@ class SmartStockResponse(SmartStockCreate):
     created_at: str
     created_by: str
 
+class SmartStockEntry(BaseModel):
+    date: str
+    stock_awal: float
+    suppliers: dict
+    total_penerimaan: Optional[float] = 0.0
+
 # ==================== SUMBER PEMAKAIAN MODELS ====================
 
 class SumberPemakaianCreate(BaseModel):
@@ -271,6 +345,12 @@ class SumberPemakaianResponse(SumberPemakaianCreate):
     id: str
     created_at: str
     created_by: str
+
+class SumberPemakaianEntry(BaseModel):
+    date: str
+    stock_awal: float
+    suppliers: dict
+    total_pemakaian: Optional[float] = 0.0
 
 # ==================== AI MODELS ====================
 

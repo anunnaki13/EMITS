@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import axios from "axios";
 import {
   LayoutDashboard,
   Ship,
@@ -23,7 +25,10 @@ import {
   Sparkles,
   Scale,
   Gavel,
-  MessageSquare
+  MessageSquare,
+  Moon,
+  Sun,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,19 +44,43 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
 const Layout = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, getAuthHeader } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rekapOpen, setRekapOpen] = useState(true);
   const [smartStockOpen, setSmartStockOpen] = useState(true);
   const [coaOpen, setCoaOpen] = useState(true);
+  const [alertSummary, setAlertSummary] = useState({ open_count: 0, critical_count: 0, warning_count: 0 });
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  const fetchAlertSummary = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/alerts`, {
+        headers: getAuthHeader(),
+        params: { status: "open", limit: 5 }
+      });
+      setAlertSummary({
+        open_count: response.data.open_count || 0,
+        critical_count: response.data.critical_count || 0,
+        warning_count: response.data.warning_count || 0
+      });
+    } catch (error) {
+      setAlertSummary({ open_count: 0, critical_count: 0, warning_count: 0 });
+    }
+  }, [getAuthHeader]);
+
+  useEffect(() => {
+    fetchAlertSummary();
+  }, [fetchAlertSummary, location.pathname]);
 
   const rekapItems = [
     { path: "/vessel", label: "Vessel TNY", icon: Ship },
@@ -72,7 +101,7 @@ const Layout = ({ children }) => {
   const isSmartStockActive = smartStockItems.some(item => location.pathname === item.path);
 
   return (
-    <div className="min-h-screen bg-[#02040A] grid-bg">
+    <div className="app-shell min-h-screen grid-bg">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -83,7 +112,7 @@ const Layout = ({ children }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-72 bg-[#0B1221]/95 backdrop-blur-xl border-r border-white/5 transform transition-transform duration-300 ease-out lg:translate-x-0 ${
+        className={`app-sidebar fixed top-0 left-0 z-50 h-full w-72 backdrop-blur-xl border-r transform transition-transform duration-300 ease-out lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -315,7 +344,7 @@ const Layout = ({ children }) => {
       {/* Main content */}
       <div className="lg:ml-72">
         {/* Header */}
-        <header className="h-16 bg-[#0B1221]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-30">
+        <header className="app-header h-16 backdrop-blur-xl border-b sticky top-0 z-30">
           <div className="h-full px-4 lg:px-8 flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -332,6 +361,38 @@ const Layout = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard")}
+                className={`relative inline-flex h-10 min-w-10 items-center justify-center rounded-lg border px-3 text-sm transition-all ${
+                  alertSummary.critical_count > 0
+                    ? "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                    : alertSummary.warning_count > 0
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                      : "border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10"
+                }`}
+                aria-label="Alert operasional"
+                title="Alert operasional"
+                data-testid="alerts-indicator"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="ml-2 hidden sm:inline">{alertSummary.open_count || 0}</span>
+                {alertSummary.open_count > 0 && (
+                  <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-400 ring-2 ring-[#0B1221]" />
+                )}
+              </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="text-slate-300 hover:text-white hover:bg-white/5"
+                aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
+                title={theme === "dark" ? "Mode terang" : "Mode gelap"}
+                data-testid="theme-toggle-btn"
+              >
+                {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -349,6 +410,17 @@ const Layout = ({ children }) => {
                   <DropdownMenuItem className="text-slate-300 focus:text-white focus:bg-white/5">
                     <User className="w-4 h-4 mr-2" />
                     Profil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={toggleTheme}
+                    className="text-slate-300 focus:text-white focus:bg-white/5"
+                  >
+                    {theme === "dark" ? (
+                      <Sun className="w-4 h-4 mr-2" />
+                    ) : (
+                      <Moon className="w-4 h-4 mr-2" />
+                    )}
+                    {theme === "dark" ? "Mode Terang" : "Mode Gelap"}
                   </DropdownMenuItem>
                   {user?.role === "admin" && (
                     <DropdownMenuItem

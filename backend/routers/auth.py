@@ -1,63 +1,19 @@
-# Authentication Router
-# NOTE: AUTHFIX-02 — when this router is eventually mounted (Phase 7 UPGRADE-01),
-# the `auth_validation_handler` registered on the FastAPI app instance in server.py
-# will apply here automatically (it scopes by request.url.path startswith('/api/auth/')).
-# No router-side handler is needed here. Decision record: docs/audit/AUTH_CONTRACT.md.
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List
 from datetime import datetime, timezone
 import uuid
-import jwt
-import bcrypt
 
 from models import UserCreate, UserLogin, UserResponse, TokenResponse
-from utils.database import db, JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRATION_HOURS
+from utils.database import db
+from utils.auth import hash_password, verify_password, create_token, get_current_user, require_role
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-security = HTTPBearer()
-
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-
-def create_token(user_id: str, role: str) -> str:
-    from datetime import timedelta
-    payload = {
-        "user_id": user_id,
-        "role": role,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get("user_id")
-        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-def require_role(allowed_roles: List[str]):
-    async def role_checker(user: dict = Depends(get_current_user)):
-        if user.get("role") not in allowed_roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-        return user
-    return role_checker
 
 @router.post("/register", response_model=TokenResponse)
 async def register(data: UserCreate):
     existing = await db.users.find_one({"email": data.email})
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="Email sudah terdaftar")
     
     user_id = str(uuid.uuid4())
     hashed_password = hash_password(data.password)
@@ -72,7 +28,7 @@ async def register(data: UserCreate):
     }
     await db.users.insert_one(user_doc)
     
-    token = create_token(user_id, data.role)
+    token = create_token(user_id, data.email, data.role)
     user_response = UserResponse(id=user_id, email=data.email, name=data.name, role=data.role, created_at=user_doc["created_at"])
     return TokenResponse(access_token=token, user=user_response)
 
@@ -80,12 +36,19 @@ async def register(data: UserCreate):
 async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email})
     if not user or not verify_password(data.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Email atau password salah")
     
-    token = create_token(user["id"], user["role"])
+    token = create_token(user["id"], user["email"], user["role"])
     user_response = UserResponse(id=user["id"], email=user["email"], name=user["name"], role=user["role"], created_at=user["created_at"])
     return TokenResponse(access_token=token, user=user_response)
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(user: dict = Depends(get_current_user)):
-    return UserResponse(**user)
+    return UserResponse(id=user["id"], email=user["email"], name=user["name"], role=user["role"], created_at=user["created_at"])
+
+users_router = APIRouter(tags=["Users"])
+
+@users_router.get("/users", response_model=List[UserResponse])
+async def get_users(user: dict = Depends(require_role(["admin"]))):
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    return [UserResponse(**u) for u in users]

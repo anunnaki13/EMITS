@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -40,7 +41,9 @@ import {
   FileSpreadsheet,
   File,
   ShoppingCart,
-  ListOrdered
+  ListOrdered,
+  RotateCcw,
+  BarChart3
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -55,14 +58,17 @@ const LaporanPage = () => {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [data, setData] = useState([]);
+  const [managementReport, setManagementReport] = useState(null);
   const [search, setSearch] = useState("");
-  const [filterPeriode, setFilterPeriode] = useState("all");
   const [filterSupplier, setFilterSupplier] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [suppliersList, setSuppliersList] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
   const PAGE_SIZE = 50;
 
   const categories = [
+    { id: "management", label: "Manajemen", icon: BarChart3, color: "cyan" },
     { id: "vessel", label: "Vessel", icon: Ship, color: "cyan" },
     { id: "barge", label: "Barge", icon: Anchor, color: "blue" },
     { id: "trucking", label: "Trucking", icon: Truck, color: "amber" },
@@ -73,7 +79,7 @@ const LaporanPage = () => {
 
   useEffect(() => {
     fetchData(1);
-  }, [activeTab, search, filterSupplier]);
+  }, [activeTab, search, filterSupplier, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -93,6 +99,22 @@ const LaporanPage = () => {
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
+      if (activeTab === "management") {
+        const params = {};
+        if (filterSupplier && filterSupplier !== "all") params.supplier = filterSupplier;
+        if (dateFrom) params.date_from = dateFrom;
+        if (dateTo) params.date_to = dateTo;
+        const response = await axios.get(`${API_URL}/api/reports/management`, {
+          headers: getAuthHeader(),
+          params
+        });
+        setManagementReport(response.data);
+        setData([]);
+        const totalSources = Object.values(response.data.source_counts || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+        setPagination({ page: 1, total: totalSources, totalPages: 1 });
+        return;
+      }
+
       const endpoint = activeTab === "vessel" ? "vessels" : 
                        activeTab === "barge" ? "barges" : 
                        activeTab === "trucking" ? "trucking" : 
@@ -101,6 +123,10 @@ const LaporanPage = () => {
       const params = { page, page_size: PAGE_SIZE };
       if (search) params.search = search;
       if (filterSupplier && filterSupplier !== "all") params.supplier = filterSupplier;
+      if (["vessel", "barge", "trucking", "biomassa"].includes(activeTab)) {
+        if (dateFrom) params.date_from = dateFrom;
+        if (dateTo) params.date_to = dateTo;
+      }
       
       const response = await axios.get(`${API_URL}/api/${endpoint}`, { 
         headers: getAuthHeader(), 
@@ -126,6 +152,14 @@ const LaporanPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetFilters = () => {
+    setSearch("");
+    setFilterSupplier("all");
+    setDateFrom("");
+    setDateTo("");
+    setPagination({ page: 1, total: 0, totalPages: 0 });
   };
 
   const getTableColumns = () => {
@@ -199,6 +233,64 @@ const LaporanPage = () => {
     return value;
   };
 
+  const formatNumber = (value, digits = 0) => {
+    if (value === null || value === undefined) return "-";
+    return Number(value).toLocaleString("id-ID", { maximumFractionDigits: digits });
+  };
+
+  const managementSummaryRows = () => {
+    if (!managementReport) return [];
+    return [
+      { Area: "Stock", Metrik: "Stock Saat Ini", Nilai: formatNumber(managementReport.stock?.current_stock), Satuan: "MT" },
+      { Area: "Stock", Metrik: "Days of Supply", Nilai: managementReport.stock?.days_of_supply ?? "-", Satuan: "hari" },
+      { Area: "Kedatangan", Metrik: "Jadwal", Nilai: formatNumber(managementReport.arrivals?.scheduled_tonnage), Satuan: "MT" },
+      { Area: "Kedatangan", Metrik: "Realisasi", Nilai: formatNumber(managementReport.arrivals?.realized_tonnage), Satuan: "MT" },
+      { Area: "Kedatangan", Metrik: "Fulfillment Tonase", Nilai: formatNumber(managementReport.arrivals?.tonnage_fulfillment_rate, 2), Satuan: "%" },
+      { Area: "Kualitas", Metrik: "Rata-rata GCV", Nilai: formatNumber(managementReport.quality?.avg_gcv, 2), Satuan: "kcal/kg" },
+      { Area: "Potential Loss", Metrik: "Selisih Internal", Nilai: formatNumber(managementReport.potential_loss?.potential_loss_mt, 2), Satuan: "MT" },
+      { Area: "Dispute", Metrik: "Critical", Nilai: formatNumber(managementReport.disputes?.critical_count), Satuan: "record" },
+      { Area: "Dispute", Metrik: "Warning", Nilai: formatNumber(managementReport.disputes?.warning_count), Satuan: "record" },
+      { Area: "Umpire", Metrik: "Aktif", Nilai: formatNumber(managementReport.disputes?.umpire?.active), Satuan: "record" }
+    ];
+  };
+
+  const exportManagementExcel = () => {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementSummaryRows()), "Ringkasan");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementReport.supplier_performance || []), "Supplier");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.entries(managementReport.source_counts || {}).map(([source, count]) => ({ source, count }))), "Traceability");
+    const fileName = `Laporan_Manajemen_${new Date().toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    toast.success(`Berhasil export ke ${fileName}`);
+  };
+
+  const exportManagementPDF = () => {
+    const doc = new jsPDF("landscape", "mm", "a4");
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Laporan Manajemen Bahan Bakar", 14, 15);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated: ${formatDateForExport(managementReport.generated_at)} | Supplier: ${managementReport.supplier || "all"}`, 14, 22);
+    doc.autoTable({
+      head: [["Area", "Metrik", "Nilai", "Satuan"]],
+      body: managementSummaryRows().map(row => [row.Area, row.Metrik, row.Nilai, row.Satuan]),
+      startY: 30,
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255 }
+    });
+    doc.autoTable({
+      head: [["Source", "Count"]],
+      body: Object.entries(managementReport.source_counts || {}).map(([source, count]) => [source, count]),
+      startY: doc.lastAutoTable.finalY + 8,
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [15, 23, 42], textColor: 255 }
+    });
+    const fileName = `Laporan_Manajemen_${new Date().toISOString().split("T")[0]}.pdf`;
+    doc.save(fileName);
+    toast.success(`Berhasil export ke ${fileName}`);
+  };
+
   const formatDateForExport = (value) => {
     if (!value) return "-";
     try {
@@ -254,6 +346,23 @@ const LaporanPage = () => {
 
   // Export to Excel
   const handleExportExcel = () => {
+    if (activeTab === "management") {
+      if (!managementReport) {
+        toast.error("Tidak ada data untuk diekspor");
+        return;
+      }
+      setExporting(true);
+      try {
+        exportManagementExcel();
+      } catch (error) {
+        console.error("Export error:", error);
+        toast.error("Gagal export ke Excel");
+      } finally {
+        setExporting(false);
+      }
+      return;
+    }
+
     if (data.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
@@ -314,6 +423,23 @@ const LaporanPage = () => {
 
   // Export to PDF
   const handleExportPDF = () => {
+    if (activeTab === "management") {
+      if (!managementReport) {
+        toast.error("Tidak ada data untuk diekspor");
+        return;
+      }
+      setExporting(true);
+      try {
+        exportManagementPDF();
+      } catch (error) {
+        console.error("PDF Export error:", error);
+        toast.error("Gagal export ke PDF");
+      } finally {
+        setExporting(false);
+      }
+      return;
+    }
+
     if (data.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
@@ -409,7 +535,7 @@ const LaporanPage = () => {
               variant="outline" 
               className="border-slate-700 text-slate-300 hover:bg-slate-800" 
               data-testid="export-btn"
-              disabled={exporting || data.length === 0}
+              disabled={exporting || (activeTab === "management" ? !managementReport : data.length === 0)}
             >
               {exporting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -443,24 +569,24 @@ const LaporanPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glass-card border-white/5 p-4">
           <p className="text-slate-400 text-sm">Total Data</p>
-          <p className="text-2xl font-bold text-white mt-1">{pagination.total || data.length}</p>
+          <p className="text-2xl font-bold text-white mt-1">{activeTab === "management" ? formatNumber(pagination.total) : (pagination.total || data.length)}</p>
           <p className="text-slate-500 text-xs mt-1">record {currentCategory?.label}</p>
         </Card>
         <Card className="glass-card border-white/5 p-4">
-          <p className="text-slate-400 text-sm">{getTonaseLabel()}</p>
-          <p className="text-2xl font-bold text-cyan-400 mt-1">{getTotalTonase().toLocaleString("id-ID")}</p>
-          <p className="text-slate-500 text-xs mt-1">{getTonaseUnit()}</p>
+          <p className="text-slate-400 text-sm">{activeTab === "management" ? "Stock Saat Ini" : getTonaseLabel()}</p>
+          <p className="text-2xl font-bold text-cyan-400 mt-1">{activeTab === "management" ? formatNumber(managementReport?.stock?.current_stock) : getTotalTonase().toLocaleString("id-ID")}</p>
+          <p className="text-slate-500 text-xs mt-1">{activeTab === "management" ? "MT" : getTonaseUnit()}</p>
         </Card>
         <Card className="glass-card border-white/5 p-4">
-          <p className="text-slate-400 text-sm">{getGCVLabel()}</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{getAvgGCV().toLocaleString("id-ID", { maximumFractionDigits: 2 })}</p>
-          <p className="text-slate-500 text-xs mt-1">Kcal/Kg (ARB)</p>
+          <p className="text-slate-400 text-sm">{activeTab === "management" ? "Fulfillment Kedatangan" : getGCVLabel()}</p>
+          <p className="text-2xl font-bold text-green-400 mt-1">{activeTab === "management" ? formatNumber(managementReport?.arrivals?.tonnage_fulfillment_rate, 2) : getAvgGCV().toLocaleString("id-ID", { maximumFractionDigits: 2 })}</p>
+          <p className="text-slate-500 text-xs mt-1">{activeTab === "management" ? "% tonase PO vs realisasi" : "Kcal/Kg (ARB)"}</p>
         </Card>
       </div>
 
       <Card className="glass-card border-white/5 p-4">
         <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setPagination({ page: 1, total: 0, totalPages: 0 }); }} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-slate-900/50 mb-4">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 bg-slate-900/50 mb-4 h-auto">
             {categories.map(cat => (
               <TabsTrigger 
                 key={cat.id} 
@@ -474,9 +600,10 @@ const LaporanPage = () => {
             ))}
           </TabsList>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,1fr)_250px_160px_160px_auto] gap-3 items-end mb-4">
+            <div className="relative">
+              <Label className="text-slate-400 text-xs">Cari</Label>
+              <Search className="absolute left-3 bottom-3 w-4 h-4 text-slate-500" />
               <Input
                 placeholder="Cari data..."
                 value={search}
@@ -486,7 +613,7 @@ const LaporanPage = () => {
               />
             </div>
             <Select value={filterSupplier} onValueChange={(val) => { setFilterSupplier(val); setPagination({ page: 1, total: 0, totalPages: 0 }); }}>
-              <SelectTrigger className="w-[250px] bg-slate-950/50 border-slate-800 text-white" data-testid="filter-supplier-select">
+              <SelectTrigger className="w-full bg-slate-950/50 border-slate-800 text-white" data-testid="filter-supplier-select">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Filter Supplier" />
               </SelectTrigger>
@@ -499,22 +626,96 @@ const LaporanPage = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterPeriode} onValueChange={setFilterPeriode}>
-              <SelectTrigger className="w-[180px] bg-slate-950/50 border-slate-800 text-white">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Filter Periode" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#0B1221] border-slate-800">
-                <SelectItem value="all" className="text-white">Semua Periode</SelectItem>
-                <SelectItem value="2026" className="text-white">2026</SelectItem>
-                <SelectItem value="2025" className="text-white">2025</SelectItem>
-                <SelectItem value="2024" className="text-white">2024</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Label className="text-slate-400 text-xs">Dari</Label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} disabled={!["management", "vessel", "barge", "trucking", "biomassa"].includes(activeTab)} className="bg-slate-950/50 border-slate-800 text-white disabled:opacity-40" data-testid="laporan-date-from-filter" />
+            </div>
+            <div>
+              <Label className="text-slate-400 text-xs">Sampai</Label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} disabled={!["management", "vessel", "barge", "trucking", "biomassa"].includes(activeTab)} className="bg-slate-950/50 border-slate-800 text-white disabled:opacity-40" data-testid="laporan-date-to-filter" />
+            </div>
+            <Button type="button" variant="outline" onClick={resetFilters} className="border-slate-700 text-slate-300 hover:bg-slate-800" data-testid="laporan-reset-filters">
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
           </div>
 
           {categories.map(cat => (
             <TabsContent key={cat.id} value={cat.id}>
+              {cat.id === "management" ? (
+                <div className="space-y-4">
+                  {loading ? (
+                    <div className="py-10">
+                      <Loader2 className="w-6 h-6 animate-spin text-purple-400 mx-auto" />
+                    </div>
+                  ) : !managementReport ? (
+                    <div className="text-center py-8 text-slate-500">Tidak ada data ditemukan</div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <Card className="bg-slate-950/40 border-white/5 p-4">
+                          <p className="text-slate-400 text-sm">Monitoring Stock</p>
+                          <p className="text-2xl font-bold text-white mt-1">{formatNumber(managementReport.stock.current_stock)} MT</p>
+                          <p className="text-slate-500 text-xs mt-1">{managementReport.stock.status} | {managementReport.stock.days_of_supply ?? "-"} hari supply</p>
+                        </Card>
+                        <Card className="bg-slate-950/40 border-white/5 p-4">
+                          <p className="text-slate-400 text-sm">Jadwal vs Realisasi</p>
+                          <p className="text-2xl font-bold text-cyan-400 mt-1">{formatNumber(managementReport.arrivals.tonnage_fulfillment_rate, 2)}%</p>
+                          <p className="text-slate-500 text-xs mt-1">{formatNumber(managementReport.arrivals.scheduled_tonnage)} MT PO | {formatNumber(managementReport.arrivals.realized_tonnage)} MT realisasi</p>
+                        </Card>
+                        <Card className="bg-slate-950/40 border-white/5 p-4">
+                          <p className="text-slate-400 text-sm">Potential Loss</p>
+                          <p className="text-2xl font-bold text-amber-400 mt-1">{formatNumber(managementReport.potential_loss.potential_loss_mt, 2)} MT</p>
+                          <p className="text-slate-500 text-xs mt-1">{managementReport.potential_loss.critical_count} critical | {managementReport.potential_loss.warning_count} warning</p>
+                        </Card>
+                        <Card className="bg-slate-950/40 border-white/5 p-4">
+                          <p className="text-slate-400 text-sm">Dispute/Umpire</p>
+                          <p className="text-2xl font-bold text-red-400 mt-1">{managementReport.disputes.umpire.active}</p>
+                          <p className="text-slate-500 text-xs mt-1">aktif | {managementReport.disputes.umpire.completed} selesai</p>
+                        </Card>
+                      </div>
+
+                      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4">
+                        <div className="rounded-lg border border-white/5 overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-white/5 hover:bg-transparent">
+                                <TableHead className="text-slate-400 font-mono text-xs">Supplier</TableHead>
+                                <TableHead className="text-slate-400 font-mono text-xs">Record</TableHead>
+                                <TableHead className="text-slate-400 font-mono text-xs">Realisasi MT</TableHead>
+                                <TableHead className="text-slate-400 font-mono text-xs">Avg GCV</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {(managementReport.supplier_performance || []).map((item) => (
+                                <TableRow key={item.supplier} className="border-white/5 hover:bg-slate-900/50">
+                                  <TableCell className="text-slate-300">{item.supplier}</TableCell>
+                                  <TableCell className="text-slate-300">{item.record_count}</TableCell>
+                                  <TableCell className="font-mono text-cyan-400">{formatNumber(item.realized_tonnage)}</TableCell>
+                                  <TableCell className="font-mono text-green-400">{formatNumber(item.avg_gcv, 2)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <Card className="bg-slate-950/40 border-white/5 p-4">
+                          <p className="text-slate-400 text-sm mb-3">Traceability</p>
+                          <div className="space-y-2">
+                            {Object.entries(managementReport.source_counts || {}).map(([source, count]) => (
+                              <div key={source} className="flex items-center justify-between text-sm">
+                                <span className="text-slate-300">{source}</span>
+                                <span className="font-mono text-white">{count}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-slate-500 text-xs mt-4">Generated: {formatDateForExport(managementReport.generated_at)}</p>
+                        </Card>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+              <>
               <div className="rounded-lg border border-white/5 overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -584,6 +785,8 @@ const LaporanPage = () => {
                     </Button>
                   </div>
                 </div>
+              )}
+              </>
               )}
             </TabsContent>
           ))}

@@ -96,3 +96,5 @@ frontend/node_modules/.cache/default-development/6.pack_
 memory/test_credentials.md
 memory/*.credentials.md
 *.test_credentials.md
+frontend/node_modules/.cache/default-development/17.pack
+frontend/node_modules/.cache/default-development/16.pack
