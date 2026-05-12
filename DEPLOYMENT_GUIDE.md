@@ -26,15 +26,17 @@ FastAPI
 MongoDB
 ```
 
-### Catatan: Postur VPS Produksi Saat Ini (2026-05-10)
+### Catatan: Postur VPS Produksi Saat Ini (2026-05-13)
 
-Panduan umum ini menggunakan port internal `8001` sebagai contoh. **Deployment produksi PLTU Tenayan yang sedang berjalan menggunakan:**
-- Backend uvicorn: port **8013** (berjalan langsung tanpa nginx, tidak lewat systemd)
-- Frontend yarn start: port **3013**
+Panduan umum ini semula menggunakan port internal `8001` sebagai contoh. Phase 19 menstandarkan artefak operasional untuk port backend **8013**:
+
+- Backend uvicorn: port **8013**, dikelola via systemd template `ops/systemd/emits-backend.service.example`
+- Frontend: React static build disajikan nginx dari `/var/www/emits`
+- Nginx: `ops/nginx/emits.conf.example` reverse-proxy `/api/*` ke `127.0.0.1:8013`
 - MongoDB: `localhost:27017` (single-host, bukan MongoDB Atlas/external)
-- `REACT_APP_BACKEND_URL`: `http://103.150.197.225:8013` (untuk produksi) atau `http://localhost:8013` (untuk dev lokal)
+- `REACT_APP_BACKEND_URL`: origin publik nginx jika sudah aktif, atau `http://103.150.197.225:8013` sebagai fallback langsung
 
-Untuk memulihkan services setelah VPS restart, lihat [LOCAL_SETUP.md → VPS Service Recovery (post-restart)](LOCAL_SETUP.md#vps-service-recovery-post-restart).
+Runbook kanonis Phase 19: [docs/operations/PRODUCTION_RUNBOOK.md](docs/operations/PRODUCTION_RUNBOOK.md).
 
 ---
 
@@ -233,6 +235,8 @@ DB_NAME=pltu_tenayan
 
 ## 9. Menjalankan Backend dengan systemd
 
+Template siap pakai ada di `ops/systemd/emits-backend.service.example`. Salin template tersebut ke `/etc/systemd/system/emits-backend.service`, lalu sesuaikan path jika instalasi tidak memakai `/opt/pltu-tenayan/app`.
+
 Buat service file:
 - `/etc/systemd/system/pltu-tenayan-backend.service`
 
@@ -275,6 +279,8 @@ journalctl -u pltu-tenayan-backend -f
 ---
 
 ## 10. Setup Nginx
+
+Template siap pakai ada di `ops/nginx/emits.conf.example`. Template ini menggunakan backend port `8013`, React static root `/var/www/emits`, dan upload limit `100M`.
 
 Buat file config:
 - `/etc/nginx/sites-available/pltu-tenayan`
@@ -350,6 +356,20 @@ sudo certbot renew --dry-run
 
 ## 12. Checklist Verifikasi Setelah Deploy
 
+Phase 19 menyediakan smoke check otomatis:
+
+```bash
+cd /opt/pltu-tenayan/app
+set -a
+. backend/.env
+set +a
+backend/.venv/bin/python ops/scripts/smoke_check.py \
+  --base-url http://127.0.0.1:8013 \
+  --frontend-url http://127.0.0.1
+```
+
+Smoke check ini mencakup frontend, backend health, MongoDB, login, dashboard, COA, dan management report.
+
 ### 12.1 Cek service
 ```bash
 sudo systemctl status pltu-tenayan-backend
@@ -383,6 +403,15 @@ curl -X POST "http://103.150.197.225:8013/api/auth/login" \
 ---
 
 ## 13. Prosedur Update Deployment
+
+Phase 19 menyediakan helper deploy repeatable:
+
+```bash
+cd /opt/pltu-tenayan/app
+ops/scripts/deploy.sh
+```
+
+Script tersebut melakukan clean-tree check, `git pull --ff-only`, pre-deploy `mongodump`, install dependency backend, build frontend, publish static build, restart backend, reload nginx, dan menjalankan smoke check.
 
 Saat ada update kode baru:
 
@@ -576,15 +605,9 @@ Untuk tahap sekarang, model deployment paling stabil adalah satu VPS dengan Ngin
 
 ## 21. Service Recovery (post-restart)
 
-Untuk perintah uvicorn + yarn-start yang tepat guna memulihkan services setelah
-VPS reboot, lihat [LOCAL_SETUP.md → VPS Service Recovery (post-restart)](LOCAL_SETUP.md#vps-service-recovery-post-restart).
-Phase-3 D-11 mempromosikan prosedur tersebut menjadi runbook tunggal yang
-berwewenang (canonical runbook) sehingga operator tidak perlu menemukan ulang
-perintah dari berbagai dokumen.
+Untuk post-restart atau operasi berulang, gunakan runbook kanonis:
 
-Ringkasan cepat:
-- Backend: aktifkan venv, jalankan uvicorn di port 8013, verifikasi dengan `curl http://localhost:8013/api/health`
-- Frontend: `yarn start` di port 3013, verifikasi dengan `curl -s -o /dev/null -w "%{http_code}" http://localhost:3013/`
-- MongoDB: cek `systemctl status mongod` — seharusnya sudah auto-start via systemd
-
-Lihat LOCAL_SETUP.md untuk perintah lengkap termasuk path venv yang benar dan smoke-test login end-to-end.
+- [docs/operations/PRODUCTION_RUNBOOK.md](docs/operations/PRODUCTION_RUNBOOK.md)
+- `sudo systemctl restart emits-backend`
+- `sudo systemctl reload nginx`
+- `backend/.venv/bin/python ops/scripts/smoke_check.py --base-url http://127.0.0.1:8013 --frontend-url http://127.0.0.1`

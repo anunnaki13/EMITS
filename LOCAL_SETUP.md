@@ -190,8 +190,8 @@ Cara menggunakan tanpa membocorkan nilai:
 
 ```bash
 # Dari root inner repo
-export TEST_ADMIN_EMAIL="$(awk '/^## Akun Admin$/,/^##/{ if(/Email:/){sub(/^- Email:[[:space:]]*/,"");print;exit} }' memory/test_credentials.md)"
-export TEST_ADMIN_PASSWORD="$(awk '/^## Akun Admin$/,/^##/{ if(/Password:/){sub(/^- Password:[[:space:]]*/,"");print;exit} }' memory/test_credentials.md)"
+export TEST_ADMIN_EMAIL="$(awk '$0=="## Akun Admin"{in_section=1;next} in_section && /^## /{exit} in_section && /Email:/{sub(/^- Email:[[:space:]]*/,"");print;exit}' memory/test_credentials.md)"
+export TEST_ADMIN_PASSWORD="$(awk '$0=="## Akun Admin"{in_section=1;next} in_section && /^## /{exit} in_section && /Password:/{sub(/^- Password:[[:space:]]*/,"");print;exit}' memory/test_credentials.md)"
 # ... pakai $TEST_ADMIN_EMAIL / $TEST_ADMIN_PASSWORD pada perintah curl/login Anda ...
 unset TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD
 ```
@@ -317,13 +317,16 @@ curl -fsS -X POST http://localhost:8013/api/auth/login \
 unset TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD
 ```
 
-### Auto-restart units (deferred — Phase 3.1 if requested)
+### Auto-restart units
 
-Per D-12, systemd / pm2 unit files for backend (`uvicorn :8013`) and frontend (`yarn start :3013`)
-are NOT shipped in Phase 3. If the operator wants the services to auto-restart on VPS reboot
-instead of requiring this manual runbook, file a Phase 3.1 INSERTED phase per the ROADMAP
-decimal-phase convention. MongoDB itself already auto-starts via systemd
-(`systemctl status mongod`).
+Phase 19 ships production hardening artefacts:
+
+- `ops/systemd/emits-backend.service.example` for backend auto-restart on port `8013`
+- `ops/nginx/emits.conf.example` for static frontend + `/api` reverse proxy
+- `ops/scripts/smoke_check.py` for post-restart verification
+- `docs/operations/PRODUCTION_RUNBOOK.md` as the canonical deploy/restart/rollback runbook
+
+MongoDB itself should already auto-start via systemd (`systemctl status mongod`).
 
 ### Cross-references
 

@@ -30,11 +30,11 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 ### Deployment Hardening (DEPLOY)
 
-- [ ] **DEPLOY-01**: Backend and frontend are managed by repeatable service definitions with restart policy and log locations documented.
-- [ ] **DEPLOY-02**: Production environment variables and secrets are documented through examples/runbooks without committing real secrets.
-- [ ] **DEPLOY-03**: Operator can run one documented smoke check covering frontend, backend health, MongoDB, auth, dashboard, COA, and reports.
-- [ ] **DEPLOY-04**: Deployment runbook includes backup-before-deploy, build, restart, rollback, and post-deploy verification steps.
-- [ ] **DEPLOY-05**: Repository root, generated artifacts, ignored local files, and deployable source boundaries are explicit and clean.
+- [x] **DEPLOY-01**: Backend and frontend are managed by repeatable service definitions with restart policy and log locations documented.
+- [x] **DEPLOY-02**: Production environment variables and secrets are documented through examples/runbooks without committing real secrets.
+- [x] **DEPLOY-03**: Operator can run one documented smoke check covering frontend, backend health, MongoDB, auth, dashboard, COA, and reports.
+- [x] **DEPLOY-04**: Deployment runbook includes backup-before-deploy, build, restart, rollback, and post-deploy verification steps.
+- [x] **DEPLOY-05**: Repository root, generated artifacts, ignored local files, and deployable source boundaries are explicit and clean.
 
 ### Dashboard Command Center v3 (DASH3)
 
@@ -61,8 +61,8 @@ Make EMITS safer to operate as production software by automating backups, harden
 ### Engineering Cleanup (CLEANUP)
 
 - [ ] **CLEANUP-01**: Existing React `react-hooks/exhaustive-deps` warnings are resolved or documented with intentional exclusions.
-- [ ] **CLEANUP-02**: Focused pytest runs load local test admin credentials consistently without exposing secrets in committed files.
-- [ ] **CLEANUP-03**: Local-only artifacts (`.env`, generated folders, runtime metadata) are either ignored, documented, or cleaned from the working tree.
+- [x] **CLEANUP-02**: Focused pytest runs load local test admin credentials consistently without exposing secrets in committed files.
+- [x] **CLEANUP-03**: Local-only artifacts (`.env`, generated folders, runtime metadata) are either ignored, documented, or cleaned from the working tree.
 
 ## Future Requirements
 
@@ -85,8 +85,8 @@ Make EMITS safer to operate as production software by automating backups, harden
 |-------------|-------|--------|
 | BACKUP2-01..05 | Phase 17 | Complete |
 | COAIMP-01..06 | Phase 18 | Complete |
-| DEPLOY-01..05 | Phase 19 | Planned |
-| CLEANUP-02..03 | Phase 19 | Planned |
+| DEPLOY-01..05 | Phase 19 | Complete |
+| CLEANUP-02..03 | Phase 19 | Complete |
 | DASH3-01..05 | Phase 20 | Planned |
 | CLEANUP-01 | Phase 20 | Planned |
 | REPORT2-01..04 | Phase 21 | Planned |

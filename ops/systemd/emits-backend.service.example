@@ -1,0 +1,24 @@
+[Unit]
+Description=EMITS FastAPI backend
+Documentation=/opt/pltu-tenayan/app/DEPLOYMENT_GUIDE.md
+After=network-online.target mongod.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/pltu-tenayan/app/backend
+EnvironmentFile=/opt/pltu-tenayan/app/backend/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/pltu-tenayan/app/backend/.venv/bin/uvicorn server:app --host 127.0.0.1 --port 8013
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ReadWritePaths=/opt/pltu-tenayan/app/backend/backups /var/log/emits
+
+[Install]
+WantedBy=multi-user.target

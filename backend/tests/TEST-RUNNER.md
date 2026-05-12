@@ -2,6 +2,8 @@
 
 **Canonical command:** `cd pltu-tenayan-full-backup/backend && .venv/bin/pytest tests/ -q`
 
+**Credential-safe helper:** `cd pltu-tenayan-full-backup && ops/scripts/pytest_with_local_credentials.sh tests/ -q`
+
 ## One-time setup
 
 Test credentials live in `pltu-tenayan-full-backup/memory/test_credentials.md` (gitignored).
@@ -18,6 +20,13 @@ export TEST_VIEWER_PASSWORD="$(grep -E '^- Password:' memory/test_credentials.md
 export MONGO_URL="mongodb://localhost:27017"
 export DB_NAME="pltu_tenayan"
 export JWT_SECRET="$(grep '^JWT_SECRET=' backend/.env | cut -d= -f2-)"
+```
+
+Or use the Phase 19 helper, which loads the same local file without printing secrets:
+
+```bash
+cd pltu-tenayan-full-backup
+ops/scripts/pytest_with_local_credentials.sh tests/ -q
 ```
 
 ## Run the suite

@@ -56,11 +56,12 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 
 - [x] BACKUP2-01..05: Scheduled backup automation, retention, history, restore validation, and backup health visibility.
 - [x] COAIMP-01..06: Safe COA workbook import preview, validation, diff/duplicate detection, history, rollback, and preservation of dispute workflow state.
-- [ ] DEPLOY-01..05: Production service hardening, env/secret runbook, health/smoke checks, repeatable deploy, and repository hygiene.
+- [x] DEPLOY-01..05: Production service hardening, env/secret runbook, health/smoke checks, repeatable deploy, and repository hygiene.
 - [ ] DASH3-01..05: Dashboard command center v3 for stock risk, arrival realization, COA dispute/umpire, supplier quality, and drilldowns.
 - [ ] REPORT2-01..04: Management reporting v2 with monthly executive summary, supplier scorecard, PDF/Excel export, and source traceability.
 - [ ] AI2-01..04: AI advisor v2 with bounded source citations, recommended next actions, draft memo support, and guardrails.
-- [ ] CLEANUP-01..03: React hook warning cleanup, focused pytest credential loading without committed secrets, and local artifact hygiene.
+- [ ] CLEANUP-01: React hook warning cleanup.
+- [x] CLEANUP-02..03: Focused pytest credential loading without committed secrets and local artifact hygiene.
 
 ### Out of Scope
 
@@ -125,7 +126,7 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 | v1.2 starts with operational reliability over new domain sprawl | EMITS is now live enough that backup, import safety, deployment repeatability, and auditability reduce more risk than adding unrelated modules | ✓ Applied (v1.2 roadmap) |
 
 ---
-*Last updated: 2026-05-13 after Phase 18 COA import governance completion.*
+*Last updated: 2026-05-13 after Phase 19 production deployment hardening completion.*
 
 
 ## ADR Cross-Links (Phase-3 lock-in)
