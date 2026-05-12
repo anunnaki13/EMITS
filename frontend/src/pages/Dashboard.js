@@ -412,7 +412,7 @@ const Dashboard = () => {
               <a href={drilldownHref("/po-batubara")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-blue-300 hover:bg-slate-800/80">
                 Jadwal PO <ArrowRight className="inline w-3 h-3" />
               </a>
-              <a href={drilldownHref("/laporan")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-emerald-300 hover:bg-slate-800/80">
+              <a href={drilldownHref("/laporan", { tab: "management" })} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-emerald-300 hover:bg-slate-800/80">
                 Realisasi <ArrowRight className="inline w-3 h-3" />
               </a>
             </div>
@@ -522,7 +522,7 @@ const Dashboard = () => {
               <a href={drilldownHref("/coa-reconciliation")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-amber-300 hover:bg-slate-800/80">
                 COA Reconcile <ArrowRight className="inline w-3 h-3" />
               </a>
-              <a href={drilldownHref("/laporan")} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-cyan-300 hover:bg-slate-800/80">
+              <a href={drilldownHref("/laporan", { tab: "management" })} className="rounded-lg bg-slate-900/50 p-3 text-sm font-semibold text-cyan-300 hover:bg-slate-800/80">
                 Report <ArrowRight className="inline w-3 h-3" />
               </a>
             </div>

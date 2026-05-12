@@ -32,7 +32,7 @@ Make EMITS safer to operate as production software by automating backups, harden
 | 18 | Complete | COA preview/diff/history/rollback safeguards shipped. |
 | 19 | Complete | Service/runbook/smoke/repo hygiene shipped. |
 | 20 | Complete | Dashboard command center filters, supplier risk, drilldowns, and hook-warning register shipped. |
-| 21 | Next | Reports v2 and AI advisor v2. |
+| 21 | Complete | Management report v2, supplier scorecard, source-traceable exports, and AI advisor shipped. |
 
 ## Phase Details
 
@@ -112,21 +112,15 @@ Make EMITS safer to operate as production software by automating backups, harden
 | CLEANUP-02..03 | Phase 19 | Complete |
 | DASH3-01..05 | Phase 20 | Complete |
 | CLEANUP-01 | Phase 20 | Complete |
-| REPORT2-01..04 | Phase 21 | Planned |
-| AI2-01..04 | Phase 21 | Planned |
+| REPORT2-01..04 | Phase 21 | Complete |
+| AI2-01..04 | Phase 21 | Complete |
 
-Coverage: 32/32 active v1.2 requirements mapped; 24/32 complete.
+Coverage: 32/32 active v1.2 requirements mapped; 32/32 complete.
 
 ## Next Step
 
-Start execution with Phase 21:
+Run milestone audit before archiving v1.2:
 
 ```bash
-$gsd-discuss-phase 21
-```
-
-or skip discussion and plan directly:
-
-```bash
-$gsd-plan-phase 21
+$gsd-audit-milestone
 ```

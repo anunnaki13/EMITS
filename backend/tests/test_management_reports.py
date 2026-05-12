@@ -60,7 +60,7 @@ def test_management_report_summarizes_sources_filters_and_traceability(base_url,
         db.coa_reconciliation.insert_one({
             "id": f"{marker}-coa",
             "suppliers": supplier,
-            "completed_unloading": "2026-05-12",
+            "completed_unloading": "2026-05-01",
             "status": "critical",
             "umpire_status": "in_progress",
             "delta_loading_internal": -25,
@@ -78,17 +78,46 @@ def test_management_report_summarizes_sources_filters_and_traceability(base_url,
         body = response.json()
 
         assert body["supplier"] == supplier
+        assert body["filter_scope"]["supplier"] == supplier
         assert body["generated_at"]
         assert body["source_counts"]["po_batubara"] == 1
         assert body["source_counts"]["vessel"] == 1
+        assert body["data_health"]["empty"] is False
         assert body["stock"]["current_stock"] == 1200
         assert body["arrivals"]["scheduled_tonnage"] == 1000
         assert body["arrivals"]["realized_tonnage"] == 800
+        assert body["arrivals"]["at_risk_count"] == 1
         assert body["quality"]["avg_gcv"] == 4200
+        assert body["quality"]["avg_coa_delta"] == 25
         assert body["potential_loss"]["potential_loss_mt"] == 25
         assert body["disputes"]["critical_count"] == 1
         assert body["disputes"]["umpire"]["active"] == 1
+        assert body["disputes"]["stale_count"] >= 1
         assert body["supplier_performance"][0]["supplier"] == supplier
+        assert body["supplier_scorecard"][0]["supplier"] == supplier
+        assert body["supplier_scorecard"][0]["risk_status"] in {"low", "medium", "high"}
+        assert body["supplier_scorecard"][0]["avg_coa_delta"] == 25
+        assert body["executive_summary"]
+        slice_names = {item["name"] for item in body["source_slices"]}
+        assert {"stock_summary", "arrival_schedule_vs_realization", "supplier_scorecard", "coa_quality_disputes"} <= slice_names
+
+        advisor = requests.get(
+            f"{base_url}/api/ai/advisor/operational",
+            headers=admin_headers,
+            params={"date_from": "2026-05-01", "date_to": "2026-05-31", "supplier": supplier},
+            timeout=15,
+        )
+        assert advisor.status_code == 200, advisor.text[:300]
+        advisor_body = advisor.json()
+        assert advisor_body["filter_scope"]["supplier"] == supplier
+        assert advisor_body["guardrails"]["bounded_context"] is True
+        assert advisor_body["guardrails"]["llm_required"] is False
+        assert "Memo Manajemen Bahan Bakar" in advisor_body["memo_draft"]
+        recommendation_ids = {item["id"] for item in advisor_body["recommendations"]}
+        assert "arrival-risk" in recommendation_ids
+        assert "coa-quality-risk" in recommendation_ids
+        assert "stale-disputes" in recommendation_ids
+        assert all(item["source_slice"] for item in advisor_body["recommendations"])
     finally:
         for collection in ["smartstock", "sumberpemakaian", "po_batubara", "vessels", "coa_reconciliation"]:
             db[collection].delete_many({"_marker": marker})

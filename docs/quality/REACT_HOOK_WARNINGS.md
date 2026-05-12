@@ -18,7 +18,7 @@ The warnings below remain documented intentional exclusions for this phase. They
 | `frontend/src/pages/BiomassaPage.js` | 115 | `fetchBiomassa` | Documented legacy CRUD effect; normalize with CRUD page hook pass. |
 | `frontend/src/pages/COAReconciliationPage.js` | 220 | `fetchData`, `fetchImportHistory`, `fetchKPIs`, `fetchSupplierData`, `fetchTrendData` | Documented legacy COA dashboard effect; defer because it has multiple parallel loaders. |
 | `frontend/src/pages/DisputeMonitorPage.js` | 118 | `fetchData` | Documented legacy dispute effect; normalize with dispute workflow cleanup. |
-| `frontend/src/pages/LaporanPage.js` | 82, 86 | `fetchData`, `fetchSuppliers` | Documented legacy report effect; normalize during reports v2. |
+| `frontend/src/pages/LaporanPage.js` | 119, 123 | `fetchData`, `fetchSuppliers` | Documented legacy report effect; still intentionally deferred after reports v2 UI expansion because the page has coupled fetch/export/pagination state. |
 | `frontend/src/pages/MeritOrderPage.js` | 101 | `fetchData` | Documented legacy CRUD effect; normalize with CRUD page hook pass. |
 | `frontend/src/pages/POBatubaraPage.js` | 126 | `fetchYearsData` | Documented legacy PO year-loader effect; normalize with arrival schedule cleanup. |
 | `frontend/src/pages/SettingsPage.js` | 127 | settings loaders | Documented legacy admin settings effect; normalize in settings reliability pass. |

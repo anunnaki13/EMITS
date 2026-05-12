@@ -46,17 +46,17 @@ Make EMITS safer to operate as production software by automating backups, harden
 
 ### Management Reports v2 (REPORT2)
 
-- [ ] **REPORT2-01**: Management report can generate a monthly executive summary with stock, arrivals, supplier performance, COA quality, disputes, and potential loss.
-- [ ] **REPORT2-02**: Supplier scorecard ranks suppliers by volume, timeliness, COA delta, dispute count, and risk status.
-- [ ] **REPORT2-03**: PDF and Excel exports include the same filter scope and source-count traceability shown on screen.
-- [ ] **REPORT2-04**: Report generation handles empty/partial data periods with clear Indonesian copy instead of broken charts or blank exports.
+- [x] **REPORT2-01**: Management report can generate a monthly executive summary with stock, arrivals, supplier performance, COA quality, disputes, and potential loss.
+- [x] **REPORT2-02**: Supplier scorecard ranks suppliers by volume, timeliness, COA delta, dispute count, and risk status.
+- [x] **REPORT2-03**: PDF and Excel exports include the same filter scope and source-count traceability shown on screen.
+- [x] **REPORT2-04**: Report generation handles empty/partial data periods with clear Indonesian copy instead of broken charts or blank exports.
 
 ### AI Advisor v2 (AI2)
 
-- [ ] **AI2-01**: AI answers for operational analysis include bounded source context and visible source slice labels.
-- [ ] **AI2-02**: AI can recommend next actions for low stock, delayed arrivals, high COA delta, and stale disputes.
-- [ ] **AI2-03**: AI can draft an Indonesian management memo from the current filtered report context.
-- [ ] **AI2-04**: AI guardrails prevent unsupported claims when required source data is missing.
+- [x] **AI2-01**: AI answers for operational analysis include bounded source context and visible source slice labels.
+- [x] **AI2-02**: AI can recommend next actions for low stock, delayed arrivals, high COA delta, and stale disputes.
+- [x] **AI2-03**: AI can draft an Indonesian management memo from the current filtered report context.
+- [x] **AI2-04**: AI guardrails prevent unsupported claims when required source data is missing.
 
 ### Engineering Cleanup (CLEANUP)
 
@@ -89,5 +89,5 @@ Make EMITS safer to operate as production software by automating backups, harden
 | CLEANUP-02..03 | Phase 19 | Complete |
 | DASH3-01..05 | Phase 20 | Complete |
 | CLEANUP-01 | Phase 20 | Complete |
-| REPORT2-01..04 | Phase 21 | Planned |
-| AI2-01..04 | Phase 21 | Planned |
+| REPORT2-01..04 | Phase 21 | Complete |
+| AI2-01..04 | Phase 21 | Complete |

@@ -43,7 +43,9 @@ import {
   ShoppingCart,
   ListOrdered,
   RotateCcw,
-  BarChart3
+  BarChart3,
+  Brain,
+  AlertTriangle
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -51,18 +53,53 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const REPORT_PERIOD_OPTIONS = [
+  { value: "all", label: "Semua Periode" },
+  { value: "2026", label: "2026" },
+  { value: "2026-01", label: "Januari 2026" },
+  { value: "2026-02", label: "Februari 2026" },
+  { value: "2026-03", label: "Maret 2026" },
+  { value: "2026-04", label: "April 2026" },
+  { value: "2026-05", label: "Mei 2026" },
+  { value: "2025", label: "2025" },
+  { value: "2024", label: "2024" }
+];
+
+const getInitialReportState = () => {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  const mode = params.get("mode");
+  const validTabs = ["management", "vessel", "barge", "trucking", "biomassa", "po_batubara", "merit_order"];
+  const initialTab = validTabs.includes(tab)
+    ? tab
+    : validTabs.includes(mode)
+      ? mode
+      : (params.has("period") || params.has("supplier") || params.has("date_from") || params.has("date_to"))
+        ? "management"
+        : "vessel";
+  return {
+    activeTab: initialTab,
+    supplier: params.get("supplier") || "all",
+    period: params.get("period") || "all",
+    dateFrom: params.get("date_from") || "",
+    dateTo: params.get("date_to") || ""
+  };
+};
 
 const LaporanPage = () => {
   const { getAuthHeader } = useAuth();
-  const [activeTab, setActiveTab] = useState("vessel");
+  const initialState = getInitialReportState();
+  const [activeTab, setActiveTab] = useState(initialState.activeTab);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [data, setData] = useState([]);
   const [managementReport, setManagementReport] = useState(null);
+  const [advisorReport, setAdvisorReport] = useState(null);
   const [search, setSearch] = useState("");
-  const [filterSupplier, setFilterSupplier] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [filterSupplier, setFilterSupplier] = useState(initialState.supplier);
+  const [filterPeriod, setFilterPeriod] = useState(initialState.period);
+  const [dateFrom, setDateFrom] = useState(initialState.dateFrom);
+  const [dateTo, setDateTo] = useState(initialState.dateTo);
   const [suppliersList, setSuppliersList] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
   const PAGE_SIZE = 50;
@@ -79,7 +116,7 @@ const LaporanPage = () => {
 
   useEffect(() => {
     fetchData(1);
-  }, [activeTab, search, filterSupplier, dateFrom, dateTo]);
+  }, [activeTab, search, filterSupplier, filterPeriod, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -101,19 +138,28 @@ const LaporanPage = () => {
     try {
       if (activeTab === "management") {
         const params = {};
+        if (filterPeriod && filterPeriod !== "all") params.period = filterPeriod;
         if (filterSupplier && filterSupplier !== "all") params.supplier = filterSupplier;
         if (dateFrom) params.date_from = dateFrom;
         if (dateTo) params.date_to = dateTo;
-        const response = await axios.get(`${API_URL}/api/reports/management`, {
-          headers: getAuthHeader(),
-          params
-        });
-        setManagementReport(response.data);
+        const [reportResponse, advisorResponse] = await Promise.all([
+          axios.get(`${API_URL}/api/reports/management`, {
+            headers: getAuthHeader(),
+            params
+          }),
+          axios.get(`${API_URL}/api/ai/advisor/operational`, {
+            headers: getAuthHeader(),
+            params
+          })
+        ]);
+        setManagementReport(reportResponse.data);
+        setAdvisorReport(advisorResponse.data);
         setData([]);
-        const totalSources = Object.values(response.data.source_counts || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+        const totalSources = Object.values(reportResponse.data.source_counts || {}).reduce((sum, value) => sum + Number(value || 0), 0);
         setPagination({ page: 1, total: totalSources, totalPages: 1 });
         return;
       }
+      setAdvisorReport(null);
 
       const endpoint = activeTab === "vessel" ? "vessels" : 
                        activeTab === "barge" ? "barges" : 
@@ -157,6 +203,7 @@ const LaporanPage = () => {
   const resetFilters = () => {
     setSearch("");
     setFilterSupplier("all");
+    setFilterPeriod("all");
     setDateFrom("");
     setDateTo("");
     setPagination({ page: 1, total: 0, totalPages: 0 });
@@ -246,18 +293,26 @@ const LaporanPage = () => {
       { Area: "Kedatangan", Metrik: "Jadwal", Nilai: formatNumber(managementReport.arrivals?.scheduled_tonnage), Satuan: "MT" },
       { Area: "Kedatangan", Metrik: "Realisasi", Nilai: formatNumber(managementReport.arrivals?.realized_tonnage), Satuan: "MT" },
       { Area: "Kedatangan", Metrik: "Fulfillment Tonase", Nilai: formatNumber(managementReport.arrivals?.tonnage_fulfillment_rate, 2), Satuan: "%" },
+      { Area: "Kedatangan", Metrik: "Jadwal At-risk", Nilai: formatNumber(managementReport.arrivals?.at_risk_count), Satuan: "jadwal" },
       { Area: "Kualitas", Metrik: "Rata-rata GCV", Nilai: formatNumber(managementReport.quality?.avg_gcv, 2), Satuan: "kcal/kg" },
+      { Area: "Kualitas", Metrik: "Rata-rata Delta COA", Nilai: formatNumber(managementReport.quality?.avg_coa_delta, 2), Satuan: "kcal/kg" },
       { Area: "Potential Loss", Metrik: "Selisih Internal", Nilai: formatNumber(managementReport.potential_loss?.potential_loss_mt, 2), Satuan: "MT" },
       { Area: "Dispute", Metrik: "Critical", Nilai: formatNumber(managementReport.disputes?.critical_count), Satuan: "record" },
       { Area: "Dispute", Metrik: "Warning", Nilai: formatNumber(managementReport.disputes?.warning_count), Satuan: "record" },
-      { Area: "Umpire", Metrik: "Aktif", Nilai: formatNumber(managementReport.disputes?.umpire?.active), Satuan: "record" }
+      { Area: "Umpire", Metrik: "Aktif", Nilai: formatNumber(managementReport.disputes?.umpire?.active), Satuan: "record" },
+      { Area: "Umpire", Metrik: "Stale", Nilai: formatNumber(managementReport.disputes?.stale_count), Satuan: "record" }
     ];
   };
 
   const exportManagementExcel = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementSummaryRows()), "Ringkasan");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementReport.supplier_performance || []), "Supplier");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementReport.supplier_scorecard || []), "Supplier Scorecard");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementReport.supplier_performance || []), "Supplier Volume");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(advisorReport?.recommendations || []), "AI Advisor");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Memo Manajemen"], [advisorReport?.memo_draft || "-"]]), "Memo");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.entries(managementReport.filter_scope || {}).map(([filter, value]) => ({ filter, value: value ?? "all" }))), "Filter Scope");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementReport.source_slices || []), "Source Slices");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.entries(managementReport.source_counts || {}).map(([source, count]) => ({ source, count }))), "Traceability");
     const fileName = `Laporan_Manajemen_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
@@ -271,13 +326,34 @@ const LaporanPage = () => {
     doc.text("Laporan Manajemen Bahan Bakar", 14, 15);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Generated: ${formatDateForExport(managementReport.generated_at)} | Supplier: ${managementReport.supplier || "all"}`, 14, 22);
+    doc.text(`Generated: ${formatDateForExport(managementReport.generated_at)} | Period: ${managementReport.period || "all"} | Supplier: ${managementReport.supplier || "all"}`, 14, 22);
     doc.autoTable({
       head: [["Area", "Metrik", "Nilai", "Satuan"]],
       body: managementSummaryRows().map(row => [row.Area, row.Metrik, row.Nilai, row.Satuan]),
       startY: 30,
       styles: { fontSize: 9, cellPadding: 2 },
       headStyles: { fillColor: [30, 41, 59], textColor: 255 }
+    });
+    doc.autoTable({
+      head: [["Rank", "Supplier", "Risk", "Realisasi MT", "Delta COA", "Dispute"]],
+      body: (managementReport.supplier_scorecard || []).slice(0, 10).map(row => [
+        row.rank,
+        row.supplier,
+        row.risk_status,
+        formatNumber(row.realized_tonnage),
+        formatNumber(row.avg_coa_delta, 2),
+        row.active_disputes
+      ]),
+      startY: doc.lastAutoTable.finalY + 8,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [15, 23, 42], textColor: 255 }
+    });
+    doc.autoTable({
+      head: [["AI Advisor", "Severity", "Source"]],
+      body: (advisorReport?.recommendations || []).slice(0, 8).map(row => [row.title, row.severity, row.source_slice]),
+      startY: doc.lastAutoTable.finalY + 8,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [88, 28, 135], textColor: 255 }
     });
     doc.autoTable({
       head: [["Source", "Count"]],
@@ -600,7 +676,7 @@ const LaporanPage = () => {
             ))}
           </TabsList>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,1fr)_250px_160px_160px_auto] gap-3 items-end mb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(180px,1fr)_180px_250px_160px_160px_auto] gap-3 items-end mb-4">
             <div className="relative">
               <Label className="text-slate-400 text-xs">Cari</Label>
               <Search className="absolute left-3 bottom-3 w-4 h-4 text-slate-500" />
@@ -612,6 +688,19 @@ const LaporanPage = () => {
                 data-testid="search-laporan-input"
               />
             </div>
+            <Select value={filterPeriod} onValueChange={(val) => { setFilterPeriod(val); setPagination({ page: 1, total: 0, totalPages: 0 }); }} disabled={activeTab !== "management"}>
+              <SelectTrigger className="w-full bg-slate-950/50 border-slate-800 text-white disabled:opacity-40" data-testid="filter-period-select">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Periode Laporan" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0B1221] border-slate-800 max-h-[300px]">
+                {REPORT_PERIOD_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value} className="text-white text-sm">
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={filterSupplier} onValueChange={(val) => { setFilterSupplier(val); setPagination({ page: 1, total: 0, totalPages: 0 }); }}>
               <SelectTrigger className="w-full bg-slate-950/50 border-slate-800 text-white" data-testid="filter-supplier-select">
                 <Filter className="w-4 h-4 mr-2" />
@@ -671,7 +760,58 @@ const LaporanPage = () => {
                         <Card className="bg-slate-950/40 border-white/5 p-4">
                           <p className="text-slate-400 text-sm">Dispute/Umpire</p>
                           <p className="text-2xl font-bold text-red-400 mt-1">{managementReport.disputes.umpire.active}</p>
-                          <p className="text-slate-500 text-xs mt-1">aktif | {managementReport.disputes.umpire.completed} selesai</p>
+                          <p className="text-slate-500 text-xs mt-1">aktif | {managementReport.disputes.stale_count || 0} stale</p>
+                        </Card>
+                      </div>
+
+                      {(managementReport.data_health?.partial_warnings || []).length > 0 && (
+                        <Card className="border-amber-500/30 bg-amber-500/10 p-4">
+                          <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-amber-300 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-semibold text-amber-200">Data parsial pada filter ini</p>
+                              <div className="mt-2 space-y-1">
+                                {managementReport.data_health.partial_warnings.map((item) => (
+                                  <p key={item} className="text-xs text-amber-100/80">{item}</p>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
+                        <Card className="bg-slate-950/40 border-white/5 p-4">
+                          <p className="text-slate-400 text-sm mb-3">Executive Summary</p>
+                          <div className="space-y-2">
+                            {(managementReport.executive_summary || []).map((item) => (
+                              <p key={item} className="text-sm text-slate-300 leading-relaxed">{item}</p>
+                            ))}
+                          </div>
+                        </Card>
+                        <Card className="bg-slate-950/40 border-white/5 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Brain className="w-4 h-4 text-cyan-400" />
+                            <p className="text-slate-300 text-sm font-semibold">AI Advisor</p>
+                          </div>
+                          <div className="space-y-3 max-h-72 overflow-y-auto">
+                            {(advisorReport?.recommendations || []).map((item) => (
+                              <div key={item.id} className="rounded-lg bg-slate-900/70 border border-slate-800 p-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-sm font-semibold text-white">{item.title}</p>
+                                  <span className={`rounded px-2 py-0.5 text-[10px] uppercase ${
+                                    item.severity === "critical" ? "bg-red-500/20 text-red-300" :
+                                    item.severity === "warning" ? "bg-amber-500/20 text-amber-300" :
+                                    "bg-cyan-500/20 text-cyan-300"
+                                  }`}>
+                                    {item.severity}
+                                  </span>
+                                </div>
+                                <p className="mt-2 text-xs text-slate-300">{item.recommendation}</p>
+                                <p className="mt-2 text-[10px] text-slate-500">Source: {item.source_slice}</p>
+                              </div>
+                            ))}
+                          </div>
                         </Card>
                       </div>
 
@@ -680,19 +820,33 @@ const LaporanPage = () => {
                           <Table>
                             <TableHeader>
                               <TableRow className="border-white/5 hover:bg-transparent">
+                                <TableHead className="text-slate-400 font-mono text-xs">Rank</TableHead>
                                 <TableHead className="text-slate-400 font-mono text-xs">Supplier</TableHead>
-                                <TableHead className="text-slate-400 font-mono text-xs">Record</TableHead>
+                                <TableHead className="text-slate-400 font-mono text-xs">Risk</TableHead>
                                 <TableHead className="text-slate-400 font-mono text-xs">Realisasi MT</TableHead>
-                                <TableHead className="text-slate-400 font-mono text-xs">Avg GCV</TableHead>
+                                <TableHead className="text-slate-400 font-mono text-xs">On-time</TableHead>
+                                <TableHead className="text-slate-400 font-mono text-xs">Avg Delta</TableHead>
+                                <TableHead className="text-slate-400 font-mono text-xs">Dispute</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {(managementReport.supplier_performance || []).map((item) => (
+                              {(managementReport.supplier_scorecard || []).map((item) => (
                                 <TableRow key={item.supplier} className="border-white/5 hover:bg-slate-900/50">
+                                  <TableCell className="text-slate-300">{item.rank}</TableCell>
                                   <TableCell className="text-slate-300">{item.supplier}</TableCell>
-                                  <TableCell className="text-slate-300">{item.record_count}</TableCell>
+                                  <TableCell>
+                                    <span className={`rounded px-2 py-1 text-[10px] uppercase ${
+                                      item.risk_status === "high" ? "bg-red-500/20 text-red-300" :
+                                      item.risk_status === "medium" ? "bg-amber-500/20 text-amber-300" :
+                                      "bg-emerald-500/20 text-emerald-300"
+                                    }`}>
+                                      {item.risk_status}
+                                    </span>
+                                  </TableCell>
                                   <TableCell className="font-mono text-cyan-400">{formatNumber(item.realized_tonnage)}</TableCell>
-                                  <TableCell className="font-mono text-green-400">{formatNumber(item.avg_gcv, 2)}</TableCell>
+                                  <TableCell className="font-mono text-green-400">{formatNumber(item.timeliness_rate, 1)}%</TableCell>
+                                  <TableCell className="font-mono text-amber-400">{formatNumber(item.avg_coa_delta, 2)}</TableCell>
+                                  <TableCell className="font-mono text-red-400">{item.active_disputes}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -708,9 +862,25 @@ const LaporanPage = () => {
                               </div>
                             ))}
                           </div>
+                          <div className="mt-4 border-t border-slate-800 pt-3 space-y-2">
+                            {(managementReport.source_slices || []).map((slice) => (
+                              <div key={slice.name} className="text-xs">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-slate-300">{slice.name}</span>
+                                  <span className="font-mono text-cyan-300">{slice.record_count}</span>
+                                </div>
+                                <p className="text-[10px] text-slate-500 truncate">{(slice.collections || []).join(", ")}</p>
+                              </div>
+                            ))}
+                          </div>
                           <p className="text-slate-500 text-xs mt-4">Generated: {formatDateForExport(managementReport.generated_at)}</p>
                         </Card>
                       </div>
+
+                      <Card className="bg-slate-950/40 border-white/5 p-4">
+                        <p className="text-slate-400 text-sm mb-3">Draft Memo Manajemen</p>
+                        <pre className="whitespace-pre-wrap text-sm text-slate-300 font-sans leading-relaxed">{advisorReport?.memo_draft || "Memo belum tersedia."}</pre>
+                      </Card>
                     </>
                   )}
                 </div>
