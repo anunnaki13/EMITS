@@ -19,6 +19,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 
@@ -27,6 +29,38 @@ class CheckResult:
     name: str
     ok: bool
     detail: str
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _payload(
+    *,
+    started_at: str,
+    finished_at: str,
+    base_url: str,
+    frontend_url: str | None,
+    results: list[CheckResult],
+) -> dict[str, Any]:
+    result_items = [{"name": result.name, "ok": result.ok, "detail": result.detail} for result in results]
+    passed = sum(1 for result in results if result.ok)
+    failed = len(results) - passed
+    return {
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "base_url": base_url,
+        "frontend_url": frontend_url,
+        "passed": passed,
+        "failed": failed,
+        "results": result_items,
+    }
+
+
+def _write_json_output(path: str, payload: dict[str, Any]) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def _request(method: str, url: str, payload: dict[str, Any] | None = None, token: str | None = None, timeout: int = 30) -> tuple[int, Any]:
@@ -96,10 +130,13 @@ def main() -> int:
     parser.add_argument("--db-name", default=os.environ.get("DB_NAME"))
     parser.add_argument("--email", default=os.environ.get("TEST_ADMIN_EMAIL"))
     parser.add_argument("--password", default=os.environ.get("TEST_ADMIN_PASSWORD"))
+    parser.add_argument("--json-output", help="Write structured smoke evidence JSON to this path")
+    parser.add_argument("--record-status", action="store_true", help="Post smoke evidence to /api/admin/runtime/smoke-report when auth succeeds")
     parser.add_argument("--skip-auth", action="store_true")
     args = parser.parse_args()
 
     base_url = args.base_url.rstrip("/")
+    started_at = _now_iso()
     results: list[CheckResult] = []
 
     health, _ = _check_http("backend health", "GET", f"{base_url}/api/health")
@@ -137,6 +174,37 @@ def main() -> int:
         for name, path in endpoints:
             check, _ = _check_http(name, "GET", f"{base_url}{path}", token=token)
             results.append(check)
+
+    if args.record_status:
+        record_payload = _payload(
+            started_at=started_at,
+            finished_at=_now_iso(),
+            base_url=base_url,
+            frontend_url=args.frontend_url,
+            results=results,
+        )
+        if not token:
+            results.append(CheckResult("record smoke status", False, "admin token unavailable"))
+        else:
+            record_check, _ = _check_http(
+                "record smoke status",
+                "POST",
+                f"{base_url}/api/admin/runtime/smoke-report",
+                payload=record_payload,
+                token=token,
+            )
+            results.append(record_check)
+
+    final_payload = _payload(
+        started_at=started_at,
+        finished_at=_now_iso(),
+        base_url=base_url,
+        frontend_url=args.frontend_url,
+        results=results,
+    )
+
+    if args.json_output:
+        _write_json_output(args.json_output, final_payload)
 
     width = max(len(result.name) for result in results)
     for result in results:

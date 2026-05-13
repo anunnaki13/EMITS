@@ -24,6 +24,7 @@ echo "==> Loading backend env for backup"
 set -a
 . "$APP_DIR/backend/.env"
 set +a
+SMOKE_EVIDENCE_DIR="${SMOKE_EVIDENCE_DIR:-/var/log/emits/smoke}"
 
 echo "==> Creating pre-deploy MongoDB backup"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -52,8 +53,19 @@ sudo systemctl reload nginx
 
 echo "==> Running smoke check"
 cd "$APP_DIR"
-"$APP_DIR/backend/.venv/bin/python" "$APP_DIR/ops/scripts/smoke_check.py" \
-  --base-url "$BASE_URL" \
+sudo mkdir -p "$SMOKE_EVIDENCE_DIR"
+sudo chown "$(id -u):$(id -g)" "$SMOKE_EVIDENCE_DIR" || true
+smoke_evidence="$SMOKE_EVIDENCE_DIR/deploy-smoke-$timestamp.json"
+smoke_args=(
+  --base-url "$BASE_URL"
   --frontend-url "$FRONTEND_URL"
+  --json-output "$smoke_evidence"
+)
+if [ -n "${TEST_ADMIN_EMAIL:-}" ] && [ -n "${TEST_ADMIN_PASSWORD:-}" ]; then
+  smoke_args+=(--record-status)
+fi
+"$APP_DIR/backend/.venv/bin/python" "$APP_DIR/ops/scripts/smoke_check.py" \
+  "${smoke_args[@]}"
 
 echo "Deploy complete. Backup snapshot: $BACKUP_DIR/$timestamp"
+echo "Smoke evidence: $smoke_evidence"
