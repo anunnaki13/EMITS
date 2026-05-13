@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Production Operations & Decision Intelligence
-status: ready_to_complete_milestone
-stopped_at: Completed v1.3 milestone audit with tech_debt status
-last_updated: "2026-05-14T03:24:00+07:00"
-last_activity: 2026-05-14 — v1.3 milestone audit completed
+status: Awaiting next milestone
+stopped_at: Completed and archived v1.3 milestone with tech_debt status
+last_updated: "2026-05-14T03:30:50+07:00"
+last_activity: 2026-05-14 — Milestone v1.3 completed and archived
 progress:
   total_phases: 7
   completed_phases: 7
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** v1.3 milestone completion
+**Current focus:** planning the next milestone
 
 ## Current Position
 
-Phase: milestone audit
+Phase: Milestone v1.3 complete
 Plan: —
-Status: All v1.3 requirements satisfied; audit status `tech_debt`; milestone completion ready
-Last activity: 2026-05-14 — v1.3 milestone audit completed
+Status: Awaiting next milestone
+Last activity: 2026-05-14 — Milestone v1.3 completed and archived
 
 ## Performance Metrics
 
@@ -113,7 +113,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Complete the v1.3 milestone if audit tech debt is accepted.
+- Start the next milestone when ready.
 
 ### Blockers/Concerns
 
@@ -133,13 +133,18 @@ Items acknowledged at v1.2 milestone close.
 | Frontend | React hook dependency warnings register | Documented | v1.2 audit |
 | Deployment | Use nginx static frontend on real VPS | Operational follow-up | v1.2 audit |
 | AI | Optional LLM polish over deterministic advisor | Future enhancement | v1.2 audit |
+| Frontend | Legacy React hook warnings outside LaporanPage | Documented | v1.3 audit |
+| Process | Nyquist metadata backfill for validation files | Optional | v1.3 audit |
+| UI QA | Browser screenshot automation for dashboard/report surfaces | Future hardening | v1.3 audit |
+| Deployment | Run full runtime status script on real VPS after deployment | Operational follow-up | v1.3 audit |
+| Analytics | Persisted data-quality snapshots and statistical forecasts | Future enhancement | v1.3 audit |
 
 ## Session Continuity
 
-Last session: 2026-05-14T03:24:00+07:00
-Stopped at: Completed v1.3 milestone audit with tech_debt status
+Last session: 2026-05-14T03:30:50+07:00
+Stopped at: Completed and archived v1.3 milestone with tech_debt status
 Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Complete v1.3 with `$gsd-complete-milestone v1.3`
+- Start the next milestone with `$gsd-new-milestone`

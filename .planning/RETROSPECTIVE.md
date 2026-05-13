@@ -2,6 +2,53 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v1.3 — Production Operations & Decision Intelligence
+
+**Shipped:** 2026-05-14
+**Phases:** 7 | **Implementation summaries:** 7 | **Sessions:** continued Codex/GSD execution
+
+### What Was Built
+
+- Static nginx production operation with admin runtime status, smoke evidence, deployment/runbook updates, and safe web-side status allowlisting.
+- Real dashboard drilldowns into stock, PO, COA, dispute, and management report pages with preserved period/supplier/mode context.
+- Backend service boundaries for dashboard, management reports, shared query filters, trend analytics, data quality, and advisor logic.
+- Data quality monitor with issue detection, import-preview impact, report/dashboard caveats, UI surface, and CSV export.
+- Trend analytics and deterministic stock forecasting in dashboard, management report, PDF, and Excel exports.
+- AI advisor v3 with trend/data-quality context, confidence, limitations, grouped recommendations, owner roles, and optional LLM memo polish.
+- Operator UI polish with first-viewport quick actions, role-aware data-quality link, visible caveats, stable card sizing, and Laporan hook cleanup.
+
+### What Worked
+
+- Layering data quality, trend analytics, and advisor improvements on top of shared report/dashboard services kept the payloads consistent.
+- Focused backend tests were enough to protect response contracts while allowing incremental refactors.
+- Keeping LLM polish optional preserved deterministic advisor behavior and avoided unsupported operational claims.
+
+### What Was Inefficient
+
+- React hook warnings remain in legacy page groups, so build output is still noisy despite being documented and reduced.
+- Visual verification still relies on production build plus code review rather than screenshot automation.
+- The GSD archive command created a useful base archive, but milestone docs still needed manual cleanup for local date, richer summaries, and current project wording.
+
+### Patterns Established
+
+- Management-facing analytics should carry data-quality caveats and confidence metadata rather than showing silent totals.
+- Advisor output should group recommendations by urgency and owner while citing only source slices already visible in the report payload.
+- Dashboard first-viewport actions should be role-aware when they link to role-restricted workflows.
+
+### Key Lessons
+
+1. Backend service boundaries made later features faster because data quality, trend analytics, and advisor v3 could share one report context.
+2. For plant operations, honest caveats are as important as richer charts; sparse or suspicious data must be visible before recommendations.
+3. Incremental frontend hook cleanup is safer than broad page refactors when pages close over auth, filters, pagination, and toast behavior.
+
+### Cost Observations
+
+- Model mix: not tracked precisely.
+- Sessions: multiple continuation turns after Claude/GSD handoff.
+- Notable: persistent `.planning` artifacts allowed Phase 26-28 and milestone audit to continue without losing context.
+
+---
+
 ## Milestone: v1.2 — Operational Reliability & Data Governance
 
 **Shipped:** 2026-05-13
@@ -55,6 +102,7 @@
 |-----------|----------|--------|------------|
 | v1.1 | Multiple | 16 | Stabilized inherited production system and established ADR/test/doc baselines. |
 | v1.2 | Multiple | 5 | Shifted from stabilization to operational reliability, data governance, and decision support. |
+| v1.3 | Multiple | 7 | Shifted from reliability features to production operability, service boundaries, data quality, trends, and source-aware advisor workflows. |
 
 ### Cumulative Quality
 
@@ -62,9 +110,11 @@
 |-----------|-------|----------|--------------|
 | v1.1 | Integration smoke 7/7 | Production stabilization scope | Audit passed. |
 | v1.2 | 13 focused tests + smoke 10/10 | 32/32 active requirements | Audit completed with non-blocking tech debt only. |
+| v1.3 | Focused backend tests per phase + frontend build | 37/37 active requirements | Audit completed with non-blocking tech debt only. |
 
 ### Top Lessons
 
 1. Keep production secrets and credentials out of committed artifacts even when test convenience suffers.
 2. Archive milestone requirements immediately after close so future planning starts from a clean requirement set.
 3. Every operationally risky data path should expose preview, traceability, and rollback evidence.
+4. Decision intelligence features need caveats, confidence, and source slices as first-class UI/API fields.

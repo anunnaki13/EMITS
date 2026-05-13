@@ -1,5 +1,46 @@
 # Milestones
 
+## v1.3 Production Operations & Decision Intelligence (Shipped: 2026-05-14)
+
+**Status:** shipped, audit completed with non-blocking tech debt
+**Phases:** 22-28
+**Requirements:** 37/37 active v1.3 requirements satisfied
+**Verification:** 7/7 phases have verification and validation artifacts
+**Integration:** 11/11 audit integration checks passing
+
+### Delivered
+
+- Static nginx production operation with admin runtime health, operator smoke evidence, and safer deploy/runbook flow.
+- Dashboard drilldowns that preserve period, supplier, and mode context into stock, PO, COA, dispute, and reports.
+- Backend service boundaries for dashboard, management reports, shared filters, and operational advisor calculations.
+- Data quality monitor with rule-based issue detection, dashboard/report caveats, import-preview impact, and CSV export.
+- Trend analytics and stock forecasting for dashboard, report UI, PDF, and Excel exports.
+- AI advisor v3 with trend/data-quality source context, confidence, limitations, grouped recommendations, and deterministic fallback.
+- Operator UI/UX polish with first-viewport quick actions, visible quality caveats, role-aware data-quality action, and Laporan hook cleanup.
+
+### Stats
+
+- 7 phases, 7 implementation summaries
+- 37 requirements satisfied
+- Focused backend tests passed in each phase; frontend build passing with documented legacy hook warnings
+- Git range: `87d9c97` -> `97411f9`
+
+### Archives
+
+- [Roadmap archive](milestones/v1.3-ROADMAP.md)
+- [Requirements archive](milestones/v1.3-REQUIREMENTS.md)
+- [Milestone audit](milestones/v1.3-MILESTONE-AUDIT.md)
+
+### Deferred
+
+- Legacy React hook warnings remain documented in `docs/quality/REACT_HOOK_WARNINGS.md`.
+- Nyquist metadata exists unevenly across validation files and can be backfilled later.
+- Visual QA was build/review based; browser screenshot automation remains a future hardening item.
+- Full `ops/scripts/runtime_status.sh` should still be run on the real VPS after deployment.
+- Data-quality scans and forecasts remain deterministic/rule-based; persisted snapshots or statistical prediction can be future phases.
+
+---
+
 ## v1.2 Operational Reliability & Data Governance (Shipped: 2026-05-13)
 
 **Status:** shipped, audit completed with non-blocking tech debt

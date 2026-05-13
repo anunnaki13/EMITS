@@ -2,24 +2,26 @@
 
 ## What This Is
 
-EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestones v1.1 and v1.2 are shipped; v1.3 focuses on production operations, backend maintainability, and decision intelligence.
+EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestones v1.1, v1.2, and v1.3 are shipped; the next milestone is pending definition.
 
 ## Current State
 
-**Shipped version:** v1.2, completed 2026-05-13.
-**Current milestone:** v1.3 - Production Operations & Decision Intelligence, implementation complete and pending milestone audit.
+**Shipped version:** v1.3, completed 2026-05-14.
+**Current milestone:** pending; start with `$gsd-new-milestone`.
 
 v1.1 delivered production audit/onboarding, authentication stabilization, documentation/test stabilization, collection naming cleanup, OpenRouter/AI chat operational unblocks, backend refactor foundation, advanced filters, dashboard control room, alerts, formal dispute/umpire workflow, Excel import preview, audit trail v2, management reports, and contextual AI.
 
 v1.2 delivered backup automation, COA import governance, production deployment hardening, dashboard command center v3, management report v2, supplier scorecards, source-traceable exports, and deterministic AI advisor recommendations with Indonesian memo drafting.
 
-**Audit status:** v1.3 implementation audited with `tech_debt` status only. See `.planning/v1.3-MILESTONE-AUDIT.md`. v1.2 closed with `tech_debt` status only; see `.planning/milestones/v1.2-MILESTONE-AUDIT.md`.
+v1.3 delivered static nginx production operation, real dashboard drilldowns, backend service boundaries, data-quality monitoring, trend analytics and forecasting, AI advisor v3, and operator UI/UX polish.
 
-## Current Milestone: v1.3 Production Operations & Decision Intelligence
+**Audit status:** v1.3 closed with `tech_debt` status only. See `.planning/milestones/v1.3-MILESTONE-AUDIT.md`. v1.2 also closed with `tech_debt` status only; see `.planning/milestones/v1.2-MILESTONE-AUDIT.md`.
 
-**Goal:** Move EMITS from "feature-complete enough" toward a more operable, maintainable, decision-oriented production system: static nginx deployment, real drilldowns, cleaner backend service boundaries, data quality monitoring, trend analytics, safer AI advice, and stronger operator UI polish.
+## Latest Milestone: v1.3 Production Operations & Decision Intelligence
 
-**Target features:**
+**Goal delivered:** Move EMITS from "feature-complete enough" toward a more operable, maintainable, decision-oriented production system: static nginx deployment, real drilldowns, cleaner backend service boundaries, data quality monitoring, trend analytics, safer AI advice, and stronger operator UI polish.
+
+**Delivered features:**
 - Production VPS cutover to static nginx frontend with visible service/smoke status.
 - Dashboard drilldowns that carry filters into stock, arrivals, COA, dispute, and reporting pages.
 - Backend refactor of shared dashboard/report/advisor calculations into tested service boundaries.
@@ -28,7 +30,7 @@ v1.2 delivered backup automation, COA import governance, production deployment h
 - AI advisor v3 that can explain trend/data-quality context while preserving deterministic fallback and source limits.
 - UI/UX polish across dashboard, reports, filters, states, and common operator workflows.
 
-## Latest Milestone: v1.2 Operational Reliability & Data Governance
+## Previous Milestone: v1.2 Operational Reliability & Data Governance
 
 **Goal delivered:** Make EMITS safer to operate as production software by automating backups, hardening deployment, making COA data imports reversible/validated, and polishing the control-room experience.
 
@@ -40,11 +42,11 @@ v1.2 delivered backup automation, COA import governance, production deployment h
 - Management report and AI advisor v2 with source-backed executive summaries, supplier scorecards, and recommended next actions.
 - Engineering cleanup for React hook warnings, focused test credential loading, and repository layout hygiene.
 
-**Carried forward into v1.3:**
-- Production VPS cutover to nginx static frontend and service monitoring.
-- Deeper drilldown adoption of dashboard query filters inside destination pages.
-- LLM-polished advisor narrative on top of the current bounded, deterministic report payload.
-- Multi-month trend analytics and forecasting beyond current rule-based projections.
+**Resolved by v1.3:**
+- Production VPS static nginx path and service monitoring are now documented and surfaced in app/runtime scripts.
+- Dashboard query filters now drive destination pages instead of remaining URL-only context.
+- Advisor narrative can optionally be LLM-polished while deterministic output remains the default.
+- Multi-period trend analytics and rule-based stock forecasting are now available in dashboard/report/export flows.
 
 ## Core Value
 
@@ -77,16 +79,17 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 - ✓ REPORT2-01..04: Management reporting v2 with monthly executive summary, supplier scorecard, PDF/Excel export, and source traceability — v1.2
 - ✓ AI2-01..04: AI advisor v2 with bounded source citations, recommended next actions, draft memo support, and guardrails — v1.2
 - ✓ CLEANUP-01..03: React hook warning register, focused pytest credential loading, and local artifact hygiene — v1.2
+- ✓ OPS3-01..05: Static nginx frontend cutover, runtime health/status visibility, deploy smoke evidence, and production runbook completion — v1.3
+- ✓ DRILL3-01..05: Dashboard drilldowns consume filters on destination pages, show active context, preserve back navigation, and handle empty states — v1.3
+- ✓ REF3-01..06: Backend service-boundary refactor for shared dashboard/report/advisor calculations, normalization helpers, tests, and response compatibility — v1.3
+- ✓ DQ3-01..06: Data quality monitor for stale, missing, duplicate, outlier, and inconsistent records with visible/exportable issue evidence — v1.3
+- ✓ TREND3-01..05: Multi-period trend analytics and forecasting for stock, arrivals, suppliers, COA deltas, disputes, and exports — v1.3
+- ✓ AI3-01..05: AI advisor v3 with trend/data-quality explanations, optional LLM narrative, deterministic fallback, limitations, and guardrail tests — v1.3
+- ✓ UX3-01..05: Operator UI/UX polish for dashboard/report layouts, workflow click reduction, responsive stability, states, and hook-warning cleanup — v1.3
 
 ### Active
 
-- [x] OPS3-01..05: Static nginx frontend cutover, runtime health/status visibility, deploy smoke evidence, and production runbook completion.
-- [x] DRILL3-01..05: Dashboard drilldowns consume filters on destination pages, show active context, preserve back navigation, and handle empty states.
-- [x] REF3-01..06: Backend service-boundary refactor for shared dashboard/report/advisor calculations, normalization helpers, tests, and response compatibility.
-- [x] DQ3-01..06: Data quality monitor for stale, missing, duplicate, outlier, and inconsistent records with visible/exportable issue evidence.
-- [x] TREND3-01..05: Multi-period trend analytics and forecasting for stock, arrivals, suppliers, COA deltas, disputes, and exports.
-- [x] AI3-01..05: AI advisor v3 with trend/data-quality explanations, optional LLM narrative, deterministic fallback, limitations, and guardrail tests.
-- [x] UX3-01..05: Operator UI/UX polish for dashboard/report layouts, workflow click reduction, responsive stability, states, and hook-warning cleanup.
+- No active milestone requirements. Define v1.4 with `$gsd-new-milestone`.
 
 ### Out of Scope
 
@@ -117,7 +120,7 @@ Live data inventory (snapshot at planning time):
 | ai_chat_history      | 10      | (legacy of: ai_conversations)          |
 | users                | 7       | admin/operator/viewer mix              |
 
-Operational situation: v1.2 is shipped and archived. The combined COA workbook update has been imported locally and pushed as code/docs support. The system now has safer backup, import governance, deployment, dashboard, reporting, and AI-advisor surfaces. v1.3 should convert those surfaces into stronger production operations and day-to-day decision workflows.
+Operational situation: v1.3 is shipped and archived. The combined COA workbook update has been imported locally and pushed as code/docs support. The system now has safer backup, import governance, deployment, dashboard, reporting, data-quality, trend, forecast, and source-aware AI-advisor surfaces. The next milestone should be selected from production feedback and remaining tech debt, not assumed automatically.
 
 Test credentials: present in upstream PRD but explicitly NOT committed. See local `memory/test_credentials.md` (gitignored).
 
@@ -150,10 +153,11 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 | Single-host VPS topology stays | Production is already there with real data; horizontal split is not justified at current load | — Pending (revisit if RAM/IO bottleneck shows up) |
 | v1.2 starts with operational reliability over new domain sprawl | EMITS is now live enough that backup, import safety, deployment repeatability, and auditability reduce more risk than adding unrelated modules | ✓ Applied (v1.2 roadmap) |
 | Close v1.2 with accepted non-blocking tech debt | Audit found no product or integration blockers; metadata backfill, hook warning register, nginx frontend cutover, and optional LLM polish can be handled later | ✓ Applied (v1.2 archive, 2026-05-13) |
-| v1.3 prioritizes operations plus decision intelligence | The app already has core modules; the next leverage is making production status, drilldowns, data quality, trends, and AI advice more actionable and maintainable | — Pending (v1.3 roadmap) |
+| v1.3 prioritizes operations plus decision intelligence | The app already has core modules; the next leverage is making production status, drilldowns, data quality, trends, and AI advice more actionable and maintainable | ✓ Applied (v1.3 archive, 2026-05-14) |
+| Close v1.3 with accepted non-blocking tech debt | Audit found no requirement, integration, or E2E blockers; remaining hook warnings, Nyquist metadata, visual automation, VPS runtime check, deterministic forecasts, and optional LLM polish are backlog items | ✓ Applied (v1.3 archive, 2026-05-14) |
 
 ---
-*Last updated: 2026-05-14 after Phase 28 completion.*
+*Last updated: 2026-05-14 after v1.3 milestone completion.*
 
 
 ## ADR Cross-Links (Phase-3 lock-in)
