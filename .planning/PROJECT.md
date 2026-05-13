@@ -13,7 +13,7 @@ v1.1 delivered production audit/onboarding, authentication stabilization, docume
 
 v1.2 delivered backup automation, COA import governance, production deployment hardening, dashboard command center v3, management report v2, supplier scorecards, source-traceable exports, and deterministic AI advisor recommendations with Indonesian memo drafting.
 
-**Audit status:** v1.2 closed with `tech_debt` status only. See `.planning/milestones/v1.2-MILESTONE-AUDIT.md`.
+**Audit status:** v1.3 implementation audited with `tech_debt` status only. See `.planning/v1.3-MILESTONE-AUDIT.md`. v1.2 closed with `tech_debt` status only; see `.planning/milestones/v1.2-MILESTONE-AUDIT.md`.
 
 ## Current Milestone: v1.3 Production Operations & Decision Intelligence
 

@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 implementation is complete. Phases 22-28 are complete and the milestone is ready for audit.
+v1.3 implementation is complete. Phases 22-28 are complete, milestone audit found no blockers, and the milestone is ready for completion with accepted tech debt.
 
 ## Milestone Goal
 
@@ -173,8 +173,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Audit v1.3 before milestone closure:
+Complete v1.3 if the audit tech debt is accepted:
 
 ```bash
-$gsd-audit-milestone v1.3
+$gsd-complete-milestone v1.3
 ```

@@ -21,6 +21,8 @@ Result: passed.
 
 Warnings: legacy React hook dependency warnings remain in the known warning register. The prior `LaporanPage.js` warning is removed.
 
+Audit follow-up: frontend build was rerun after role-gating the dashboard Data Quality quick action for admin/operator users.
+
 ## Requirement Validation
 
 | Requirement | Evidence | Status |
