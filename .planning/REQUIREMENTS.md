@@ -58,11 +58,11 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 ### AI Advisor v3 (AI3)
 
-- [ ] **AI3-01**: Advisor can summarize trend and data-quality findings using visible source slices.
-- [ ] **AI3-02**: Advisor can optionally use a configured LLM for narrative polish while deterministic fallback remains available.
-- [ ] **AI3-03**: Advisor exposes confidence and limitations when data quality or historical coverage is weak.
-- [ ] **AI3-04**: Advisor recommendations are grouped by urgency and suggested owner or operating role.
-- [ ] **AI3-05**: Tests prevent unsupported claims and prevent accidental live LLM calls in normal test runs.
+- [x] **AI3-01**: Advisor can summarize trend and data-quality findings using visible source slices.
+- [x] **AI3-02**: Advisor can optionally use a configured LLM for narrative polish while deterministic fallback remains available.
+- [x] **AI3-03**: Advisor exposes confidence and limitations when data quality or historical coverage is weak.
+- [x] **AI3-04**: Advisor recommendations are grouped by urgency and suggested owner or operating role.
+- [x] **AI3-05**: Tests prevent unsupported claims and prevent accidental live LLM calls in normal test runs.
 
 ### UI/UX Operator Polish (UX3)
 
@@ -100,15 +100,15 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | REF3-01..06 | Phase 24 | Complete |
 | DQ3-01..06 | Phase 25 | Complete |
 | TREND3-01..05 | Phase 26 | Complete |
-| AI3-01..05 | Phase 27 | Pending |
+| AI3-01..05 | Phase 27 | Complete |
 | UX3-01..05 | Phase 28 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0
-- Complete: 27
+- Complete: 32
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-14 after Phase 26 completion*
+*Last updated: 2026-05-14 after Phase 27 completion*

@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-26 are complete; Phase 27 is planned; remaining phases focus on AI advisor execution and UI/UX polish.
+v1.3 is in progress. Phases 22-27 are complete; remaining work focuses on UI/UX polish.
 
 ## Milestone Goal
 
@@ -111,7 +111,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 **Requirements:** AI3-01, AI3-02, AI3-03, AI3-04, AI3-05
 
-**Status:** Planned (2026-05-14)
+**Status:** Complete (2026-05-14)
 
 **Success criteria:**
 1. Advisor summarizes trends and data-quality caveats using visible source slices.
@@ -142,10 +142,10 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | REF3-01..06 | Phase 24 | Complete |
 | DQ3-01..06 | Phase 25 | Complete |
 | TREND3-01..05 | Phase 26 | Complete |
-| AI3-01..05 | Phase 27 | Pending |
+| AI3-01..05 | Phase 27 | Complete |
 | UX3-01..05 | Phase 28 | Pending |
 
-Coverage: 37/37 active v1.3 requirements mapped; 27/37 complete.
+Coverage: 37/37 active v1.3 requirements mapped; 32/37 complete.
 
 ## Completed Milestones
 
@@ -171,8 +171,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Execute Phase 27:
+Plan Phase 28:
 
 ```bash
-$gsd-execute-phase 27
+$gsd-plan-phase 28
 ```

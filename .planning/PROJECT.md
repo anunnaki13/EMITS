@@ -85,7 +85,7 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 - [x] REF3-01..06: Backend service-boundary refactor for shared dashboard/report/advisor calculations, normalization helpers, tests, and response compatibility.
 - [x] DQ3-01..06: Data quality monitor for stale, missing, duplicate, outlier, and inconsistent records with visible/exportable issue evidence.
 - [x] TREND3-01..05: Multi-period trend analytics and forecasting for stock, arrivals, suppliers, COA deltas, disputes, and exports.
-- [ ] AI3-01..05: AI advisor v3 with trend/data-quality explanations, optional LLM narrative, deterministic fallback, limitations, and guardrail tests.
+- [x] AI3-01..05: AI advisor v3 with trend/data-quality explanations, optional LLM narrative, deterministic fallback, limitations, and guardrail tests.
 - [ ] UX3-01..05: Operator UI/UX polish for dashboard/report layouts, workflow click reduction, responsive stability, states, and hook-warning cleanup.
 
 ### Out of Scope
