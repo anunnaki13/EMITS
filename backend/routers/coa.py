@@ -29,6 +29,7 @@ from services.coa_reconciliation import (
     parse_combined_coa_workbook,
     parse_coa_excel,
 )
+from services.data_quality import summarize_coa_preview_quality
 from utils.auth import get_current_user, require_role
 from utils.database import db
 
@@ -139,6 +140,7 @@ def _public_preview_response(preview: dict) -> dict:
         "issues": (preview.get("issues") or [])[:100],
         "diff_summary": preview.get("diff_summary") or {},
         "preservation_summary": preview.get("preservation_summary") or {},
+        "data_quality": preview.get("data_quality") or summarize_coa_preview_quality(preview),
         "preview_rows": (preview.get("records") or [])[:10],
         "allowed_modes": ["merge", "replace"],
         "status": preview.get("status"),
@@ -432,6 +434,7 @@ async def preview_combined_coa_file(
         merged_data, source_counts = parse_combined_coa_workbook(contents)
         existing_records = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(50000)
         preview = build_combined_coa_import_preview(merged_data, source_counts, existing_records)
+        data_quality = summarize_coa_preview_quality(preview)
         preview_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
         preview_doc = {
@@ -445,6 +448,7 @@ async def preview_combined_coa_file(
             "validation_summary": preview["validation_summary"],
             "diff_summary": preview["diff_summary"],
             "preservation_summary": preview["preservation_summary"],
+            "data_quality": data_quality,
             "status": "previewed",
             "created_at": now,
             "created_by": user["id"],

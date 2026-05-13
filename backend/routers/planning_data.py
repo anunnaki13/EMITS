@@ -10,6 +10,7 @@ import pandas as pd
 from pydantic import BaseModel
 
 from models import MeritOrderCreate, MeritOrderResponse, POBatubaraCreate, POBatubaraResponse
+from services.data_quality import summarize_import_quality
 from utils.auth import get_current_user, require_role
 from utils.database import db
 
@@ -193,6 +194,7 @@ async def _preview_import(dataset: str, contents: bytes, filename: str, user: di
     if existing_duplicate_count:
         issues.append({"row": None, "field": ",".join(key_fields), "type": "duplicate_existing", "message": f"{existing_duplicate_count} baris berpotensi duplikat dengan data existing"})
 
+    data_quality = summarize_import_quality(dataset, records, issues)
     preview_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     preview_doc = {
@@ -202,6 +204,7 @@ async def _preview_import(dataset: str, contents: bytes, filename: str, user: di
         "records": records,
         "columns": columns,
         "issues": issues,
+        "data_quality": data_quality,
         "status": "previewed",
         "created_at": now,
         "created_by": user["id"],
@@ -214,6 +217,7 @@ async def _preview_import(dataset: str, contents: bytes, filename: str, user: di
         "row_count": len(records),
         "issue_count": len(issues),
         "issues": issues[:100],
+        "data_quality": data_quality,
         "preview_rows": records[:10],
         "allowed_modes": ["append", "replace", "merge"],
     }
