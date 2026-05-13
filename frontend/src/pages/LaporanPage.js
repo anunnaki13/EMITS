@@ -313,6 +313,19 @@ const LaporanPage = () => {
     return "bg-slate-500/15 text-slate-300 border-slate-500/30";
   };
 
+  const advisorConfidenceTone = (level) => {
+    if (level === "high") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
+    if (level === "medium") return "border-amber-500/40 bg-amber-500/10 text-amber-300";
+    return "border-red-500/40 bg-red-500/10 text-red-300";
+  };
+
+  const urgencyTone = (urgency) => {
+    if (urgency === "critical") return "bg-red-500/20 text-red-300";
+    if (urgency === "warning") return "bg-amber-500/20 text-amber-300";
+    if (urgency === "watch") return "bg-blue-500/20 text-blue-300";
+    return "bg-cyan-500/20 text-cyan-300";
+  };
+
   const TrendDirectionIcon = ({ metric }) => {
     if (metric?.direction === "up") return <TrendingUp className="w-4 h-4" />;
     if (metric?.direction === "down") return <TrendingDown className="w-4 h-4" />;
@@ -698,6 +711,9 @@ const LaporanPage = () => {
   const reportTrend = managementReport?.trend_analytics || {};
   const reportTrendMetrics = reportTrend.metrics || {};
   const reportForecast = reportTrend.stock_forecast || {};
+  const advisorConfidence = advisorReport?.confidence || {};
+  const advisorLimitations = advisorReport?.limitations || [];
+  const advisorGroups = advisorReport?.recommendation_groups || [];
 
   return (
     <div className="space-y-6" data-testid="laporan-page">
@@ -1004,28 +1020,73 @@ const LaporanPage = () => {
                           </div>
                         </Card>
                         <Card className="bg-slate-950/40 border-white/5 p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Brain className="w-4 h-4 text-cyan-400" />
-                            <p className="text-slate-300 text-sm font-semibold">AI Advisor</p>
+                          <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex items-center gap-2">
+                              <Brain className="w-4 h-4 text-cyan-400" />
+                              <p className="text-slate-300 text-sm font-semibold">AI Advisor</p>
+                            </div>
+                            {advisorReport?.confidence && (
+                              <span className={`w-fit rounded border px-2 py-1 text-[10px] font-semibold uppercase ${advisorConfidenceTone(advisorConfidence.level)}`}>
+                                Confidence {advisorConfidence.level || "low"} / {advisorConfidence.score ?? 0}
+                              </span>
+                            )}
                           </div>
+
+                          {advisorLimitations.length > 0 && (
+                            <div className="mb-3 rounded border border-amber-500/30 bg-amber-500/10 p-3">
+                              <p className="text-xs font-semibold text-amber-200">Batasan advisor</p>
+                              <div className="mt-2 space-y-1">
+                                {advisorLimitations.slice(0, 4).map((item) => (
+                                  <p key={item} className="text-[11px] text-amber-100/90">{item}</p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           <div className="space-y-3 max-h-72 overflow-y-auto">
-                            {(advisorReport?.recommendations || []).map((item) => (
+                            {advisorGroups.length > 0 ? advisorGroups.map((group) => (
+                              <div key={group.urgency} className="rounded-lg border border-slate-800 bg-slate-900/60">
+                                <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-3 py-2">
+                                  <p className="text-xs font-semibold text-slate-300">{group.label}</p>
+                                  <span className={`rounded px-2 py-0.5 text-[10px] uppercase ${urgencyTone(group.urgency)}`}>
+                                    {group.count} item
+                                  </span>
+                                </div>
+                                <div className="divide-y divide-slate-800">
+                                  {(group.items || []).map((item) => (
+                                    <div key={item.id} className="p-3">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <p className="text-sm font-semibold text-white">{item.title}</p>
+                                        <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] uppercase ${urgencyTone(item.urgency || item.severity)}`}>
+                                          {item.urgency_label || item.severity}
+                                        </span>
+                                      </div>
+                                      <p className="mt-2 text-xs text-slate-300 leading-relaxed">{item.recommendation}</p>
+                                      <p className="mt-2 text-[11px] text-slate-400 leading-relaxed">{item.evidence}</p>
+                                      <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
+                                        <span className="rounded bg-slate-800 px-2 py-1 text-slate-300">Owner: {item.owner_role || "-"}</span>
+                                        <span className="rounded bg-slate-800 px-2 py-1 text-slate-300">Source: {item.source_slice}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )) : (advisorReport?.recommendations || []).map((item) => (
                               <div key={item.id} className="rounded-lg bg-slate-900/70 border border-slate-800 p-3">
                                 <div className="flex items-start justify-between gap-2">
                                   <p className="text-sm font-semibold text-white">{item.title}</p>
-                                  <span className={`rounded px-2 py-0.5 text-[10px] uppercase ${
-                                    item.severity === "critical" ? "bg-red-500/20 text-red-300" :
-                                    item.severity === "warning" ? "bg-amber-500/20 text-amber-300" :
-                                    "bg-cyan-500/20 text-cyan-300"
-                                  }`}>
-                                    {item.severity}
+                                  <span className={`rounded px-2 py-0.5 text-[10px] uppercase ${urgencyTone(item.urgency || item.severity)}`}>
+                                    {item.urgency_label || item.severity}
                                   </span>
                                 </div>
                                 <p className="mt-2 text-xs text-slate-300">{item.recommendation}</p>
-                                <p className="mt-2 text-[10px] text-slate-500">Source: {item.source_slice}</p>
+                                <p className="mt-2 text-[10px] text-slate-500">Owner: {item.owner_role || "-"} | Source: {item.source_slice}</p>
                               </div>
                             ))}
                           </div>
+                          {advisorReport?.guardrails?.fallback_reason && (
+                            <p className="mt-3 text-[10px] text-slate-500">{advisorReport.guardrails.fallback_reason}</p>
+                          )}
                         </Card>
                       </div>
 
