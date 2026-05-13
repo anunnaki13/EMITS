@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-24 are complete; remaining phases focus on data quality, trend analytics, AI advice, and UI/UX polish.
+v1.3 is in progress. Phases 22-25 are complete; remaining phases focus on trend analytics, AI advice, and UI/UX polish.
 
 ## Milestone Goal
 
@@ -80,6 +80,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 **Requirements:** DQ3-01, DQ3-02, DQ3-03, DQ3-04, DQ3-05, DQ3-06
 
+**Status:** Complete (2026-05-14)
+
 **Success criteria:**
 1. Data quality checks identify stale records, missing dates, duplicates, unrealistic values, and COA outlier deltas.
 2. Admin/operator UI shows issue summary, severity, module, source record, and suggested fix.
@@ -134,12 +136,12 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | OPS3-01..05 | Phase 22 | Complete |
 | DRILL3-01..05 | Phase 23 | Complete |
 | REF3-01..06 | Phase 24 | Complete |
-| DQ3-01..06 | Phase 25 | Pending |
+| DQ3-01..06 | Phase 25 | Complete |
 | TREND3-01..05 | Phase 26 | Pending |
 | AI3-01..05 | Phase 27 | Pending |
 | UX3-01..05 | Phase 28 | Pending |
 
-Coverage: 37/37 active v1.3 requirements mapped; 16/37 complete.
+Coverage: 37/37 active v1.3 requirements mapped; 22/37 complete.
 
 ## Completed Milestones
 
@@ -165,8 +167,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Execute Phase 25:
+Plan Phase 26:
 
 ```bash
-$gsd-execute-phase 25
+$gsd-plan-phase 26
 ```

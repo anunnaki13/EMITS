@@ -41,12 +41,12 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 ### Data Quality Monitor (DQ3)
 
-- [ ] **DQ3-01**: System computes data quality checks for stale data, missing dates, duplicates, negative/unrealistic values, and COA outlier deltas.
-- [ ] **DQ3-02**: Admin/operator can view a data quality summary and issue list with module, severity, source record, and suggested fix.
-- [ ] **DQ3-03**: Dashboard and management reports include data-quality caveats when source data is incomplete or suspicious.
-- [ ] **DQ3-04**: Import flows surface data-quality impact before commit when uploaded data would create warnings or critical issues.
-- [ ] **DQ3-05**: Data quality results are exportable or auditable for management follow-up.
-- [ ] **DQ3-06**: Tests cover clean, warning, and critical data-quality cases.
+- [x] **DQ3-01**: System computes data quality checks for stale data, missing dates, duplicates, negative/unrealistic values, and COA outlier deltas.
+- [x] **DQ3-02**: Admin/operator can view a data quality summary and issue list with module, severity, source record, and suggested fix.
+- [x] **DQ3-03**: Dashboard and management reports include data-quality caveats when source data is incomplete or suspicious.
+- [x] **DQ3-04**: Import flows surface data-quality impact before commit when uploaded data would create warnings or critical issues.
+- [x] **DQ3-05**: Data quality results are exportable or auditable for management follow-up.
+- [x] **DQ3-06**: Tests cover clean, warning, and critical data-quality cases.
 
 ### Trend Analytics & Forecasting (TREND3)
 
@@ -98,7 +98,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | OPS3-01..05 | Phase 22 | Complete |
 | DRILL3-01..05 | Phase 23 | Complete |
 | REF3-01..06 | Phase 24 | Complete |
-| DQ3-01..06 | Phase 25 | Pending |
+| DQ3-01..06 | Phase 25 | Complete |
 | TREND3-01..05 | Phase 26 | Pending |
 | AI3-01..05 | Phase 27 | Pending |
 | UX3-01..05 | Phase 28 | Pending |
@@ -107,8 +107,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 - v1.3 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0
-- Complete: 16
+- Complete: 22
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-14 after Phase 24 completion*
+*Last updated: 2026-05-14 after Phase 25 completion*
