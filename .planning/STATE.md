@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Production Operations & Decision Intelligence
-status: Awaiting next milestone
-stopped_at: Completed and archived v1.3 milestone with tech_debt status
-last_updated: "2026-05-14T03:30:50+07:00"
-last_activity: 2026-05-14 — Milestone v1.3 completed and archived
+milestone: v1.4
+milestone_name: Production QA & Cleanup
+status: planning
+last_updated: "2026-05-14T04:20:24+07:00"
+last_activity: 2026-05-14 — Milestone v1.4 Production QA & Cleanup started
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-14)
 
 ## Current Position
 
-Phase: Milestone v1.3 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-14 — Milestone v1.3 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-14 — Milestone v1.4 Production QA & Cleanup started
 
 ## Performance Metrics
 
@@ -110,6 +109,7 @@ Recent decisions affecting current work:
 - [Phase 27]: Advisor v3 consumes trend/data-quality context, exposes confidence/limitations, groups recommendations by urgency/owner, keeps deterministic fallback default, and gates optional LLM memo polish behind `ADVISOR_LLM_POLISH=1`.
 - [Phase 28]: Dashboard quick actions, visible data-quality states, stable dashboard/report layout, and safe Laporan hook cleanup completed.
 - [Milestone v1.3]: Audit found 37/37 requirements satisfied, 7/7 phases verified, no critical gaps, and non-blocking tech debt only.
+- [Milestone v1.4]: Production QA & Cleanup selected to close accepted audit debt before larger feature expansion.
 
 ### Pending Todos
 
@@ -141,10 +141,10 @@ Items acknowledged at v1.2 milestone close.
 
 ## Session Continuity
 
-Last session: 2026-05-14T03:30:50+07:00
-Stopped at: Completed and archived v1.3 milestone with tech_debt status
+Last session: 2026-05-14T04:20:24+07:00
+Stopped at: Started v1.4 Production QA & Cleanup; defining requirements and roadmap
 Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Start the next milestone with `$gsd-new-milestone`
+- Define v1.4 requirements and roadmap, then start Phase 29.
