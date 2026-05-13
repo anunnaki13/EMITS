@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import RuntimeHealthPanel from "@/components/RuntimeHealthPanel";
 import {
   Dialog,
   DialogContent,
@@ -495,6 +496,8 @@ const SettingsPage = () => {
           <p className="text-slate-400 mt-1">Kelola sistem dan pengguna aplikasi</p>
         </div>
       </div>
+
+      <RuntimeHealthPanel getAuthHeader={getAuthHeader} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="glass-card border-white/5 p-6">
