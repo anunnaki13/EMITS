@@ -2,6 +2,7 @@ server {
     listen 80;
     server_name _;
 
+    # static nginx production path for the React build.
     root /var/www/emits;
     index index.html;
 
@@ -11,6 +12,7 @@ server {
     error_log /var/log/nginx/emits.error.log;
 
     location /api/ {
+        # Reverse proxy all application API calls to FastAPI.
         proxy_pass http://127.0.0.1:8013/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -23,6 +25,7 @@ server {
     }
 
     location / {
+        # React Router fallback; required for direct refresh on app routes.
         try_files $uri /index.html;
     }
 }
