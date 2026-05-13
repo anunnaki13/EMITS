@@ -4,6 +4,7 @@ from typing import Optional
 from dateutil.relativedelta import relativedelta
 
 from models import DashboardStats
+from services.data_quality import build_data_quality_caveat
 from services.query_filters import (
     aging_days,
     distinct_strings,
@@ -256,6 +257,7 @@ async def build_dashboard_operational(
         {"value": "trucking", "label": "Trucking"},
         {"value": "biomassa", "label": "Biomassa"},
     ]
+    data_quality = await build_data_quality_caveat(limit=5)
 
     return {
         "period": selected_period,
@@ -306,6 +308,7 @@ async def build_dashboard_operational(
             "recent": recent_disputes,
         },
         "supplier_risk": supplier_risk,
+        "data_quality": data_quality,
     }
 
 async def build_dashboard_stats(user: Optional[dict] = None):
