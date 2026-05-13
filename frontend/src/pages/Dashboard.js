@@ -224,6 +224,7 @@ const Dashboard = () => {
   const stock = operationalStats?.stock || {};
   const arrivals = operationalStats?.arrivals || {};
   const disputes = operationalStats?.disputes || {};
+  const dataQuality = operationalStats?.data_quality || {};
   const trendAnalytics = operationalStats?.trend_analytics || {};
   const trendMetrics = trendAnalytics.metrics || {};
   const stockForecast = trendAnalytics.stock_forecast || {};
@@ -277,6 +278,43 @@ const Dashboard = () => {
     const query = params.toString();
     return query ? `${path}?${query}` : path;
   };
+  const quickActions = [
+    {
+      label: "Stock Batubara",
+      metric: `${formatNumber(stock.current_stock || 0)} MT`,
+      href: drilldownHref("/smart-stock/sumber-penerimaan"),
+      icon: Package,
+      tone: "text-cyan-300",
+    },
+    {
+      label: "Jadwal PO",
+      metric: `${arrivals.at_risk_count || 0} at-risk`,
+      href: drilldownHref("/po-batubara"),
+      icon: CalendarCheck,
+      tone: "text-blue-300",
+    },
+    {
+      label: "Dispute / Umpire",
+      metric: `${disputes.umpire?.active || 0} aktif`,
+      href: drilldownHref("/dispute-monitor"),
+      icon: Scale,
+      tone: "text-red-300",
+    },
+    {
+      label: "Report Manajemen",
+      metric: `${trendAnalytics.confidence || "low"} confidence`,
+      href: drilldownHref("/laporan", { tab: "management" }),
+      icon: BarChart3,
+      tone: "text-emerald-300",
+    },
+    {
+      label: "Data Quality",
+      metric: `${dataQuality.counts?.critical || 0} critical`,
+      href: drilldownHref("/data-quality"),
+      icon: AlertTriangle,
+      tone: dataQuality.status === "critical" ? "text-red-300" : "text-amber-300",
+    },
+  ];
 
   return (
     <div className="space-y-6 sm:space-y-8" data-testid="dashboard-page">
@@ -327,9 +365,57 @@ const Dashboard = () => {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+        {quickActions.map((item) => {
+          const Icon = item.icon;
+          return (
+            <a
+              key={item.label}
+              href={item.href}
+              className="rounded-lg border border-white/10 bg-slate-900/45 p-3 hover:border-cyan-500/30 hover:bg-slate-900/70"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-mono uppercase text-slate-500">{item.label}</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-white">{item.metric}</p>
+                </div>
+                <Icon className={`h-5 w-5 shrink-0 ${item.tone}`} />
+              </div>
+            </a>
+          );
+        })}
+      </div>
+
+      {["critical", "warning"].includes(dataQuality.status) && (
+        <div className={`rounded-lg border p-4 ${
+          dataQuality.status === "critical"
+            ? "border-red-500/30 bg-red-500/10"
+            : "border-amber-500/30 bg-amber-500/10"
+        }`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className={`mt-0.5 h-5 w-5 ${dataQuality.status === "critical" ? "text-red-300" : "text-amber-300"}`} />
+              <div>
+                <p className={`text-sm font-semibold ${dataQuality.status === "critical" ? "text-red-200" : "text-amber-200"}`}>
+                  Data perlu dicek sebelum keputusan final
+                </p>
+                <div className="mt-2 space-y-1">
+                  {(dataQuality.caveats || []).slice(0, 3).map((item) => (
+                    <p key={item} className="text-xs text-slate-200/85">{item}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <a href="/data-quality" className="shrink-0 rounded bg-slate-950/60 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900">
+              Buka Data Quality
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Operational First Viewport */}
       <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="glass-card border-white/10">
+        <Card className="glass-card border-white/10 min-h-[360px]">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-3">
               <CardTitle className="font-heading text-base text-white flex items-center gap-2">
@@ -378,7 +464,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-white/10">
+        <Card className="glass-card border-white/10 min-h-[360px]">
           <CardHeader className="pb-3">
             <CardTitle className="font-heading text-base text-white flex items-center gap-2">
               <CalendarCheck className="w-5 h-5 text-blue-400" />
@@ -444,7 +530,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-white/10">
+        <Card className="glass-card border-white/10 min-h-[360px]">
           <CardHeader className="pb-3">
             <CardTitle className="font-heading text-base text-white flex items-center gap-2">
               <Scale className="w-5 h-5 text-red-400" />
@@ -500,7 +586,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-white/10">
+        <Card className="glass-card border-white/10 min-h-[360px]">
           <CardHeader className="pb-3">
             <CardTitle className="font-heading text-base text-white flex items-center gap-2">
               <Activity className="w-5 h-5 text-amber-400" />

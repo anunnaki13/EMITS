@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
@@ -59,6 +59,7 @@ import DashboardDrilldownBar from "@/components/DashboardDrilldownBar";
 import { buildResetPath, dashboardEmptyText, parseDashboardDrilldown, periodToDateRange, periodToYearMonth } from "@/utils/dashboardDrilldown";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const PAGE_SIZE = 50;
 const REPORT_PERIOD_OPTIONS = [
   { value: "all", label: "Semua Periode" },
   { value: "2026", label: "2026" },
@@ -113,8 +114,6 @@ const LaporanPage = () => {
   const [dateTo, setDateTo] = useState(initialState.dateTo);
   const [suppliersList, setSuppliersList] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
-  const PAGE_SIZE = 50;
-
   const categories = [
     { id: "management", label: "Manajemen", icon: BarChart3, color: "cyan" },
     { id: "vessel", label: "Vessel", icon: Ship, color: "cyan" },
@@ -125,15 +124,7 @@ const LaporanPage = () => {
     { id: "merit_order", label: "Merit Order", icon: ListOrdered, color: "pink" }
   ];
 
-  useEffect(() => {
-    fetchData(1);
-  }, [activeTab, search, filterSupplier, filterPeriod, dateFrom, dateTo]);
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
-
-  const fetchSuppliers = async () => {
+  const fetchSuppliers = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/suppliers`, {
         headers: getAuthHeader()
@@ -142,9 +133,9 @@ const LaporanPage = () => {
     } catch (error) {
       console.error("Error fetching suppliers:", error);
     }
-  };
+  }, [getAuthHeader]);
 
-  const fetchData = async (page = 1) => {
+  const fetchData = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       if (activeTab === "management") {
@@ -214,7 +205,15 @@ const LaporanPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, dateFrom, dateTo, filterPeriod, filterSupplier, getAuthHeader, search]);
+
+  useEffect(() => {
+    fetchData(1);
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [fetchSuppliers]);
 
   const resetFilters = () => {
     setSearch("");
