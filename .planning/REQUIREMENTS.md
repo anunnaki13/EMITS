@@ -16,11 +16,11 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 ### Production Runtime & Observability (OPS3)
 
-- [ ] **OPS3-01**: Production frontend can be built and served as a static nginx site with `/api` reverse proxy; real operation no longer depends on `yarn start`.
-- [ ] **OPS3-02**: Operator can run one deploy/status command that verifies backend, frontend static build, nginx, MongoDB, disk usage, latest backup, and app version.
-- [ ] **OPS3-03**: Admin can view runtime health in the app, including backend status, DB connectivity, latest backup, latest smoke result, and build/version metadata.
-- [ ] **OPS3-04**: Production runbook covers restart, rollback, nginx reload, smoke check, and failure triage using current service paths.
-- [ ] **OPS3-05**: Post-deploy smoke check writes auditable evidence as a report artifact or persisted status record.
+- [x] **OPS3-01**: Production frontend can be built and served as a static nginx site with `/api` reverse proxy; real operation no longer depends on `yarn start`.
+- [x] **OPS3-02**: Operator can run one deploy/status command that verifies backend, frontend static build, nginx, MongoDB, disk usage, latest backup, and app version.
+- [x] **OPS3-03**: Admin can view runtime health in the app, including backend status, DB connectivity, latest backup, latest smoke result, and build/version metadata.
+- [x] **OPS3-04**: Production runbook covers restart, rollback, nginx reload, smoke check, and failure triage using current service paths.
+- [x] **OPS3-05**: Post-deploy smoke check writes auditable evidence as a report artifact or persisted status record.
 
 ### Dashboard Drilldowns (DRILL3)
 
@@ -95,7 +95,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OPS3-01..05 | Phase 22 | Pending |
+| OPS3-01..05 | Phase 22 | Complete |
 | DRILL3-01..05 | Phase 23 | Pending |
 | REF3-01..06 | Phase 24 | Pending |
 | DQ3-01..06 | Phase 25 | Pending |
@@ -107,7 +107,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 - v1.3 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0
+- Complete: 5
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after v1.3 milestone start*
+*Last updated: 2026-05-13 after Phase 22 completion*

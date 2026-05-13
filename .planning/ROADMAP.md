@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in planning. The milestone continues phase numbering from v1.2 and focuses on production operations, backend maintainability, data quality, trend analytics, AI advice, and UI/UX polish.
+v1.3 is in progress. Phase 22 is complete; remaining phases focus on dashboard drilldowns, backend maintainability, data quality, trend analytics, AI advice, and UI/UX polish.
 
 ## Milestone Goal
 
@@ -33,6 +33,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 **Goal:** Real production operation uses static nginx frontend, visible runtime health, and auditable smoke evidence.
 
 **Requirements:** OPS3-01, OPS3-02, OPS3-03, OPS3-04, OPS3-05
+
+**Status:** Complete (2026-05-13)
 
 **Success criteria:**
 1. React production build can be served through nginx with `/api` reverse proxy and no `yarn start` runtime dependency.
@@ -125,7 +127,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 | Requirement Group | Covered By | Status |
 |-------------------|------------|--------|
-| OPS3-01..05 | Phase 22 | Pending |
+| OPS3-01..05 | Phase 22 | Complete |
 | DRILL3-01..05 | Phase 23 | Pending |
 | REF3-01..06 | Phase 24 | Pending |
 | DQ3-01..06 | Phase 25 | Pending |
@@ -133,7 +135,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | AI3-01..05 | Phase 27 | Pending |
 | UX3-01..05 | Phase 28 | Pending |
 
-Coverage: 37/37 active v1.3 requirements mapped; 0/37 complete.
+Coverage: 37/37 active v1.3 requirements mapped; 5/37 complete.
 
 ## Completed Milestones
 
@@ -159,8 +161,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Execute Phase 22:
+Plan Phase 23:
 
 ```bash
-$gsd-execute-phase 22
+$gsd-plan-phase 23
 ```
