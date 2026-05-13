@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-23 are complete; remaining phases focus on backend maintainability, data quality, trend analytics, AI advice, and UI/UX polish.
+v1.3 is in progress. Phases 22-24 are complete; remaining phases focus on data quality, trend analytics, AI advice, and UI/UX polish.
 
 ## Milestone Goal
 
@@ -63,6 +63,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 **Goal:** Shared dashboard/report/advisor logic is moved into testable services without breaking API contracts.
 
 **Requirements:** REF3-01, REF3-02, REF3-03, REF3-04, REF3-05, REF3-06
+
+**Status:** Complete (2026-05-14)
 
 **Success criteria:**
 1. Shared calculations for operational dashboard, management reports, and advisor are extracted into service-layer modules.
@@ -131,13 +133,13 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 |-------------------|------------|--------|
 | OPS3-01..05 | Phase 22 | Complete |
 | DRILL3-01..05 | Phase 23 | Complete |
-| REF3-01..06 | Phase 24 | Pending |
+| REF3-01..06 | Phase 24 | Complete |
 | DQ3-01..06 | Phase 25 | Pending |
 | TREND3-01..05 | Phase 26 | Pending |
 | AI3-01..05 | Phase 27 | Pending |
 | UX3-01..05 | Phase 28 | Pending |
 
-Coverage: 37/37 active v1.3 requirements mapped; 10/37 complete.
+Coverage: 37/37 active v1.3 requirements mapped; 16/37 complete.
 
 ## Completed Milestones
 
@@ -163,8 +165,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Plan Phase 24:
+Plan Phase 25:
 
 ```bash
-$gsd-plan-phase 24
+$gsd-plan-phase 25
 ```

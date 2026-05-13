@@ -32,12 +32,12 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 ### Backend Refactor & Service Boundaries (REF3)
 
-- [ ] **REF3-01**: Shared dashboard, report, and AI advisor calculations move into service-layer functions with explicit inputs and outputs.
-- [ ] **REF3-02**: Duplicate date, number, period, supplier, and mode normalization helpers are consolidated and tested.
-- [ ] **REF3-03**: Router handlers stay thin: auth/role gate, request validation, service call, and response mapping.
-- [ ] **REF3-04**: Service-layer functions have focused unit tests that do not require committed secrets or live LLM calls.
-- [ ] **REF3-05**: Public API response contracts remain backward compatible unless a requirement explicitly documents a change.
-- [ ] **REF3-06**: Common backend errors use the existing Indonesian error taxonomy consistently across touched routes.
+- [x] **REF3-01**: Shared dashboard, report, and AI advisor calculations move into service-layer functions with explicit inputs and outputs.
+- [x] **REF3-02**: Duplicate date, number, period, supplier, and mode normalization helpers are consolidated and tested.
+- [x] **REF3-03**: Router handlers stay thin: auth/role gate, request validation, service call, and response mapping.
+- [x] **REF3-04**: Service-layer functions have focused unit tests that do not require committed secrets or live LLM calls.
+- [x] **REF3-05**: Public API response contracts remain backward compatible unless a requirement explicitly documents a change.
+- [x] **REF3-06**: Common backend errors use the existing Indonesian error taxonomy consistently across touched routes.
 
 ### Data Quality Monitor (DQ3)
 
@@ -97,7 +97,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 |-------------|-------|--------|
 | OPS3-01..05 | Phase 22 | Complete |
 | DRILL3-01..05 | Phase 23 | Complete |
-| REF3-01..06 | Phase 24 | Pending |
+| REF3-01..06 | Phase 24 | Complete |
 | DQ3-01..06 | Phase 25 | Pending |
 | TREND3-01..05 | Phase 26 | Pending |
 | AI3-01..05 | Phase 27 | Pending |
@@ -107,8 +107,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 - v1.3 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0
-- Complete: 10
+- Complete: 16
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-14 after Phase 23 completion*
+*Last updated: 2026-05-14 after Phase 24 completion*
