@@ -2,28 +2,36 @@
 
 ## What This Is
 
-EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestone v1.1 is shipped and audit-passed; v1.2 focuses on operational reliability and safer data governance.
+EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestones v1.1 and v1.2 are shipped; the project is ready for a fresh v1.3 requirements pass.
 
 ## Current State
 
-**Shipped version:** v1.1, completed 2026-05-12.
-**Current milestone:** v1.2 — Operational Reliability & Data Governance.
+**Shipped version:** v1.2, completed 2026-05-13.
+**Current milestone:** Not started. Next step is `$gsd-new-milestone`.
 
 v1.1 delivered production audit/onboarding, authentication stabilization, documentation/test stabilization, collection naming cleanup, OpenRouter/AI chat operational unblocks, backend refactor foundation, advanced filters, dashboard control room, alerts, formal dispute/umpire workflow, Excel import preview, audit trail v2, management reports, and contextual AI.
 
-**Audit status:** passed. See `.planning/v1.1-MILESTONE-AUDIT.md`.
+v1.2 delivered backup automation, COA import governance, production deployment hardening, dashboard command center v3, management report v2, supplier scorecards, source-traceable exports, and deterministic AI advisor recommendations with Indonesian memo drafting.
 
-## Current Milestone: v1.2 Operational Reliability & Data Governance
+**Audit status:** v1.2 closed with `tech_debt` status only. See `.planning/milestones/v1.2-MILESTONE-AUDIT.md`.
 
-**Goal:** Make EMITS safer to operate as production software by automating backups, hardening deployment, making COA data imports reversible/validated, and polishing the control-room experience.
+## Latest Milestone: v1.2 Operational Reliability & Data Governance
 
-**Target features:**
+**Goal delivered:** Make EMITS safer to operate as production software by automating backups, hardening deployment, making COA data imports reversible/validated, and polishing the control-room experience.
+
+**Delivered features:**
 - Scheduled database/application backup with retention, history, restore validation, and operator-visible status.
 - COA workbook import governance with preview, validation, duplicate detection, import history, and rollback-safe behavior.
 - Production deployment hardening for repeatable service restart, env/secret handling, health checks, and smoke verification.
 - Dashboard command center v3 with clearer stock risk, arrival realization, dispute/umpire, and supplier quality signals.
 - Management report and AI advisor v2 with source-backed executive summaries, supplier scorecards, and recommended next actions.
 - Engineering cleanup for React hook warnings, focused test credential loading, and repository layout hygiene.
+
+**Next milestone candidates:**
+- Production VPS cutover to nginx static frontend and service monitoring.
+- Deeper drilldown adoption of dashboard query filters inside destination pages.
+- LLM-polished advisor narrative on top of the current bounded, deterministic report payload.
+- Multi-month trend analytics and forecasting beyond current rule-based projections.
 
 ## Core Value
 
@@ -49,19 +57,17 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 - ✓ REQ-coa-export
 - ✓ REQ-laporan-supplier-filter
 - ✓ REQ-developer-docs-suite (initial generation; due for refresh)
+- ✓ BACKUP2-01..05: Scheduled backup automation, retention, history, restore validation, and backup health visibility — v1.2
+- ✓ COAIMP-01..06: Safe COA workbook import preview, validation, diff/duplicate detection, history, rollback, and preservation of dispute workflow state — v1.2
+- ✓ DEPLOY-01..05: Production service hardening, env/secret runbook, health/smoke checks, repeatable deploy, and repository hygiene — v1.2
+- ✓ DASH3-01..05: Dashboard command center v3 for stock risk, arrival realization, COA dispute/umpire, supplier quality, and drilldowns — v1.2
+- ✓ REPORT2-01..04: Management reporting v2 with monthly executive summary, supplier scorecard, PDF/Excel export, and source traceability — v1.2
+- ✓ AI2-01..04: AI advisor v2 with bounded source citations, recommended next actions, draft memo support, and guardrails — v1.2
+- ✓ CLEANUP-01..03: React hook warning register, focused pytest credential loading, and local artifact hygiene — v1.2
 
 ### Active
 
-<!-- v1.2 scope. See REQUIREMENTS.md for full requirement text and ROADMAP.md for traceability. -->
-
-- [x] BACKUP2-01..05: Scheduled backup automation, retention, history, restore validation, and backup health visibility.
-- [x] COAIMP-01..06: Safe COA workbook import preview, validation, diff/duplicate detection, history, rollback, and preservation of dispute workflow state.
-- [x] DEPLOY-01..05: Production service hardening, env/secret runbook, health/smoke checks, repeatable deploy, and repository hygiene.
-- [ ] DASH3-01..05: Dashboard command center v3 for stock risk, arrival realization, COA dispute/umpire, supplier quality, and drilldowns.
-- [ ] REPORT2-01..04: Management reporting v2 with monthly executive summary, supplier scorecard, PDF/Excel export, and source traceability.
-- [ ] AI2-01..04: AI advisor v2 with bounded source citations, recommended next actions, draft memo support, and guardrails.
-- [ ] CLEANUP-01: React hook warning cleanup.
-- [x] CLEANUP-02..03: Focused pytest credential loading without committed secrets and local artifact hygiene.
+None currently defined. Start the next requirements cycle with `$gsd-new-milestone`.
 
 ### Out of Scope
 
@@ -92,7 +98,7 @@ Live data inventory (snapshot at planning time):
 | ai_chat_history      | 10      | (legacy of: ai_conversations)          |
 | users                | 7       | admin/operator/viewer mix              |
 
-Operational situation: v1.1 is shipped and running. The combined COA workbook update has been imported locally and pushed as code/docs support. v1.2 should prioritize safer production operations over broad feature expansion: backups, import governance, deployment repeatability, and clearer management/operator decision surfaces.
+Operational situation: v1.2 is shipped and archived. The combined COA workbook update has been imported locally and pushed as code/docs support. The system now has safer backup, import governance, deployment, dashboard, reporting, and AI-advisor surfaces; the next milestone should be selected from live operational priorities rather than inferred from stale roadmap text.
 
 Test credentials: present in upstream PRD but explicitly NOT committed. See local `memory/test_credentials.md` (gitignored).
 
@@ -124,9 +130,10 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 | Treat collection naming debt as a tracked phase, not a silent migration | SPEC explicitly flags it; silent migration risks data loss against 721-row COA + 461-row trucking | — Pending (Phase 5) |
 | Single-host VPS topology stays | Production is already there with real data; horizontal split is not justified at current load | — Pending (revisit if RAM/IO bottleneck shows up) |
 | v1.2 starts with operational reliability over new domain sprawl | EMITS is now live enough that backup, import safety, deployment repeatability, and auditability reduce more risk than adding unrelated modules | ✓ Applied (v1.2 roadmap) |
+| Close v1.2 with accepted non-blocking tech debt | Audit found no product or integration blockers; metadata backfill, hook warning register, nginx frontend cutover, and optional LLM polish can be handled later | ✓ Applied (v1.2 archive, 2026-05-13) |
 
 ---
-*Last updated: 2026-05-13 after Phase 19 production deployment hardening completion.*
+*Last updated: 2026-05-13 after v1.2 milestone completion.*
 
 
 ## ADR Cross-Links (Phase-3 lock-in)

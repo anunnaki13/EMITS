@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Operational Reliability & Data Governance
-status: ready_to_complete
-last_updated: "2026-05-13T03:40:05+07:00"
-last_activity: 2026-05-13
+status: awaiting_next_milestone
+stopped_at: v1.2 milestone complete and archived
+last_updated: "2026-05-13T08:07:53+07:00"
+last_activity: 2026-05-13 — Milestone v1.2 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -20,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** v1.2 operational reliability and data governance
+**Current focus:** Planning the next milestone
 
 ## Current Position
 
-Phase: v1.2 milestone completion
+Phase: Milestone v1.2 complete
 Plan: —
-Status: v1.2 milestone audit complete with tech debt only; ready to complete/archive v1.2
-Last activity: 2026-05-13 — v1.2 milestone audit completed
+Status: Awaiting next milestone
+Last activity: 2026-05-13 — Milestone v1.2 completed and archived
 
 ## Performance Metrics
 
@@ -100,20 +101,25 @@ None yet.
 - No active v1.2 blocker identified.
 - UI quality note: React build passes; existing `react-hooks/exhaustive-deps` warnings are documented as Phase 20 intentional exclusions in `docs/quality/REACT_HOOK_WARNINGS.md`.
 - Repository hygiene note: `.env`, `.emergent`, and generated integration/runtime folders are documented/ignored going forward. Pre-existing tracked deletions/edits remain local and intentionally uncommitted.
+- Milestone audit note: v1.2 closed with `tech_debt` status only; no product requirement or integration blocker.
 
 ## Deferred Items
 
-Items acknowledged and carried forward into v1.2.
+Items acknowledged at v1.2 milestone close.
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| Backup | Scheduled backup automation and retention | Completed in Phase 17 | v1.1 archive |
-| Cleanup | React hook dependency warnings | Completed in Phase 20 | v1.1 archive |
-| Cleanup | Focused pytest credential loading | Planned in Phase 19 | v1.1 archive |
-| Cleanup | Repository/local artifact hygiene | Planned in Phase 19 | v1.1 archive |
+| Process | SUMMARY/VALIDATION GSD metadata backfill | Optional | v1.2 audit |
+| Frontend | React hook dependency warnings register | Documented | v1.2 audit |
+| Deployment | Use nginx static frontend on real VPS | Operational follow-up | v1.2 audit |
+| AI | Optional LLM polish over deterministic advisor | Future enhancement | v1.2 audit |
 
 ## Session Continuity
 
-Last session: 2026-05-13T03:40:05+07:00
-Stopped at: v1.2 milestone audit complete. Next step is `$gsd-complete-milestone v1.2` if tech debt is accepted.
+Last session: 2026-05-13T08:07:53+07:00
+Stopped at: v1.2 milestone complete and archived. Next step is `$gsd-new-milestone`.
 Resume file: .planning/ROADMAP.md
+
+## Operator Next Steps
+
+- Start the next milestone with `$gsd-new-milestone`

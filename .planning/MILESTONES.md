@@ -1,5 +1,44 @@
 # Milestones
 
+## v1.2 Operational Reliability & Data Governance (Shipped: 2026-05-13)
+
+**Status:** shipped, audit completed with non-blocking tech debt
+**Phases:** 17-21
+**Requirements:** 32/32 active v1.2 requirements satisfied
+**Verification:** 5/5 phases have verification and validation artifacts
+**Integration smoke:** 10/10 checks passing
+
+### Delivered
+
+- Automated backup scheduling, retention, history, restore validation, and backup health visibility.
+- Made recurring combined COA workbook imports previewable, validated, traceable, and rollback-safe.
+- Hardened deployment operations with service templates, env examples, deploy helper, smoke check, and production runbook.
+- Rebuilt the dashboard first viewport around stock risk, arrival realization, dispute/umpire status, and supplier risk signals.
+- Added management report v2, supplier scorecard, source-traceable exports, and a bounded AI advisor with Indonesian memo drafting.
+
+### Stats
+
+- 5 phases, 5 implementation summaries
+- 30 non-planning source/doc files changed across the v1.2 git range
+- 32 requirements satisfied
+- 13 focused tests passing, frontend build passing, smoke check 10/10 passing
+- Git range: `1b9f9ce` -> `38a31e7`
+
+### Archives
+
+- [Roadmap archive](milestones/v1.2-ROADMAP.md)
+- [Requirements archive](milestones/v1.2-REQUIREMENTS.md)
+- [Milestone audit](milestones/v1.2-MILESTONE-AUDIT.md)
+
+### Deferred
+
+- SUMMARY/VALIDATION GSD metadata backfill remains optional process cleanup.
+- React hook dependency warnings remain documented in `docs/quality/REACT_HOOK_WARNINGS.md`.
+- VPS production frontend should use nginx static build rather than dev `yarn start`.
+- Optional LLM polish can be layered over the deterministic management report advisor later.
+
+---
+
 ## v1.1 — Shipped 2026-05-12
 
 **Status:** shipped, audit passed  
