@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-27 are complete; remaining work focuses on UI/UX polish.
+v1.3 is in progress. Phases 22-27 are complete; Phase 28 is planned for UI/UX polish.
 
 ## Milestone Goal
 
@@ -126,6 +126,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 **Requirements:** UX3-01, UX3-02, UX3-03, UX3-04, UX3-05
 
+**Status:** Planned (2026-05-14)
+
 **Success criteria:**
 1. Dashboard, report, and control surfaces share consistent filter/header/badge/state patterns.
 2. Monitoring stock, arrivals, disputes, and report/advisor review takes fewer clicks.
@@ -171,8 +173,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Plan Phase 28:
+Execute Phase 28:
 
 ```bash
-$gsd-plan-phase 28
+$gsd-execute-phase 28
 ```
