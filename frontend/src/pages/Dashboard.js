@@ -143,7 +143,7 @@ const GaugeChart = ({ percentage, label }) => {
 };
 
 const Dashboard = () => {
-  const { getAuthHeader } = useAuth();
+  const { getAuthHeader, user } = useAuth();
   const initialDrilldown = parseDashboardDrilldown(window.location.search);
   const [stats, setStats] = useState(null);
   const [advancedStats, setAdvancedStats] = useState(null);
@@ -278,6 +278,7 @@ const Dashboard = () => {
     const query = params.toString();
     return query ? `${path}?${query}` : path;
   };
+  const canViewDataQuality = user?.role === "admin" || user?.role === "operator";
   const quickActions = [
     {
       label: "Stock Batubara",
@@ -307,14 +308,14 @@ const Dashboard = () => {
       icon: BarChart3,
       tone: "text-emerald-300",
     },
-    {
+    canViewDataQuality ? {
       label: "Data Quality",
       metric: `${dataQuality.counts?.critical || 0} critical`,
       href: drilldownHref("/data-quality"),
       icon: AlertTriangle,
       tone: dataQuality.status === "critical" ? "text-red-300" : "text-amber-300",
-    },
-  ];
+    } : null,
+  ].filter(Boolean);
 
   return (
     <div className="space-y-6 sm:space-y-8" data-testid="dashboard-page">
