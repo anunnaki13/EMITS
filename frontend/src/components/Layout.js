@@ -28,7 +28,8 @@ import {
   MessageSquare,
   Moon,
   Sun,
-  Bell
+  Bell,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -305,6 +306,22 @@ const Layout = ({ children }) => {
             <span className="text-sm font-normal">Riwayat Percakapan AI</span>
             {location.pathname === "/ai-chat" && <ChevronRight className="w-4 h-4 ml-auto" />}
           </Link>
+
+          {(user?.role === "admin" || user?.role === "operator") && (
+            <Link
+              to="/data-quality"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                location.pathname === "/data-quality"
+                  ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <ShieldAlert className="w-5 h-5" />
+              <span className="text-sm font-medium">Data Quality</span>
+              {location.pathname === "/data-quality" && <ChevronRight className="w-4 h-4 ml-auto" />}
+            </Link>
+          )}
 
           {user?.role === "admin" && (
             <>

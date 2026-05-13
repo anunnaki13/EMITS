@@ -16,6 +16,7 @@ import AIChatPage from "@/pages/AIChatPage";
 import LaporanPage from "@/pages/LaporanPage";
 import COAReconciliationPage from "@/pages/COAReconciliationPage";
 import DisputeMonitorPage from "@/pages/DisputeMonitorPage";
+import DataQualityPage from "@/pages/DataQualityPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Layout from "@/components/Layout";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -167,6 +168,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><DisputeMonitorPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/data-quality"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "operator"]}>
+            <Layout><DataQualityPage /></Layout>
           </ProtectedRoute>
         }
       />
