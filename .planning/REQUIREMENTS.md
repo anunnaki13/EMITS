@@ -50,11 +50,11 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 ### Trend Analytics & Forecasting (TREND3)
 
-- [ ] **TREND3-01**: Dashboard and reports can compare current period to previous period for stock, arrivals, supplier performance, COA delta, and disputes.
-- [ ] **TREND3-02**: Supplier trend cards show volume, timeliness, quality delta, and dispute trend with clear risk labels.
-- [ ] **TREND3-03**: Stock forecast projects coverage using configurable burn assumptions and expected arrivals.
-- [ ] **TREND3-04**: Trend charts degrade safely for sparse historical data with Indonesian explanation instead of misleading charts.
-- [ ] **TREND3-05**: PDF and Excel exports include trend context matching the on-screen filter scope.
+- [x] **TREND3-01**: Dashboard and reports can compare current period to previous period for stock, arrivals, supplier performance, COA delta, and disputes.
+- [x] **TREND3-02**: Supplier trend cards show volume, timeliness, quality delta, and dispute trend with clear risk labels.
+- [x] **TREND3-03**: Stock forecast projects coverage using configurable burn assumptions and expected arrivals.
+- [x] **TREND3-04**: Trend charts degrade safely for sparse historical data with Indonesian explanation instead of misleading charts.
+- [x] **TREND3-05**: PDF and Excel exports include trend context matching the on-screen filter scope.
 
 ### AI Advisor v3 (AI3)
 
@@ -99,7 +99,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | DRILL3-01..05 | Phase 23 | Complete |
 | REF3-01..06 | Phase 24 | Complete |
 | DQ3-01..06 | Phase 25 | Complete |
-| TREND3-01..05 | Phase 26 | Pending |
+| TREND3-01..05 | Phase 26 | Complete |
 | AI3-01..05 | Phase 27 | Pending |
 | UX3-01..05 | Phase 28 | Pending |
 
@@ -107,8 +107,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 - v1.3 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0
-- Complete: 22
+- Complete: 27
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-14 after Phase 25 completion*
+*Last updated: 2026-05-14 after Phase 26 completion*

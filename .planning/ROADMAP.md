@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-25 are complete; Phase 26 is planned; remaining phases focus on trend analytics execution, AI advice, and UI/UX polish.
+v1.3 is in progress. Phases 22-26 are complete; remaining phases focus on AI advice and UI/UX polish.
 
 ## Milestone Goal
 
@@ -96,7 +96,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 **Requirements:** TREND3-01, TREND3-02, TREND3-03, TREND3-04, TREND3-05
 
-**Status:** Planned (2026-05-14)
+**Status:** Complete (2026-05-14)
 
 **Success criteria:**
 1. Dashboard and reports compare current period to previous period for stock, arrivals, suppliers, COA deltas, and disputes.
@@ -139,11 +139,11 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | DRILL3-01..05 | Phase 23 | Complete |
 | REF3-01..06 | Phase 24 | Complete |
 | DQ3-01..06 | Phase 25 | Complete |
-| TREND3-01..05 | Phase 26 | Pending |
+| TREND3-01..05 | Phase 26 | Complete |
 | AI3-01..05 | Phase 27 | Pending |
 | UX3-01..05 | Phase 28 | Pending |
 
-Coverage: 37/37 active v1.3 requirements mapped; 22/37 complete.
+Coverage: 37/37 active v1.3 requirements mapped; 27/37 complete.
 
 ## Completed Milestones
 
@@ -169,8 +169,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Execute Phase 26:
+Plan Phase 27:
 
 ```bash
-$gsd-execute-phase 26
+$gsd-plan-phase 27
 ```

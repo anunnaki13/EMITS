@@ -80,11 +80,11 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 
 ### Active
 
-- [ ] OPS3-01..05: Static nginx frontend cutover, runtime health/status visibility, deploy smoke evidence, and production runbook completion.
-- [ ] DRILL3-01..05: Dashboard drilldowns consume filters on destination pages, show active context, preserve back navigation, and handle empty states.
-- [ ] REF3-01..06: Backend service-boundary refactor for shared dashboard/report/advisor calculations, normalization helpers, tests, and response compatibility.
-- [ ] DQ3-01..06: Data quality monitor for stale, missing, duplicate, outlier, and inconsistent records with visible/exportable issue evidence.
-- [ ] TREND3-01..05: Multi-period trend analytics and forecasting for stock, arrivals, suppliers, COA deltas, disputes, and exports.
+- [x] OPS3-01..05: Static nginx frontend cutover, runtime health/status visibility, deploy smoke evidence, and production runbook completion.
+- [x] DRILL3-01..05: Dashboard drilldowns consume filters on destination pages, show active context, preserve back navigation, and handle empty states.
+- [x] REF3-01..06: Backend service-boundary refactor for shared dashboard/report/advisor calculations, normalization helpers, tests, and response compatibility.
+- [x] DQ3-01..06: Data quality monitor for stale, missing, duplicate, outlier, and inconsistent records with visible/exportable issue evidence.
+- [x] TREND3-01..05: Multi-period trend analytics and forecasting for stock, arrivals, suppliers, COA deltas, disputes, and exports.
 - [ ] AI3-01..05: AI advisor v3 with trend/data-quality explanations, optional LLM narrative, deterministic fallback, limitations, and guardrail tests.
 - [ ] UX3-01..05: Operator UI/UX polish for dashboard/report layouts, workflow click reduction, responsive stability, states, and hook-warning cleanup.
 
