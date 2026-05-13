@@ -1,0 +1,89 @@
+# Requirements: EMITS v1.4 - Production QA & Cleanup
+
+**Defined:** 2026-05-14
+**Core Value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support.
+
+v1.3 requirements are complete and archived in:
+
+- [v1.3 Requirements Archive](milestones/v1.3-REQUIREMENTS.md)
+- [v1.3 Milestone Audit](milestones/v1.3-MILESTONE-AUDIT.md)
+
+## Milestone Goal
+
+Turn the accepted v1.3 tech debt into concrete release-quality gates: clean frontend warning posture, repeatable visual QA, complete GSD validation metadata, real VPS runtime evidence, repository hygiene, and a consolidated regression pack.
+
+## Active Requirements
+
+### Frontend Quality & Visual Assurance (QA4)
+
+- [ ] **QA4-01**: Remaining legacy React hook warnings are removed where safe, or each remaining warning has an owner, rationale, and follow-up path in the warning register.
+- [ ] **QA4-02**: Key operator/admin pages have browser screenshot smoke coverage for desktop and tablet layouts: dashboard, management report, data quality, dispute monitor, and settings runtime status.
+- [ ] **QA4-03**: Visual QA checks detect blank critical panels, obvious text overlap, and missing primary data/action surfaces before release.
+- [ ] **QA4-04**: The React build warning register matches actual `npm run build` output and fails the release gate when new undocumented warnings appear.
+- [ ] **QA4-05**: Loading, error, empty, partial-data, and success states on the covered pages use consistent Indonesian copy and remain readable in responsive layouts.
+
+### GSD Metadata & Planning Hygiene (META4)
+
+- [ ] **META4-01**: Current and archived phase validation files expose consistent Nyquist metadata or an explicit documented exception.
+- [ ] **META4-02**: Phase directories from shipped milestones are archived and discoverable from milestone archives without bloating the active `.planning/phases/` workspace.
+- [ ] **META4-03**: GSD health/progress output no longer points users to stale active requirements or phase paths after milestone archive.
+- [ ] **META4-04**: Future phase completion docs have a consistent template for SUMMARY, VERIFICATION, VALIDATION, requirement frontmatter, and residual-risk notes.
+
+### Production Runtime Evidence (OPS4)
+
+- [ ] **OPS4-01**: Operator can run the full runtime status command on the production VPS and capture an auditable report artifact.
+- [ ] **OPS4-02**: Production smoke check can record status through the admin API and the latest smoke result is visible in the runtime health UI.
+- [ ] **OPS4-03**: Production runbook includes the exact v1.4 release gate, expected artifacts, fallback steps, and evidence storage location.
+- [ ] **OPS4-04**: Build/version metadata visible to admins reflects the deployed git SHA or release tag for static frontend and backend.
+- [ ] **OPS4-05**: If real VPS execution is unavailable during development, the release process records a clear manual gate instead of silently passing runtime verification.
+
+### Repository Hygiene & Secret Safety (REPO4)
+
+- [ ] **REPO4-01**: Pre-existing tracked local dirt (`.emergent/*`, `README.md`, `backend/.env`, `frontend/.env`) is resolved or explicitly documented without committing secrets.
+- [ ] **REPO4-02**: Frontend build-cache artifacts no longer cause `.gitignore` churn or accidental generated-file commits during normal build/test workflows.
+- [ ] **REPO4-03**: Credential scanning continues to block real secrets while documented local test credentials remain outside committed artifacts.
+- [ ] **REPO4-04**: A repository hygiene check can distinguish intentional local-only files from release-blocking dirty worktree changes.
+
+### Regression & Release Gate (REG4)
+
+- [ ] **REG4-01**: One command runs the focused backend regression suite for auth, dashboard, COA/import, reports, data quality, trends, advisor, and runtime status.
+- [ ] **REG4-02**: One command runs the frontend production build and verifies the hook-warning budget against the warning register.
+- [ ] **REG4-03**: Release gate includes smoke-check execution or a clearly marked skip reason when production services are unavailable.
+- [ ] **REG4-04**: Release gate writes a compact artifact summary with command results, warnings, skipped checks, git SHA/tag, and next action.
+
+## Future Requirements
+
+- GitHub Actions or external CI/CD pipeline after the local release gate is stable.
+- Persisted data-quality snapshots and trend/forecast history.
+- Statistical or ML-based forecasting beyond deterministic operational projection.
+- Expanded workflow/task assignment for data-quality fixes and dispute follow-up.
+- Multi-provider LLM routing and per-user AI budget tracking.
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| New business-domain modules | v1.4 is a quality/release milestone, not a feature expansion milestone. |
+| Replacing React, FastAPI, MongoDB, or the LLM provider | Architecture remains locked; cleanup should reduce risk, not restart the stack. |
+| Full cloud CI/CD migration | Local/repo release gate comes first; remote CI can be a later milestone. |
+| Statistical forecasting or ML model training | v1.4 closes QA debt; analytics expansion belongs in a decision-intelligence milestone. |
+| Committing production secrets or local test credentials | Credential hygiene remains locked. |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| QA4-01..05 | TBD | Pending roadmap |
+| META4-01..04 | TBD | Pending roadmap |
+| OPS4-01..05 | TBD | Pending roadmap |
+| REPO4-01..04 | TBD | Pending roadmap |
+| REG4-01..04 | TBD | Pending roadmap |
+
+**Coverage:**
+- v1.4 requirements: 22 total
+- Mapped to phases: 0
+- Unmapped: 22
+- Complete: 0
+
+---
+*Requirements defined: 2026-05-14*
