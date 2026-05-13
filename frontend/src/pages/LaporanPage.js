@@ -798,7 +798,7 @@ const LaporanPage = () => {
             ))}
           </TabsList>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(180px,1fr)_180px_250px_160px_160px_auto] gap-3 items-end mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_180px_250px_160px_160px_auto] gap-3 items-end mb-4">
             <div className="relative">
               <Label className="text-slate-400 text-xs">Cari</Label>
               <Search className="absolute left-3 bottom-3 w-4 h-4 text-slate-500" />

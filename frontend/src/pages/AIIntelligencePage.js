@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -94,15 +94,10 @@ const AIIntelligencePage = () => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    fetchHistory();
-    fetchQuickData();
-  }, []);
-
-  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/ai/history?limit=50`, {
         headers: getAuthHeader()
@@ -114,9 +109,9 @@ const AIIntelligencePage = () => {
     } catch (error) {
       console.error("Error fetching history:", error);
     }
-  };
+  }, [getAuthHeader]);
 
-  const fetchQuickData = async () => {
+  const fetchQuickData = useCallback(async () => {
     try {
       const [blending, boiler, contract, logistics, smartStock, coa, prompts] = await Promise.all([
         axios.get(`${API_URL}/api/ai/quick/blending-suggestion`, { headers: getAuthHeader() }),
@@ -141,7 +136,12 @@ const AIIntelligencePage = () => {
     } finally {
       setLoadingQuick(false);
     }
-  };
+  }, [getAuthHeader]);
+
+  useEffect(() => {
+    fetchHistory();
+    fetchQuickData();
+  }, [fetchHistory, fetchQuickData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

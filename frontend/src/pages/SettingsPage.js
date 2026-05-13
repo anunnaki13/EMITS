@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -57,6 +57,16 @@ import {
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+const INITIAL_AUDIT_FILTERS = {
+  category: "all",
+  action: "all",
+  severity: "all",
+  actor: "",
+  record_id: "",
+  date_from: "",
+  date_to: ""
+};
+
 const SettingsPage = () => {
   const { user, getAuthHeader } = useAuth();
   const [users, setUsers] = useState([]);
@@ -95,15 +105,7 @@ const SettingsPage = () => {
   const [restoreConfirmation, setRestoreConfirmation] = useState("");
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
-  const [auditFilters, setAuditFilters] = useState({
-    category: "all",
-    action: "all",
-    severity: "all",
-    actor: "",
-    record_id: "",
-    date_from: "",
-    date_to: ""
-  });
+  const [auditFilters, setAuditFilters] = useState(INITIAL_AUDIT_FILTERS);
   const [alertOverview, setAlertOverview] = useState({
     open_count: 0,
     critical_count: 0,
@@ -118,16 +120,7 @@ const SettingsPage = () => {
     role: "operator"
   });
 
-  useEffect(() => {
-    fetchUsers();
-    fetchAISettings();
-    fetchCOASettings();
-    fetchBackupStatus();
-    fetchAuditLogs();
-    fetchAlertOverview();
-  }, []);
-
-  const fetchAlertOverview = async () => {
+  const fetchAlertOverview = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/alerts?status=open&limit=5`, { headers: getAuthHeader() });
       setAlertOverview({
@@ -139,9 +132,9 @@ const SettingsPage = () => {
     } catch (error) {
       console.log("Alert overview not available");
     }
-  };
+  }, [getAuthHeader]);
 
-  const fetchCOASettings = async () => {
+  const fetchCOASettings = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/settings/coa`, { headers: getAuthHeader() });
       setCoaSettings({
@@ -150,7 +143,7 @@ const SettingsPage = () => {
     } catch (error) {
       console.log("COA settings not available");
     }
-  };
+  }, [getAuthHeader]);
 
   const handleSaveCOASettings = async () => {
     if (!coaSettings.price_per_kcal_per_ton) {
@@ -172,7 +165,7 @@ const SettingsPage = () => {
     }
   };
 
-  const fetchAISettings = async () => {
+  const fetchAISettings = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/ai/settings`, { headers: getAuthHeader() });
       setAiSettings({
@@ -184,7 +177,7 @@ const SettingsPage = () => {
     } catch (error) {
       console.log("AI settings not available");
     }
-  };
+  }, [getAuthHeader]);
 
   const handleSaveAISettings = async () => {
     setSavingAI(true);
@@ -204,7 +197,7 @@ const SettingsPage = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/api/users`, { headers: getAuthHeader() });
@@ -215,13 +208,13 @@ const SettingsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthHeader]);
 
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogsForFilters = useCallback(async (filters) => {
     setAuditLoading(true);
     try {
       const params = { page_size: 25 };
-      Object.entries(auditFilters).forEach(([key, value]) => {
+      Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== "all") params[key] = value;
       });
       const response = await axios.get(`${API_URL}/api/admin/audit-logs`, { headers: getAuthHeader(), params });
@@ -231,7 +224,11 @@ const SettingsPage = () => {
     } finally {
       setAuditLoading(false);
     }
-  };
+  }, [getAuthHeader]);
+
+  const fetchAuditLogs = useCallback(() => {
+    return fetchAuditLogsForFilters(auditFilters);
+  }, [auditFilters, fetchAuditLogsForFilters]);
 
   const exportAuditLogs = async () => {
     try {
@@ -312,7 +309,7 @@ const SettingsPage = () => {
     }
   };
 
-  const fetchBackupStatus = async () => {
+  const fetchBackupStatus = useCallback(async () => {
     try {
       const [settingsResponse, historyResponse] = await Promise.all([
         axios.get(`${API_URL}/api/admin/backup/settings`, { headers: getAuthHeader() }),
@@ -331,7 +328,23 @@ const SettingsPage = () => {
     } catch (error) {
       console.log("Backup status not available");
     }
-  };
+  }, [getAuthHeader]);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchAISettings();
+    fetchCOASettings();
+    fetchBackupStatus();
+    fetchAuditLogsForFilters(INITIAL_AUDIT_FILTERS);
+    fetchAlertOverview();
+  }, [
+    fetchAISettings,
+    fetchAlertOverview,
+    fetchAuditLogsForFilters,
+    fetchBackupStatus,
+    fetchCOASettings,
+    fetchUsers
+  ]);
 
   const handleSaveBackupSettings = async () => {
     setSavingBackupSettings(true);

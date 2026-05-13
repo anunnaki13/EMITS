@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -112,9 +112,7 @@ const BiomassaPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchBiomassa(); setCurrentPage(1); }, [search, supplier, dateFrom, dateTo]);
-
-  const fetchBiomassa = async () => {
+  const fetchBiomassa = useCallback(async () => {
     try {
       const params = { page: 1, page_size: 10000 };
       if (search) params.search = search;
@@ -130,7 +128,9 @@ const BiomassaPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateFrom, dateTo, getAuthHeader, search, supplier]);
+
+  useEffect(() => { fetchBiomassa(); setCurrentPage(1); }, [fetchBiomassa]);
 
   const resetFilters = () => {
     setSearch("");

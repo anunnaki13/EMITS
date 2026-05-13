@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -67,11 +67,7 @@ const SumberPemakaianPage = () => {
   const [formZone, setFormZone] = useState("A");
   const [formAmount, setFormAmount] = useState("");
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async (filterStartDate = null, filterEndDate = null) => {
+  const fetchData = useCallback(async (filterStartDate = null, filterEndDate = null) => {
     setLoading(true);
     try {
       const params = {};
@@ -91,7 +87,11 @@ const SumberPemakaianPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthHeader]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleFilter = () => {
     if (startDate && endDate && startDate > endDate) {

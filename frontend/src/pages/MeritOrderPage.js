@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -98,9 +98,7 @@ const MeritOrderPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchData(); }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/merit-order`, { headers: getAuthHeader(), params: { page: 1, page_size: 10000 } });
       const data = response.data.items || response.data;
@@ -110,7 +108,9 @@ const MeritOrderPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthHeader]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const parseFloat2 = (val) => val ? parseFloat(val) : null;
 

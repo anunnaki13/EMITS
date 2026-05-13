@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -55,9 +55,7 @@ const VesselPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchVessels(); setCurrentPage(1); }, [search, supplier, dateFrom, dateTo]);
-
-  const fetchVessels = async () => {
+  const fetchVessels = useCallback(async () => {
     try {
       const params = { page: 1, page_size: 10000 };
       if (search) params.search = search;
@@ -75,7 +73,9 @@ const VesselPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateFrom, dateTo, getAuthHeader, search, supplier]);
+
+  useEffect(() => { fetchVessels(); setCurrentPage(1); }, [fetchVessels]);
 
   const resetFilters = () => {
     setSearch("");

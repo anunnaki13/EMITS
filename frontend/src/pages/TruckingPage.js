@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -54,9 +54,7 @@ const TruckingPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchTrucking(); setCurrentPage(1); }, [search, supplier, dateFrom, dateTo]);
-
-  const fetchTrucking = async () => {
+  const fetchTrucking = useCallback(async () => {
     try {
       const params = { page: 1, page_size: 10000 };
       if (search) params.search = search;
@@ -72,7 +70,9 @@ const TruckingPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateFrom, dateTo, getAuthHeader, search, supplier]);
+
+  useEffect(() => { fetchTrucking(); setCurrentPage(1); }, [fetchTrucking]);
 
   const resetFilters = () => {
     setSearch("");

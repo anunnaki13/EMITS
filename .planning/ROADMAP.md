@@ -9,7 +9,7 @@
 
 ## Current Status
 
-v1.4 is planned. Phase 29 Plan 29-01 is ready for execution.
+v1.4 is in progress. Phase 29 is complete; Phase 30 is ready for planning.
 
 ## Milestone Goal
 
@@ -19,7 +19,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 | # | Phase | Goal | Requirements | Success Criteria |
 |---|-------|------|--------------|------------------|
-| 29 | Frontend Warning & Visual QA | Remove or strictly account for frontend warnings and add browser visual smoke coverage for key operator/admin pages. | QA4-01..05 | 5 |
+| 29 | Frontend Warning & Visual QA | Remove or strictly account for frontend warnings and add browser visual smoke coverage for key operator/admin pages. | QA4-01..05 | Complete |
 | 30 | GSD Metadata & Phase Archive Hygiene | Make planning state, archived phase docs, Nyquist metadata, and future completion templates consistent and discoverable. | META4-01..04 | 4 |
 | 31 | Production Runtime Evidence | Capture real production runtime/smoke evidence and make release version metadata visible and auditable. | OPS4-01..05 | 5 |
 | 32 | Repository Hygiene & Secret Safety | Resolve or document local artifact dirt, stop build-cache churn, and keep credential scanning effective. | REPO4-01..04 | 4 |
@@ -33,7 +33,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 **Requirements:** QA4-01, QA4-02, QA4-03, QA4-04, QA4-05
 
-**Status:** Planned - Plan 29-01 ready
+**Status:** Complete
 
 **Success criteria:**
 1. Remaining React hook warnings are fixed where safe, and any remaining warning is explicitly documented with owner/rationale.
@@ -103,13 +103,13 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 | Requirement Group | Covered By | Status |
 |-------------------|------------|--------|
-| QA4-01..05 | Phase 29 | Planned |
+| QA4-01..05 | Phase 29 | Complete |
 | META4-01..04 | Phase 30 | Planned |
 | OPS4-01..05 | Phase 31 | Planned |
 | REPO4-01..04 | Phase 32 | Planned |
 | REG4-01..04 | Phase 33 | Planned |
 
-Coverage: 22/22 active v1.4 requirements mapped; 0/22 complete.
+Coverage: 22/22 active v1.4 requirements mapped; 5/22 complete.
 
 ## Completed Milestones
 
@@ -128,8 +128,8 @@ Coverage: 22/22 active v1.4 requirements mapped; 0/22 complete.
 
 ## Next Step
 
-Execute Phase 29:
+Plan Phase 30:
 
 ```bash
-$gsd-execute-phase 29
+$gsd-plan-phase 30
 ```

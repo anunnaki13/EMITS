@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Production QA & Cleanup
-status: executing
-last_updated: "2026-05-14T04:33:24+07:00"
-last_activity: 2026-05-14 — Phase 29 planned; Plan 29-01 ready for execution
+status: planning
+last_updated: "2026-05-14T05:07:06+07:00"
+last_activity: 2026-05-14 — Phase 29 complete; Phase 30 ready for planning
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** executing Phase 29 frontend warning and visual QA hardening
+**Current focus:** planning Phase 30 GSD metadata and archive hygiene
 
 ## Current Position
 
-Phase: 29 (executing)
-Plan: 29-01 Frontend Warning Cleanup And Visual Smoke Gate
-Status: Plan 29-01 ready for execution
-Last activity: 2026-05-14 — Phase 29 planned; Plan 29-01 ready for execution
+Phase: 30 (ready to plan)
+Plan: —
+Status: Phase 29 complete; Phase 30 ready for planning
+Last activity: 2026-05-14 — Phase 29 complete; visual smoke and warning budget verified
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Last activity: 2026-05-14 — Phase 29 planned; Plan 29-01 ready for execution
 | Phase 26 P01 | 19 min | 5 tasks | 13 files |
 | Phase 27 P01 | 17 min | 5 tasks | 11 files |
 | Phase 28 P01 | 12 min | 5 tasks | 7 files |
+| Phase 29 P01 | 34 min | 5 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -110,15 +111,16 @@ Recent decisions affecting current work:
 - [Phase 28]: Dashboard quick actions, visible data-quality states, stable dashboard/report layout, and safe Laporan hook cleanup completed.
 - [Milestone v1.3]: Audit found 37/37 requirements satisfied, 7/7 phases verified, no critical gaps, and non-blocking tech debt only.
 - [Milestone v1.4]: Production QA & Cleanup selected to close accepted audit debt before larger feature expansion.
+- [Phase 29]: Remaining documented React hook warnings normalized to 0; `build:checked` enforces warning-register parity; Playwright visual smoke covers dashboard, management report, data quality, dispute monitor, and settings runtime status on desktop/tablet; tablet smoke fixed sidebar/menu overlap and report filter overflow.
 
 ### Pending Todos
 
-- Start the next milestone when ready.
+- Start Phase 30 GSD metadata and archive hygiene.
 
 ### Blockers/Concerns
 
 - No active v1.3 blocker identified.
-- UI quality note: React build passes; Phase 23 removed hook warnings from COA, Dispute Monitor, PO Batubara, and Smart Stock. Remaining legacy warnings are documented in `docs/quality/REACT_HOOK_WARNINGS.md`.
+- UI quality note: React build passes; Phase 29 reduced `react-hooks/exhaustive-deps` warnings to 0 and added `frontend` visual smoke coverage.
 - Repository hygiene note: `.env`, `.emergent`, and generated integration/runtime folders are documented/ignored going forward. Pre-existing tracked deletions/edits remain local and intentionally uncommitted.
 - Milestone audit note: v1.2 closed with `tech_debt` status only; no product requirement or integration blocker.
 - Phase 22 operational note: full `runtime_status.sh` should be run on the production VPS after deployment because local verification cannot exercise real nginx/systemd state.
@@ -133,18 +135,18 @@ Items acknowledged at v1.2 milestone close.
 | Frontend | React hook dependency warnings register | Documented | v1.2 audit |
 | Deployment | Use nginx static frontend on real VPS | Operational follow-up | v1.2 audit |
 | AI | Optional LLM polish over deterministic advisor | Future enhancement | v1.2 audit |
-| Frontend | Legacy React hook warnings outside LaporanPage | Documented | v1.3 audit |
+| Frontend | Legacy React hook warnings outside LaporanPage | Completed in Phase 29 | v1.3 audit |
 | Process | Nyquist metadata backfill for validation files | Optional | v1.3 audit |
-| UI QA | Browser screenshot automation for dashboard/report surfaces | Future hardening | v1.3 audit |
+| UI QA | Browser screenshot automation for dashboard/report surfaces | Completed in Phase 29 | v1.3 audit |
 | Deployment | Run full runtime status script on real VPS after deployment | Operational follow-up | v1.3 audit |
 | Analytics | Persisted data-quality snapshots and statistical forecasts | Future enhancement | v1.3 audit |
 
 ## Session Continuity
 
-Last session: 2026-05-14T04:33:24+07:00
-Stopped at: Phase 29 planned; Plan 29-01 ready for execution
-Resume file: .planning/phases/29-frontend-warning-visual-qa/29-01-PLAN.md
+Last session: 2026-05-14T05:07:06+07:00
+Stopped at: Phase 29 complete; Phase 30 ready for planning
+Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Execute Phase 29 Plan 29-01, then run frontend build and warning-budget verification.
+- Start Phase 30 with `$gsd-plan-phase 30`.

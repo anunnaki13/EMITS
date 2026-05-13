@@ -16,11 +16,11 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 ### Frontend Quality & Visual Assurance (QA4)
 
-- [ ] **QA4-01**: Remaining legacy React hook warnings are removed where safe, or each remaining warning has an owner, rationale, and follow-up path in the warning register.
-- [ ] **QA4-02**: Key operator/admin pages have browser screenshot smoke coverage for desktop and tablet layouts: dashboard, management report, data quality, dispute monitor, and settings runtime status.
-- [ ] **QA4-03**: Visual QA checks detect blank critical panels, obvious text overlap, and missing primary data/action surfaces before release.
-- [ ] **QA4-04**: The React build warning register matches actual `npm run build` output and fails the release gate when new undocumented warnings appear.
-- [ ] **QA4-05**: Loading, error, empty, partial-data, and success states on the covered pages use consistent Indonesian copy and remain readable in responsive layouts.
+- [x] **QA4-01**: Remaining legacy React hook warnings are removed where safe, or each remaining warning has an owner, rationale, and follow-up path in the warning register.
+- [x] **QA4-02**: Key operator/admin pages have browser screenshot smoke coverage for desktop and tablet layouts: dashboard, management report, data quality, dispute monitor, and settings runtime status.
+- [x] **QA4-03**: Visual QA checks detect blank critical panels, obvious text overlap, and missing primary data/action surfaces before release.
+- [x] **QA4-04**: The React build warning register matches actual `npm run build` output and fails the release gate when new undocumented warnings appear.
+- [x] **QA4-05**: Loading, error, empty, partial-data, and success states on the covered pages use consistent Indonesian copy and remain readable in responsive layouts.
 
 ### GSD Metadata & Planning Hygiene (META4)
 
@@ -73,7 +73,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| QA4-01..05 | Phase 29 | Planned |
+| QA4-01..05 | Phase 29 | Complete |
 | META4-01..04 | Phase 30 | Planned |
 | OPS4-01..05 | Phase 31 | Planned |
 | REPO4-01..04 | Phase 32 | Planned |
@@ -83,7 +83,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 - v1.4 requirements: 22 total
 - Mapped to phases: 22
 - Unmapped: 0
-- Complete: 0
+- Complete: 5
 
 ---
-*Last updated: 2026-05-14 after v1.4 roadmap creation*
+*Last updated: 2026-05-14 after Phase 29 verification*

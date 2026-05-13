@@ -1,34 +1,41 @@
 # React Hook Warning Register
 
 Date: 2026-05-14
-Scope: Phase 20 Dashboard Command Center v3, updated by Phase 28 Operator UI/UX Polish
+Scope: Phase 29 Frontend Warning & Visual QA
 
 ## Status
 
-`npm run build` passes. The Phase 20 dashboard changes do not introduce a new `react-hooks/exhaustive-deps` warning.
+`npm run build` passes with no current `react-hooks/exhaustive-deps` warnings.
 
-Phase 22 added `RuntimeHealthPanel` as a separate component with `useCallback`-backed runtime status loading. Phase 23 normalized the dashboard-drilldown destination loaders for COA, Dispute Monitor, PO Batubara, and Smart Stock while adding query-driven filter context. Phase 28 normalized `LaporanPage.js` management/report fetch callbacks.
+Phase 29 normalized the remaining documented legacy fetch effects in:
 
-The warnings below remain documented intentional exclusions for this phase. They are legacy bootstrapping effects in existing module pages. Resolving all of them safely requires page-by-page fetch callback normalization because several fetch functions close over auth headers, filters, tab state, pagination state, and toast handling.
+- `frontend/src/pages/AIIntelligencePage.js`
+- `frontend/src/pages/BargePage.js`
+- `frontend/src/pages/BiomassaPage.js`
+- `frontend/src/pages/MeritOrderPage.js`
+- `frontend/src/pages/SettingsPage.js`
+- `frontend/src/pages/SumberPemakaianPage.js`
+- `frontend/src/pages/TruckingPage.js`
+- `frontend/src/pages/VesselPage.js`
+
+The production build still emits the standard Create React App bundle-size advisory, but that advisory is not a React hook warning and is outside this register.
 
 ## Current Warnings
 
-| File | Line | Warning Scope | Phase 20 Decision |
-|------|------|---------------|-------------------|
-| `frontend/src/pages/AIIntelligencePage.js` | 99 | `fetchHistory`, `fetchQuickData` | Documented legacy effect; normalize in future AI page cleanup. |
-| `frontend/src/pages/BargePage.js` | 57 | `fetchBarges` | Documented legacy CRUD effect; normalize with CRUD page hook pass. |
-| `frontend/src/pages/BiomassaPage.js` | 115 | `fetchBiomassa` | Documented legacy CRUD effect; normalize with CRUD page hook pass. |
-| `frontend/src/pages/MeritOrderPage.js` | 101 | `fetchData` | Documented legacy CRUD effect; normalize with CRUD page hook pass. |
-| `frontend/src/pages/SettingsPage.js` | 128 | settings loaders | Legacy bootstrap effect remains; Phase 22 runtime status loader is isolated in `RuntimeHealthPanel`. |
-| `frontend/src/pages/SumberPemakaianPage.js` | 72 | `fetchData` | Documented legacy stock usage effect; normalize with stock module cleanup. |
-| `frontend/src/pages/TruckingPage.js` | 57 | `fetchTrucking` | Documented legacy CRUD effect; normalize with CRUD page hook pass. |
-| `frontend/src/pages/VesselPage.js` | 58 | `fetchVessels` | Documented legacy CRUD effect; normalize with CRUD page hook pass. |
+No current React hook dependency warnings.
+
+## Enforcement
+
+Run the warning-budget gate from the frontend directory:
+
+```bash
+npm run build:checked
+```
+
+The gate runs `npm run build`, parses `react-hooks/exhaustive-deps` warnings, and compares them with this register. It fails when the build emits an undocumented hook warning or when this file contains a stale warning row.
 
 ## Acceptance Notes
 
-- Dashboard Command Center v3 uses `useCallback` with explicit dependencies for `getAuthHeader`, period, supplier, and mode.
-- RuntimeHealthPanel uses `useCallback` for its admin runtime status fetch and does not add a SettingsPage-level loader warning.
-- Phase 23 dashboard-drilldown pages for COA, Dispute Monitor, PO Batubara, and Smart Stock no longer emit hook dependency warnings.
-- Phase 28 report page cleanup removed the prior `LaporanPage.js` `fetchData`/`fetchSuppliers` hook warnings while preserving filter and pagination behavior.
-- The production build remains deployable despite warnings.
-- Future work should fix one page group at a time with regression checks for auth, pagination, filtering, and initial load behavior.
+- Dashboard, drilldown, report, runtime status, and CRUD loaders use dependency-aware fetch callbacks where currently touched.
+- Settings page keeps initial audit loading on default filters while refresh/filter actions still use the selected audit filters.
+- Future hook warnings must either be fixed in the same change or added to this register with file, line, owner, rationale, and follow-up path.
