@@ -21,6 +21,7 @@ from routers.admin import router as admin_router
 from routers.alerts import router as alerts_router
 from routers.ai_intelligence import router as ai_intelligence_router
 from routers.coa import router as coa_router
+from routers.data_quality import router as data_quality_router
 from routers.dashboard import router as dashboard_router
 from routers.planning_data import router as planning_data_router
 from routers.reports import router as reports_router
@@ -84,6 +85,7 @@ api_router.include_router(admin_router)
 api_router.include_router(alerts_router)
 api_router.include_router(ai_intelligence_router)
 api_router.include_router(coa_router)
+api_router.include_router(data_quality_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(planning_data_router)
 api_router.include_router(reports_router)
