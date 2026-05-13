@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 
 from models import DashboardStats
 from services.data_quality import build_data_quality_caveat
+from services.trend_analytics import build_dashboard_trends
 from services.query_filters import (
     aging_days,
     distinct_strings,
@@ -258,6 +259,11 @@ async def build_dashboard_operational(
         {"value": "biomassa", "label": "Biomassa"},
     ]
     data_quality = await build_data_quality_caveat(limit=5)
+    trend_analytics = await build_dashboard_trends(
+        period=selected_period,
+        supplier=selected_supplier,
+        mode=selected_mode,
+    )
 
     return {
         "period": selected_period,
@@ -309,6 +315,7 @@ async def build_dashboard_operational(
         },
         "supplier_risk": supplier_risk,
         "data_quality": data_quality,
+        "trend_analytics": trend_analytics,
     }
 
 async def build_dashboard_stats(user: Optional[dict] = None):

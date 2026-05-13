@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 
 from services.data_quality import build_data_quality_caveat
+from services.trend_analytics import build_management_trends
 from services.query_filters import (
     abs_delta,
     aging_days,
@@ -304,6 +305,12 @@ async def build_management_report(
     supplier_performance = await _supplier_performance(period, supplier, date_from, date_to)
     supplier_scorecard = await _supplier_scorecard(period, supplier, date_from, date_to)
     data_quality = await build_data_quality_caveat(limit=5)
+    trend_analytics = await build_management_trends(
+        period=period,
+        supplier=supplier,
+        date_from=date_from,
+        date_to=date_to,
+    )
     total_source_records = sum(int(value or 0) for value in source_counts.values())
     partial_warnings = []
     if source_counts["po_batubara"] == 0:
@@ -344,6 +351,7 @@ async def build_management_report(
             "message": "Data tersedia untuk filter ini." if total_source_records else "Belum ada data untuk filter laporan ini.",
         },
         "data_quality": data_quality,
+        "trend_analytics": trend_analytics,
         "stock": {
             "current_stock": float(current_stock or 0),
             "latest_stock_date": latest_stock.get("date") if latest_stock else None,
