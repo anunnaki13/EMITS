@@ -9,7 +9,7 @@
 
 ## Current Status
 
-v1.4 is planned. Phase 29 is ready for discussion/planning.
+v1.4 is planned. Phase 29 Plan 29-01 is ready for execution.
 
 ## Milestone Goal
 
@@ -33,7 +33,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 **Requirements:** QA4-01, QA4-02, QA4-03, QA4-04, QA4-05
 
-**Status:** Ready to plan
+**Status:** Planned - Plan 29-01 ready
 
 **Success criteria:**
 1. Remaining React hook warnings are fixed where safe, and any remaining warning is explicitly documented with owner/rationale.
@@ -128,8 +128,8 @@ Coverage: 22/22 active v1.4 requirements mapped; 0/22 complete.
 
 ## Next Step
 
-Discuss Phase 29:
+Execute Phase 29:
 
 ```bash
-$gsd-discuss-phase 29
+$gsd-execute-phase 29
 ```

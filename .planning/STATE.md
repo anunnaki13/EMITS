@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Production QA & Cleanup
-status: planning
-last_updated: "2026-05-14T04:20:24+07:00"
-last_activity: 2026-05-14 — v1.4 roadmap created; Phase 29 ready
+status: executing
+last_updated: "2026-05-14T04:33:24+07:00"
+last_activity: 2026-05-14 — Phase 29 planned; Plan 29-01 ready for execution
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 1
   completed_plans: 0
   percent: 0
 ---
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** planning the next milestone
+**Current focus:** executing Phase 29 frontend warning and visual QA hardening
 
 ## Current Position
 
-Phase: 29 (ready to discuss)
-Plan: —
-Status: v1.4 roadmap created; Phase 29 ready for discussion/planning
-Last activity: 2026-05-14 — v1.4 roadmap created; Phase 29 ready
+Phase: 29 (executing)
+Plan: 29-01 Frontend Warning Cleanup And Visual Smoke Gate
+Status: Plan 29-01 ready for execution
+Last activity: 2026-05-14 — Phase 29 planned; Plan 29-01 ready for execution
 
 ## Performance Metrics
 
@@ -141,10 +141,10 @@ Items acknowledged at v1.2 milestone close.
 
 ## Session Continuity
 
-Last session: 2026-05-14T04:20:24+07:00
-Stopped at: Created v1.4 requirements and roadmap; Phase 29 ready
-Resume file: .planning/ROADMAP.md
+Last session: 2026-05-14T04:33:24+07:00
+Stopped at: Phase 29 planned; Plan 29-01 ready for execution
+Resume file: .planning/phases/29-frontend-warning-visual-qa/29-01-PLAN.md
 
 ## Operator Next Steps
 
-- Start Phase 29 with `$gsd-discuss-phase 29` or `$gsd-plan-phase 29`.
+- Execute Phase 29 Plan 29-01, then run frontend build and warning-budget verification.
