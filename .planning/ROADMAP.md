@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phase 22 is complete; remaining phases focus on dashboard drilldowns, backend maintainability, data quality, trend analytics, AI advice, and UI/UX polish.
+v1.3 is in progress. Phases 22-23 are complete; remaining phases focus on backend maintainability, data quality, trend analytics, AI advice, and UI/UX polish.
 
 ## Milestone Goal
 
@@ -48,6 +48,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 **Goal:** Dashboard filters become real working context inside destination pages.
 
 **Requirements:** DRILL3-01, DRILL3-02, DRILL3-03, DRILL3-04, DRILL3-05
+
+**Status:** Complete (2026-05-14)
 
 **Success criteria:**
 1. Stock, arrivals/PO, COA, dispute, and reports pages read dashboard query filters and apply them to visible data.
@@ -128,14 +130,14 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | Requirement Group | Covered By | Status |
 |-------------------|------------|--------|
 | OPS3-01..05 | Phase 22 | Complete |
-| DRILL3-01..05 | Phase 23 | Pending |
+| DRILL3-01..05 | Phase 23 | Complete |
 | REF3-01..06 | Phase 24 | Pending |
 | DQ3-01..06 | Phase 25 | Pending |
 | TREND3-01..05 | Phase 26 | Pending |
 | AI3-01..05 | Phase 27 | Pending |
 | UX3-01..05 | Phase 28 | Pending |
 
-Coverage: 37/37 active v1.3 requirements mapped; 5/37 complete.
+Coverage: 37/37 active v1.3 requirements mapped; 10/37 complete.
 
 ## Completed Milestones
 
@@ -161,8 +163,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Plan Phase 23:
+Plan Phase 24:
 
 ```bash
-$gsd-plan-phase 23
+$gsd-plan-phase 24
 ```

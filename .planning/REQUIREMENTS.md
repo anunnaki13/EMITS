@@ -24,11 +24,11 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 ### Dashboard Drilldowns (DRILL3)
 
-- [ ] **DRILL3-01**: Dashboard query filters for period, supplier, mode, and status are consumed by destination pages instead of only being passed in URLs.
-- [ ] **DRILL3-02**: Stock, arrivals/PO, COA, dispute, and report pages show active filter chips and clear reset actions when opened from dashboard cards.
-- [ ] **DRILL3-03**: Drilldown pages show clear Indonesian empty/partial-data states when filters return sparse results.
-- [ ] **DRILL3-04**: Dashboard drilldowns preserve navigation context so users can return to the originating filtered dashboard state.
-- [ ] **DRILL3-05**: Tests cover representative dashboard-to-destination drilldowns and filtered API payloads.
+- [x] **DRILL3-01**: Dashboard query filters for period, supplier, mode, and status are consumed by destination pages instead of only being passed in URLs.
+- [x] **DRILL3-02**: Stock, arrivals/PO, COA, dispute, and report pages show active filter chips and clear reset actions when opened from dashboard cards.
+- [x] **DRILL3-03**: Drilldown pages show clear Indonesian empty/partial-data states when filters return sparse results.
+- [x] **DRILL3-04**: Dashboard drilldowns preserve navigation context so users can return to the originating filtered dashboard state.
+- [x] **DRILL3-05**: Tests cover representative dashboard-to-destination drilldowns and filtered API payloads.
 
 ### Backend Refactor & Service Boundaries (REF3)
 
@@ -96,7 +96,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | OPS3-01..05 | Phase 22 | Complete |
-| DRILL3-01..05 | Phase 23 | Pending |
+| DRILL3-01..05 | Phase 23 | Complete |
 | REF3-01..06 | Phase 24 | Pending |
 | DQ3-01..06 | Phase 25 | Pending |
 | TREND3-01..05 | Phase 26 | Pending |
@@ -107,8 +107,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 - v1.3 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0
-- Complete: 5
+- Complete: 10
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after Phase 22 completion*
+*Last updated: 2026-05-14 after Phase 23 completion*
