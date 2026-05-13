@@ -165,8 +165,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Plan Phase 25:
+Execute Phase 25:
 
 ```bash
-$gsd-plan-phase 25
+$gsd-execute-phase 25
 ```
