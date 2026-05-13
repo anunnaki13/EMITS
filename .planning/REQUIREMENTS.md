@@ -73,17 +73,17 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| QA4-01..05 | TBD | Pending roadmap |
-| META4-01..04 | TBD | Pending roadmap |
-| OPS4-01..05 | TBD | Pending roadmap |
-| REPO4-01..04 | TBD | Pending roadmap |
-| REG4-01..04 | TBD | Pending roadmap |
+| QA4-01..05 | Phase 29 | Planned |
+| META4-01..04 | Phase 30 | Planned |
+| OPS4-01..05 | Phase 31 | Planned |
+| REPO4-01..04 | Phase 32 | Planned |
+| REG4-01..04 | Phase 33 | Planned |
 
 **Coverage:**
 - v1.4 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 - Complete: 0
 
 ---
-*Requirements defined: 2026-05-14*
+*Last updated: 2026-05-14 after v1.4 roadmap creation*
