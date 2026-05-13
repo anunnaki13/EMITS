@@ -13,6 +13,7 @@ from services.backup_service import (
     list_backup_history,
     update_backup_settings,
 )
+from services.runtime_status import build_runtime_status, record_smoke_report
 from utils.auth import require_role
 from utils.database import db
 
@@ -31,6 +32,20 @@ class BackupSettingsUpdate(BaseModel):
     retention_days: int = Field(14, ge=1, le=365)
     max_backups: int = Field(7, ge=1, le=100)
     backup_dir: Optional[str] = None
+
+
+class SmokeCheckResult(BaseModel):
+    name: str
+    ok: bool
+    detail: str = ""
+
+
+class SmokeReportRequest(BaseModel):
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    base_url: Optional[str] = None
+    frontend_url: Optional[str] = None
+    results: List[SmokeCheckResult] = Field(default_factory=list)
 
 
 def _validate_backup_payload(backup: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
@@ -116,6 +131,24 @@ async def get_admin_backup_history(
     user: dict = Depends(require_role(["admin"])),
 ):
     return await list_backup_history(page=page, page_size=page_size)
+
+
+@router.get("/runtime/status")
+async def get_admin_runtime_status(user: dict = Depends(require_role(["admin"]))):
+    return await build_runtime_status()
+
+
+@router.post("/runtime/smoke-report")
+async def create_admin_runtime_smoke_report(
+    request: SmokeReportRequest,
+    user: dict = Depends(require_role(["admin"])),
+):
+    report = await record_smoke_report(request.dict(), user)
+    return {
+        "message": "Smoke report tersimpan",
+        "report": report,
+        "runtime": await build_runtime_status(),
+    }
 
 
 @router.get("/audit-logs")
