@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-27 are complete; Phase 28 is planned for UI/UX polish.
+v1.3 implementation is complete. Phases 22-28 are complete and the milestone is ready for audit.
 
 ## Milestone Goal
 
@@ -126,7 +126,7 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 **Requirements:** UX3-01, UX3-02, UX3-03, UX3-04, UX3-05
 
-**Status:** Planned (2026-05-14)
+**Status:** Complete (2026-05-14)
 
 **Success criteria:**
 1. Dashboard, report, and control surfaces share consistent filter/header/badge/state patterns.
@@ -145,9 +145,9 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | DQ3-01..06 | Phase 25 | Complete |
 | TREND3-01..05 | Phase 26 | Complete |
 | AI3-01..05 | Phase 27 | Complete |
-| UX3-01..05 | Phase 28 | Pending |
+| UX3-01..05 | Phase 28 | Complete |
 
-Coverage: 37/37 active v1.3 requirements mapped; 32/37 complete.
+Coverage: 37/37 active v1.3 requirements mapped; 37/37 complete.
 
 ## Completed Milestones
 
@@ -173,8 +173,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Execute Phase 28:
+Audit v1.3 before milestone closure:
 
 ```bash
-$gsd-execute-phase 28
+$gsd-audit-milestone v1.3
 ```

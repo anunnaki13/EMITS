@@ -7,7 +7,7 @@ EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack
 ## Current State
 
 **Shipped version:** v1.2, completed 2026-05-13.
-**Current milestone:** v1.3 - Production Operations & Decision Intelligence.
+**Current milestone:** v1.3 - Production Operations & Decision Intelligence, implementation complete and pending milestone audit.
 
 v1.1 delivered production audit/onboarding, authentication stabilization, documentation/test stabilization, collection naming cleanup, OpenRouter/AI chat operational unblocks, backend refactor foundation, advanced filters, dashboard control room, alerts, formal dispute/umpire workflow, Excel import preview, audit trail v2, management reports, and contextual AI.
 
@@ -86,7 +86,7 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 - [x] DQ3-01..06: Data quality monitor for stale, missing, duplicate, outlier, and inconsistent records with visible/exportable issue evidence.
 - [x] TREND3-01..05: Multi-period trend analytics and forecasting for stock, arrivals, suppliers, COA deltas, disputes, and exports.
 - [x] AI3-01..05: AI advisor v3 with trend/data-quality explanations, optional LLM narrative, deterministic fallback, limitations, and guardrail tests.
-- [ ] UX3-01..05: Operator UI/UX polish for dashboard/report layouts, workflow click reduction, responsive stability, states, and hook-warning cleanup.
+- [x] UX3-01..05: Operator UI/UX polish for dashboard/report layouts, workflow click reduction, responsive stability, states, and hook-warning cleanup.
 
 ### Out of Scope
 
@@ -153,7 +153,7 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 | v1.3 prioritizes operations plus decision intelligence | The app already has core modules; the next leverage is making production status, drilldowns, data quality, trends, and AI advice more actionable and maintainable | — Pending (v1.3 roadmap) |
 
 ---
-*Last updated: 2026-05-13 after v1.3 milestone start.*
+*Last updated: 2026-05-14 after Phase 28 completion.*
 
 
 ## ADR Cross-Links (Phase-3 lock-in)

@@ -66,11 +66,11 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 ### UI/UX Operator Polish (UX3)
 
-- [ ] **UX3-01**: Dashboard, report, and control pages share cleaner layout patterns for filters, headers, badges, loading states, and empty states.
-- [ ] **UX3-02**: Top workflows require fewer clicks for monitoring stock, arrivals, COA disputes, and report/advisor review.
-- [ ] **UX3-03**: Common desktop and tablet layouts have stable dimensions with no overlapping text, controls, cards, or charts.
-- [ ] **UX3-04**: Loading, error, empty, partial-data, and success states use consistent Indonesian copy.
-- [ ] **UX3-05**: Legacy React hook warnings are reduced where safe or kept in the warning register with explicit rationale.
+- [x] **UX3-01**: Dashboard, report, and control pages share cleaner layout patterns for filters, headers, badges, loading states, and empty states.
+- [x] **UX3-02**: Top workflows require fewer clicks for monitoring stock, arrivals, COA disputes, and report/advisor review.
+- [x] **UX3-03**: Common desktop and tablet layouts have stable dimensions with no overlapping text, controls, cards, or charts.
+- [x] **UX3-04**: Loading, error, empty, partial-data, and success states use consistent Indonesian copy.
+- [x] **UX3-05**: Legacy React hook warnings are reduced where safe or kept in the warning register with explicit rationale.
 
 ## Future Requirements
 
@@ -101,14 +101,14 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 | DQ3-01..06 | Phase 25 | Complete |
 | TREND3-01..05 | Phase 26 | Complete |
 | AI3-01..05 | Phase 27 | Complete |
-| UX3-01..05 | Phase 28 | Pending |
+| UX3-01..05 | Phase 28 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0
-- Complete: 32
+- Complete: 37
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-14 after Phase 27 completion*
+*Last updated: 2026-05-14 after Phase 28 completion*
