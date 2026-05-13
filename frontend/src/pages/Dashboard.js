@@ -31,7 +31,9 @@ import {
   ShieldCheck,
   Clock3,
   ArrowRight,
-  CircleAlert
+  CircleAlert,
+  TrendingDown,
+  Minus
 } from "lucide-react";
 import { parseDashboardDrilldown } from "@/utils/dashboardDrilldown";
 import {
@@ -88,6 +90,23 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color = "cyan" }) => {
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+const trendTone = (metric = {}) => {
+  if (metric.status === "improving") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
+  if (metric.status === "worsening") return "border-red-500/40 bg-red-500/10 text-red-300";
+  if (metric.status === "stable") return "border-blue-500/40 bg-blue-500/10 text-blue-300";
+  return "border-slate-500/40 bg-slate-500/10 text-slate-300";
+};
+
+const TrendDirectionBadge = ({ metric }) => {
+  const Icon = metric?.direction === "up" ? TrendingUp : metric?.direction === "down" ? TrendingDown : Minus;
+  return (
+    <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold ${trendTone(metric)}`}>
+      <Icon className="w-3 h-3" />
+      {metric?.direction_label || "Belum cukup data"}
+    </span>
   );
 };
 
@@ -205,6 +224,9 @@ const Dashboard = () => {
   const stock = operationalStats?.stock || {};
   const arrivals = operationalStats?.arrivals || {};
   const disputes = operationalStats?.disputes || {};
+  const trendAnalytics = operationalStats?.trend_analytics || {};
+  const trendMetrics = trendAnalytics.metrics || {};
+  const stockForecast = trendAnalytics.stock_forecast || {};
   const realizedByMode = arrivals.realized_by_mode || [];
   const supplierRisk = operationalStats?.supplier_risk || [];
   const upcomingSchedule = arrivals.upcoming_schedule || [];
@@ -532,6 +554,120 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {operationalStats?.trend_analytics && (
+        <Card className="glass-card border-white/10">
+          <CardHeader>
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <CardTitle className="font-heading text-sm sm:text-base text-white flex items-center gap-2">
+                  <LineChartIcon className="w-5 h-5 text-cyan-400" />
+                  Trend & Forecast
+                </CardTitle>
+                <p className="text-xs text-slate-500 mt-1">
+                  {trendAnalytics.period_comparison?.current?.label || "-"} dibanding {trendAnalytics.period_comparison?.previous?.label || "-"}
+                </p>
+              </div>
+              <span className={`w-fit rounded border px-2.5 py-1 text-[10px] font-semibold uppercase ${
+                trendAnalytics.confidence === "high" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" :
+                trendAnalytics.confidence === "medium" ? "border-amber-500/40 bg-amber-500/10 text-amber-300" :
+                "border-red-500/40 bg-red-500/10 text-red-300"
+              }`}>
+                Confidence: {trendAnalytics.confidence || "low"}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {trendAnalytics.sparse_data && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                {(trendAnalytics.caveats || []).slice(0, 3).map((item) => (
+                  <p key={item} className="text-xs text-amber-100/90">{item}</p>
+                ))}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+              {[
+                trendMetrics.stock_coverage,
+                trendMetrics.arrivals,
+                trendMetrics.supplier_performance,
+                trendMetrics.quality_delta,
+                trendMetrics.disputes
+              ].filter(Boolean).map((metric) => (
+                <div key={metric.label} className="rounded-lg border border-white/5 bg-slate-900/50 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[11px] text-slate-400">{metric.label}</p>
+                    <TrendDirectionBadge metric={metric} />
+                  </div>
+                  <p className="mt-2 text-xl font-bold text-white">
+                    {formatNumber(Number(metric.current || 0))} {metric.unit}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Sebelumnya {formatNumber(Number(metric.previous || 0))} | delta {formatNumber(Number(metric.delta || 0))}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-4">
+              <div className="rounded-lg border border-white/5 bg-slate-900/50 p-4">
+                <p className="text-xs text-slate-400">Forecast stok</p>
+                <p className="mt-1 font-heading text-3xl font-bold text-white">{stockForecast.projected_coverage_days ?? "-"} hari</p>
+                <p className="text-xs text-slate-500">
+                  Burn {formatNumber(stockForecast.avg_daily_usage || 0)} MT/hari | arrivals 30 hari {formatNumber(stockForecast.expected_arrivals_30d || 0)} MT
+                </p>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {(stockForecast.horizons || []).map((item) => (
+                    <div key={item.days} className="rounded-lg bg-slate-950/70 p-2">
+                      <p className="text-[10px] text-slate-500">{item.days} hari</p>
+                      <p className="text-sm font-semibold text-white">{formatNumber(item.projected_stock || 0)} MT</p>
+                      <p className="text-[10px] text-slate-500">{item.projected_coverage_days} hari</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/5 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-800">
+                      <th className="text-left py-2 px-3 text-slate-500 font-medium">Supplier</th>
+                      <th className="text-left py-2 px-3 text-slate-500 font-medium">Risk</th>
+                      <th className="text-right py-2 px-3 text-slate-500 font-medium">Volume</th>
+                      <th className="text-right py-2 px-3 text-slate-500 font-medium">On-time</th>
+                      <th className="text-right py-2 px-3 text-slate-500 font-medium">Delta COA</th>
+                      <th className="text-right py-2 px-3 text-slate-500 font-medium">Dispute</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(trendAnalytics.supplier_trends || []).slice(0, 6).map((item) => (
+                      <tr key={item.supplier} className="border-b border-slate-800/50">
+                        <td className="py-2 px-3 text-white max-w-[240px] whitespace-normal">{item.supplier}</td>
+                        <td className="py-2 px-3">
+                          <span className={`rounded px-2 py-1 text-[10px] font-semibold ${
+                            item.risk_status === "high" ? "bg-red-500/20 text-red-300" :
+                            item.risk_status === "medium" ? "bg-amber-500/20 text-amber-300" :
+                            "bg-emerald-500/20 text-emerald-300"
+                          }`}>
+                            {item.risk_label}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-right text-slate-300">{formatNumber(item.volume?.delta || 0)} MT</td>
+                        <td className="py-2 px-3 text-right text-slate-300">{item.timeliness?.direction_label || "-"}</td>
+                        <td className="py-2 px-3 text-right text-slate-300">{formatNumber(item.quality_delta?.delta || 0)}</td>
+                        <td className="py-2 px-3 text-right text-slate-300">{formatNumber(item.disputes?.delta || 0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {(trendAnalytics.supplier_trends || []).length === 0 && (
+                  <p className="text-center text-slate-500 py-6">Belum ada tren supplier pada filter ini</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {(atRiskSchedule.length > 0 || upcomingSchedule.length > 0) && (
         <Card className="glass-card border-white/10">

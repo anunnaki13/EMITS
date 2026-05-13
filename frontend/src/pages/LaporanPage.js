@@ -46,7 +46,10 @@ import {
   RotateCcw,
   BarChart3,
   Brain,
-  AlertTriangle
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Minus
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -303,6 +306,64 @@ const LaporanPage = () => {
     return Number(value).toLocaleString("id-ID", { maximumFractionDigits: digits });
   };
 
+  const trendTone = (metric = {}) => {
+    if (metric.status === "improving") return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+    if (metric.status === "worsening") return "bg-red-500/15 text-red-300 border-red-500/30";
+    if (metric.status === "stable") return "bg-blue-500/15 text-blue-300 border-blue-500/30";
+    return "bg-slate-500/15 text-slate-300 border-slate-500/30";
+  };
+
+  const TrendDirectionIcon = ({ metric }) => {
+    if (metric?.direction === "up") return <TrendingUp className="w-4 h-4" />;
+    if (metric?.direction === "down") return <TrendingDown className="w-4 h-4" />;
+    return <Minus className="w-4 h-4" />;
+  };
+
+  const trendMetricRows = () => {
+    const metrics = managementReport?.trend_analytics?.metrics || {};
+    return Object.entries(metrics).map(([key, metric]) => ({
+      Area: key,
+      Metrik: metric.label,
+      Current: metric.current,
+      Previous: metric.previous,
+      Delta: metric.delta,
+      "Delta %": metric.delta_percent ?? "-",
+      Direction: metric.direction_label,
+      Status: metric.status,
+      Satuan: metric.unit || "-"
+    }));
+  };
+
+  const supplierTrendRows = () => {
+    return (managementReport?.trend_analytics?.supplier_trends || []).map((item) => ({
+      Supplier: item.supplier,
+      Risk: item.risk_label,
+      "Risk Score": item.risk_score,
+      "Volume Current": item.volume?.current,
+      "Volume Previous": item.volume?.previous,
+      "Volume Direction": item.volume?.direction_label,
+      "Timeliness Current": item.timeliness?.current,
+      "Timeliness Previous": item.timeliness?.previous,
+      "Quality Delta Current": item.quality_delta?.current,
+      "Quality Delta Previous": item.quality_delta?.previous,
+      "Disputes Current": item.disputes?.current,
+      "Disputes Previous": item.disputes?.previous
+    }));
+  };
+
+  const stockForecastRows = () => {
+    const forecast = managementReport?.trend_analytics?.stock_forecast || {};
+    return (forecast.horizons || []).map((item) => ({
+      Horizon: `${item.days} hari`,
+      "Expected Arrivals": item.expected_arrivals,
+      "Projected Stock": item.projected_stock,
+      "Projected Coverage Days": item.projected_coverage_days,
+      Status: item.status,
+      "Avg Daily Usage": forecast.avg_daily_usage,
+      Confidence: forecast.confidence
+    }));
+  };
+
   const managementSummaryRows = () => {
     if (!managementReport) return [];
     return [
@@ -325,6 +386,9 @@ const LaporanPage = () => {
   const exportManagementExcel = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementSummaryRows()), "Ringkasan");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trendMetricRows()), "Trend Analytics");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(supplierTrendRows()), "Supplier Trends");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockForecastRows()), "Stock Forecast");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementReport.supplier_scorecard || []), "Supplier Scorecard");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(managementReport.supplier_performance || []), "Supplier Volume");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(advisorReport?.recommendations || []), "AI Advisor");
@@ -339,6 +403,8 @@ const LaporanPage = () => {
 
   const exportManagementPDF = () => {
     const doc = new jsPDF("landscape", "mm", "a4");
+    const trendRows = trendMetricRows();
+    const forecastRows = stockForecastRows();
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("Laporan Manajemen Bahan Bakar", 14, 15);
@@ -352,6 +418,24 @@ const LaporanPage = () => {
       styles: { fontSize: 9, cellPadding: 2 },
       headStyles: { fillColor: [30, 41, 59], textColor: 255 }
     });
+    if (trendRows.length > 0) {
+      doc.autoTable({
+        head: [["Metrik", "Current", "Previous", "Delta", "Arah", "Status"]],
+        body: trendRows.map(row => [row.Metrik, row.Current, row.Previous, row.Delta, row.Direction, row.Status]),
+        startY: doc.lastAutoTable.finalY + 8,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [8, 145, 178], textColor: 255 }
+      });
+    }
+    if (forecastRows.length > 0) {
+      doc.autoTable({
+        head: [["Horizon", "Expected Arrivals", "Projected Stock", "Coverage", "Status"]],
+        body: forecastRows.map(row => [row.Horizon, row["Expected Arrivals"], row["Projected Stock"], row["Projected Coverage Days"], row.Status]),
+        startY: doc.lastAutoTable.finalY + 8,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [21, 128, 61], textColor: 255 }
+      });
+    }
     doc.autoTable({
       head: [["Rank", "Supplier", "Risk", "Realisasi MT", "Delta COA", "Dispute"]],
       body: (managementReport.supplier_scorecard || []).slice(0, 10).map(row => [
@@ -611,6 +695,9 @@ const LaporanPage = () => {
 
   const columns = getTableColumns();
   const currentCategory = categories.find(c => c.id === activeTab);
+  const reportTrend = managementReport?.trend_analytics || {};
+  const reportTrendMetrics = reportTrend.metrics || {};
+  const reportForecast = reportTrend.stock_forecast || {};
 
   return (
     <div className="space-y-6" data-testid="laporan-page">
@@ -798,6 +885,113 @@ const LaporanPage = () => {
                             </div>
                           </div>
                         </Card>
+                      )}
+
+                      {managementReport.trend_analytics && (
+                        <div className="rounded-lg border border-white/5 bg-slate-950/40 p-4">
+                          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <p className="text-slate-300 text-sm font-semibold flex items-center gap-2">
+                                <BarChart3 className="w-4 h-4 text-cyan-400" />
+                                Trend & Forecast
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {reportTrend.period_comparison?.current?.label || "-"} dibanding {reportTrend.period_comparison?.previous?.label || "-"}
+                              </p>
+                            </div>
+                            <span className={`w-fit rounded border px-2 py-1 text-[10px] font-semibold uppercase ${
+                              reportTrend.confidence === "high" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" :
+                              reportTrend.confidence === "medium" ? "border-amber-500/40 bg-amber-500/10 text-amber-300" :
+                              "border-red-500/40 bg-red-500/10 text-red-300"
+                            }`}>
+                              Confidence: {reportTrend.confidence || "low"}
+                            </span>
+                          </div>
+
+                          {reportTrend.sparse_data && (
+                            <div className="mt-3 rounded border border-amber-500/30 bg-amber-500/10 p-3">
+                              {(reportTrend.caveats || []).slice(0, 3).map((item) => (
+                                <p key={item} className="text-xs text-amber-100/90">{item}</p>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+                            {[
+                              reportTrendMetrics.stock,
+                              reportTrendMetrics.arrivals,
+                              reportTrendMetrics.supplier_performance,
+                              reportTrendMetrics.quality_delta,
+                              reportTrendMetrics.disputes
+                            ].filter(Boolean).map((metric) => (
+                              <div key={metric.label} className="rounded-lg border border-white/5 bg-slate-900/60 p-3">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-[11px] text-slate-400">{metric.label}</p>
+                                  <span className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] ${trendTone(metric)}`}>
+                                    <TrendDirectionIcon metric={metric} />
+                                    {metric.direction_label}
+                                  </span>
+                                </div>
+                                <p className="mt-2 text-xl font-bold text-white">{formatNumber(metric.current, 2)} {metric.unit}</p>
+                                <p className="text-[11px] text-slate-500">Sebelumnya {formatNumber(metric.previous, 2)} | delta {formatNumber(metric.delta, 2)}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-4">
+                            <div className="rounded-lg border border-white/5 bg-slate-900/60 p-3">
+                              <p className="text-xs text-slate-400">Forecast stok</p>
+                              <p className="mt-1 text-2xl font-bold text-white">{reportForecast.projected_coverage_days ?? "-"} hari</p>
+                              <p className="text-[11px] text-slate-500">
+                                Burn {formatNumber(reportForecast.avg_daily_usage, 2)} MT/hari | arrivals 30 hari {formatNumber(reportForecast.expected_arrivals_30d, 2)} MT
+                              </p>
+                              <div className="mt-3 grid grid-cols-3 gap-2">
+                                {(reportForecast.horizons || []).map((item) => (
+                                  <div key={item.days} className="rounded bg-slate-950/70 p-2">
+                                    <p className="text-[10px] text-slate-500">{item.days} hari</p>
+                                    <p className="text-sm font-semibold text-white">{formatNumber(item.projected_stock, 0)} MT</p>
+                                    <p className="text-[10px] text-slate-500">{item.projected_coverage_days} hari</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="rounded-lg border border-white/5 overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-white/5 hover:bg-transparent">
+                                    <TableHead className="text-slate-400 font-mono text-xs">Supplier</TableHead>
+                                    <TableHead className="text-slate-400 font-mono text-xs">Risk</TableHead>
+                                    <TableHead className="text-slate-400 font-mono text-xs">Volume</TableHead>
+                                    <TableHead className="text-slate-400 font-mono text-xs">On-time</TableHead>
+                                    <TableHead className="text-slate-400 font-mono text-xs">Delta COA</TableHead>
+                                    <TableHead className="text-slate-400 font-mono text-xs">Dispute</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {(reportTrend.supplier_trends || []).slice(0, 5).map((item) => (
+                                    <TableRow key={item.supplier} className="border-white/5 hover:bg-slate-900/50">
+                                      <TableCell className="text-slate-300 max-w-[220px] whitespace-normal">{item.supplier}</TableCell>
+                                      <TableCell>
+                                        <span className={`rounded px-2 py-1 text-[10px] uppercase ${
+                                          item.risk_status === "high" ? "bg-red-500/20 text-red-300" :
+                                          item.risk_status === "medium" ? "bg-amber-500/20 text-amber-300" :
+                                          "bg-emerald-500/20 text-emerald-300"
+                                        }`}>
+                                          {item.risk_label}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="text-xs text-slate-300">{formatNumber(item.volume?.delta, 2)} MT</TableCell>
+                                      <TableCell className="text-xs text-slate-300">{item.timeliness?.direction_label}</TableCell>
+                                      <TableCell className="text-xs text-slate-300">{formatNumber(item.quality_delta?.delta, 2)}</TableCell>
+                                      <TableCell className="text-xs text-slate-300">{formatNumber(item.disputes?.delta, 0)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        </div>
                       )}
 
                       <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
