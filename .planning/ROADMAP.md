@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-25 are complete; remaining phases focus on trend analytics, AI advice, and UI/UX polish.
+v1.3 is in progress. Phases 22-25 are complete; Phase 26 is planned; remaining phases focus on trend analytics execution, AI advice, and UI/UX polish.
 
 ## Milestone Goal
 
@@ -96,6 +96,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 **Requirements:** TREND3-01, TREND3-02, TREND3-03, TREND3-04, TREND3-05
 
+**Status:** Planned (2026-05-14)
+
 **Success criteria:**
 1. Dashboard and reports compare current period to previous period for stock, arrivals, suppliers, COA deltas, and disputes.
 2. Supplier trend cards explain volume, timeliness, quality delta, and dispute direction.
@@ -167,8 +169,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Plan Phase 26:
+Execute Phase 26:
 
 ```bash
-$gsd-plan-phase 26
+$gsd-execute-phase 26
 ```
