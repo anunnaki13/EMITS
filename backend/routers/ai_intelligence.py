@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app.ai.client import AIClient, get_ai_client
-from routers.reports import build_management_report
+from services.operational_advisor import build_operational_advisor
+from services.query_filters import period_match, sum_collection
 from utils.auth import get_current_user
 from utils.database import db
 
@@ -33,38 +34,6 @@ class AISettingsUpdate(BaseModel):
     custom_api_key: Optional[str] = None
     llm_provider: Optional[str] = "openrouter"
     llm_model: Optional[str] = "openai/gpt-4o-mini"
-
-
-def _period_bounds(period: Optional[str]):
-    if not period or period == "all":
-        return None
-    if len(period) == 4 and period.isdigit():
-        year = int(period)
-        return f"{year}-01-01", f"{year + 1}-01-01"
-    if len(period) == 7 and period[4] == "-":
-        year = int(period[:4])
-        month = int(period[5:7])
-        if month == 12:
-            return f"{year}-12-01", f"{year + 1}-01-01"
-        return f"{year}-{month:02d}-01", f"{year}-{month + 1:02d}-01"
-    return None
-
-
-def _period_match(field: str, period: Optional[str]) -> dict:
-    bounds = _period_bounds(period)
-    if not bounds:
-        return {}
-    start, end = bounds
-    return {field: {"$gte": start, "$lt": end}}
-
-
-async def _sum_collection(collection, match: dict, field: str) -> float:
-    result = await collection.aggregate([
-        {"$match": match},
-        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": [f"${field}", 0]}}}},
-    ]).to_list(1)
-    return float(result[0]["total"]) if result else 0.0
-
 
 def _clean_records(records: list[dict]) -> list[dict]:
     blocked = {"_id", "password", "hashed_password", "custom_api_key", "api_key", "token", "access_token"}
@@ -93,11 +62,11 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
     include_all = module in {"general", "smart_stock", "coa_reconciliation", "logistics", "contract"}
 
     if include_all or module == "smart_stock":
-        stock_match = _period_match("date", period)
+        stock_match = period_match("date", period)
         latest_stock = await db.smartstock.find_one({}, {"_id": 0}, sort=[("date", -1)])
         latest_usage = await db.sumberpemakaian.find_one({}, {"_id": 0}, sort=[("date", -1)])
-        total_penerimaan = await _sum_collection(db.smartstock, stock_match, "total_penerimaan")
-        total_pemakaian = await _sum_collection(db.sumberpemakaian, stock_match, "total_pemakaian")
+        total_penerimaan = await sum_collection(db.smartstock, stock_match, "total_penerimaan")
+        total_pemakaian = await sum_collection(db.sumberpemakaian, stock_match, "total_pemakaian")
         current_stock = latest_stock.get("stock_akhir") if latest_stock and latest_stock.get("stock_akhir") is not None else None
         if current_stock is None:
             current_stock = (
@@ -119,9 +88,9 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
         _add_slice(slices, "stock_summary", ["smartstock", "sumberpemakaian"], count, list(context["stock"].keys()))
 
     if include_all or module in {"contract", "logistics"}:
-        po_match = _period_match("time_arrival", period)
+        po_match = period_match("time_arrival", period)
         scheduled_count = await db.po_batubara.count_documents(po_match)
-        scheduled_tonnage = await _sum_collection(db.po_batubara, po_match, "tonase_po")
+        scheduled_tonnage = await sum_collection(db.po_batubara, po_match, "tonase_po")
         realized_sources = [
             ("vessel", db.vessels, "completed_unloading", "ds_mt"),
             ("barge", db.barges, "completed_unloading", "ds_mt"),
@@ -132,9 +101,9 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
         realized_count = 0
         realized_tonnage = 0.0
         for mode, collection, date_field, tonnage_field in realized_sources:
-            match = _period_match(date_field, period)
+            match = period_match(date_field, period)
             count = await collection.count_documents(match)
-            tonnage = await _sum_collection(collection, match, tonnage_field)
+            tonnage = await sum_collection(collection, match, tonnage_field)
             realized_count += count
             realized_tonnage += tonnage
             realized_by_mode.append({"mode": mode, "count": count, "tonnage": tonnage})
@@ -149,7 +118,7 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
         _add_slice(slices, "arrival_schedule_vs_realization", ["po_batubara", "vessels", "barges", "trucking", "biomassa"], scheduled_count + realized_count, list(context["arrivals"].keys()))
 
     if include_all or module in {"coa_reconciliation", "boiler_risk"}:
-        coa_match = _period_match("completed_unloading", period)
+        coa_match = period_match("completed_unloading", period)
         coa_items = await db.coa_reconciliation.find(
             coa_match,
             {"_id": 0, "shipment": 1, "suppliers": 1, "status": 1, "umpire_status": 1, "delta_loading_internal": 1, "ds_mt": 1, "completed_unloading": 1, "dispute_history": 1},
@@ -203,145 +172,6 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
             "max_prompt_chars": AI_CONTEXT_MAX_CHARS,
         },
     }
-
-
-def _fmt(value, digits: int = 0, suffix: str = "") -> str:
-    if value is None:
-        return "-"
-    try:
-        formatted = f"{float(value):,.{digits}f}"
-        return f"{formatted}{suffix}"
-    except (TypeError, ValueError):
-        return str(value)
-
-
-def _advisor_recommendations(report: dict) -> tuple[list[dict], list[str]]:
-    recommendations = []
-    refusals = []
-    stock = report["stock"]
-    arrivals = report["arrivals"]
-    quality = report["quality"]
-    disputes = report["disputes"]
-
-    days_of_supply = stock.get("days_of_supply")
-    if days_of_supply is None:
-        refusals.append("Rekomendasi reorder stock tidak diberikan karena data pemakaian pada filter ini belum cukup untuk menghitung days of supply.")
-    elif days_of_supply < 7:
-        recommendations.append({
-            "id": "stock-critical",
-            "severity": "critical",
-            "title": "Stock coverage kritis",
-            "recommendation": "Aktifkan percepatan kedatangan terdekat dan review pemakaian harian sampai coverage kembali di atas 14 hari.",
-            "source_slice": "stock_summary",
-            "evidence": f"Days of supply {days_of_supply} hari; stok {_fmt(stock.get('current_stock'), 0, ' MT')}; burn rate {_fmt(stock.get('avg_daily_usage'), 0, ' MT/hari')}.",
-            "next_steps": [
-                "Cek jadwal PO yang at-risk.",
-                "Prioritaskan supplier dengan realisasi paling cepat.",
-                "Laporkan risiko coverage ke manajemen shift.",
-            ],
-        })
-    elif days_of_supply < 14:
-        recommendations.append({
-            "id": "stock-warning",
-            "severity": "warning",
-            "title": "Stock mendekati threshold reorder",
-            "recommendation": "Siapkan reorder atau percepatan pengiriman sebelum coverage turun di bawah 7 hari.",
-            "source_slice": "stock_summary",
-            "evidence": f"Days of supply {days_of_supply} hari dengan threshold operasional 14 hari.",
-            "next_steps": ["Review jadwal 7 hari ke depan.", "Pastikan rencana pemakaian unit tidak naik mendadak."],
-        })
-
-    if arrivals.get("at_risk_count", 0) > 0 or arrivals.get("tonnage_gap", 0) > 0:
-        recommendations.append({
-            "id": "arrival-risk",
-            "severity": "warning" if arrivals.get("at_risk_count", 0) < 3 else "critical",
-            "title": "Jadwal kedatangan perlu follow-up",
-            "recommendation": "Follow-up jadwal yang sudah melewati ETA dan cocokkan ulang dengan realisasi bongkar.",
-            "source_slice": "arrival_schedule_vs_realization",
-            "evidence": f"{arrivals.get('at_risk_count', 0)} jadwal at-risk; gap tonase {_fmt(arrivals.get('tonnage_gap'), 0, ' MT')}.",
-            "next_steps": ["Hubungi PIC supplier/logistik.", "Update ETA aktual di PO Batubara.", "Cek apakah realisasi masuk di modul laporan."],
-        })
-    elif arrivals.get("scheduled_count", 0) == 0:
-        refusals.append("Rekomendasi keterlambatan kedatangan tidak diberikan karena tidak ada jadwal PO pada filter ini.")
-
-    if quality.get("critical_count", 0) > 0 or (quality.get("avg_coa_delta") or 0) >= 150:
-        recommendations.append({
-            "id": "coa-quality-risk",
-            "severity": "critical" if quality.get("critical_count", 0) else "warning",
-            "title": "Risiko kualitas COA tinggi",
-            "recommendation": "Prioritaskan review COA critical/warning dan siapkan eskalasi umpire untuk shipment dengan delta terbesar.",
-            "source_slice": "coa_quality_disputes",
-            "evidence": f"{quality.get('critical_count', 0)} critical, {quality.get('warning_count', 0)} warning, avg delta {_fmt(quality.get('avg_coa_delta'), 0, ' kcal/kg')}.",
-            "next_steps": ["Validasi data loading/internal.", "Cek attachment dan catatan dispute.", "Ajukan umpire jika bukti lengkap."],
-        })
-    elif quality.get("coa_records", 0) == 0:
-        refusals.append("Rekomendasi COA tidak diberikan karena tidak ada record COA reconciliation pada filter ini.")
-
-    if disputes.get("stale_count", 0) > 0:
-        recommendations.append({
-            "id": "stale-disputes",
-            "severity": "warning",
-            "title": "Dispute aktif mulai stale",
-            "recommendation": "Tutup loop dispute/umpire yang berumur 7 hari atau lebih dengan PIC, target keputusan, dan tanggal follow-up.",
-            "source_slice": "coa_quality_disputes",
-            "evidence": f"{disputes.get('stale_count', 0)} dispute stale; aging tertua {disputes.get('oldest_active_aging_days') or '-'} hari.",
-            "next_steps": ["Tag owner dispute.", "Minta update lab umpire.", "Masukkan status terbaru ke dispute monitor."],
-        })
-
-    if not recommendations and not report["data_health"]["empty"]:
-        recommendations.append({
-            "id": "monitor-normal",
-            "severity": "info",
-            "title": "Tidak ada risiko prioritas tinggi pada filter ini",
-            "recommendation": "Lanjutkan monitoring rutin dan gunakan scorecard supplier untuk review mingguan.",
-            "source_slice": "supplier_scorecard",
-            "evidence": "Tidak ada indikator low stock, arrival at-risk, COA critical, atau stale dispute yang melewati threshold advisor.",
-            "next_steps": ["Review supplier scorecard.", "Pastikan data harian tetap diinput lengkap."],
-        })
-
-    if report["data_health"]["empty"]:
-        refusals.append("Memo dan rekomendasi detail dibatasi karena tidak ada data sumber pada filter ini.")
-
-    return recommendations, refusals
-
-
-def _management_memo(report: dict, recommendations: list[dict], refusals: list[str]) -> str:
-    scope = report["filter_scope"]
-    scope_label = scope.get("period") or "all"
-    if scope.get("date_from") or scope.get("date_to"):
-        scope_label = f"{scope.get('date_from') or '-'} s.d. {scope.get('date_to') or '-'}"
-    supplier = scope.get("supplier") or "all"
-    stock = report["stock"]
-    arrivals = report["arrivals"]
-    disputes = report["disputes"]
-    quality = report["quality"]
-    top_supplier = (report.get("supplier_scorecard") or [{}])[0]
-    priority_lines = "\n".join(
-        f"- {item['title']}: {item['recommendation']} ({item['source_slice']})"
-        for item in recommendations[:5]
-    ) or "- Tidak ada rekomendasi prioritas dari advisor."
-    refusal_lines = "\n".join(f"- {item}" for item in refusals) if refusals else "- Tidak ada penolakan klaim; data minimum tersedia."
-
-    return f"""Memo Manajemen Bahan Bakar
-Periode: {scope_label}
-Supplier: {supplier}
-
-Ringkasan:
-- Stok saat ini {_fmt(stock.get('current_stock'), 0, ' MT')} dengan coverage {stock.get('days_of_supply') if stock.get('days_of_supply') is not None else '-'} hari dan status {stock.get('status')}.
-- Realisasi kedatangan {_fmt(arrivals.get('realized_tonnage'), 0, ' MT')} dari jadwal {_fmt(arrivals.get('scheduled_tonnage'), 0, ' MT')}; jadwal at-risk {arrivals.get('at_risk_count', 0)}.
-- COA: {quality.get('critical_count', 0)} critical, {quality.get('warning_count', 0)} warning, avg delta {_fmt(quality.get('avg_coa_delta'), 0, ' kcal/kg')}.
-- Dispute/umpire aktif {disputes.get('umpire', {}).get('active', 0)}, stale {disputes.get('stale_count', 0)}.
-- Supplier risiko tertinggi: {top_supplier.get('supplier', '-')} dengan status {top_supplier.get('risk_status', '-')}.
-
-Rekomendasi Prioritas:
-{priority_lines}
-
-Batasan Data:
-{refusal_lines}
-
-Sumber Data:
-{", ".join(slice_item["name"] for slice_item in report.get("source_slices", []))}
-"""
 
 async def get_database_context(module: str, parameters: dict = None) -> str:
     """Gather relevant data from database based on module"""
@@ -1082,33 +912,7 @@ async def get_operational_advisor(
     user: dict = Depends(get_current_user),
 ):
     """Source-backed operational recommendations and Indonesian management memo."""
-    report = await build_management_report(period, supplier, date_from, date_to, user)
-    recommendations, refusals = _advisor_recommendations(report)
-    memo_draft = _management_memo(report, recommendations, refusals)
-    return {
-        "period": report["period"],
-        "supplier": report["supplier"],
-        "date_from": report["date_from"],
-        "date_to": report["date_to"],
-        "filter_scope": report["filter_scope"],
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source_slices": report["source_slices"],
-        "source_counts": report["source_counts"],
-        "data_health": report["data_health"],
-        "recommendations": recommendations,
-        "memo_draft": memo_draft,
-        "guardrails": {
-            "bounded_context": True,
-            "llm_required": False,
-            "unsupported_claims_refused": refusals,
-            "rule_thresholds": {
-                "stock_critical_days": 7,
-                "stock_warning_days": 14,
-                "coa_high_delta_kcal": 150,
-                "stale_dispute_days": 7,
-            },
-        },
-    }
+    return await build_operational_advisor(period, supplier, date_from, date_to, user)
 
 # ==================== AI CONVERSATION SESSIONS ====================
 
