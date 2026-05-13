@@ -16,7 +16,7 @@ from services.query_filters import (
     stock_risk,
     sum_collection,
     supplier_match,
-    supplier_name,
+    supplier_name as normalize_supplier_name,
 )
 from utils.database import db
 
@@ -91,7 +91,7 @@ async def build_dashboard_operational(
         realized_by_mode.append({"mode": source_mode, "count": count, "tonnage": tonnage})
         supplier_docs = await collection.find(match, {"_id": 0, "suppliers": 1}).to_list(10000)
         for item in supplier_docs:
-            name = supplier_name(item.get("suppliers"))
+            name = normalize_supplier_name(item.get("suppliers"))
             realized_records_by_supplier[name] = realized_records_by_supplier.get(name, 0) + 1
 
     coa_match = merge_match(
@@ -127,7 +127,7 @@ async def build_dashboard_operational(
     supplier_risk_map = {}
 
     def risk_entry(name: Optional[str]) -> dict:
-        supplier_name = supplier_name(name)
+        supplier_name = normalize_supplier_name(name)
         if supplier_name not in supplier_risk_map:
             supplier_risk_map[supplier_name] = {
                 "supplier": supplier_name,
