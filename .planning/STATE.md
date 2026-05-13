@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Production Operations & Decision Intelligence
-status: ready_to_plan
-stopped_at: Completed 26-01-PLAN.md; Phase 27 ready to plan
-last_updated: "2026-05-14T02:31:00+07:00"
-last_activity: 2026-05-14 — Phase 26 Trend Analytics & Forecasting completed
+status: ready_to_execute
+stopped_at: Planned 27-01-PLAN.md; Phase 27 ready to execute
+last_updated: "2026-05-14T02:36:00+07:00"
+last_activity: 2026-05-14 — Phase 27 AI Advisor v3 planned
 progress:
   total_phases: 7
   completed_phases: 5
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-14)
 
 ## Current Position
 
-Phase: 27 (ready to plan)
-Plan: —
-Status: Phase 26 complete; Phase 27 AI Advisor v3 ready to plan
-Last activity: 2026-05-14 — Phase 26 Trend Analytics & Forecasting completed
+Phase: 27 (ready to execute)
+Plan: 27-01
+Status: Phase 27 AI Advisor v3 planned; 27-01 ready to execute
+Last activity: 2026-05-14 — Phase 27 AI Advisor v3 planned
 
 ## Performance Metrics
 
@@ -103,10 +103,11 @@ Recent decisions affecting current work:
 - [Phase 24]: Dashboard, reports, and operational advisor calculations now live behind service-layer builders; routers remain FastAPI dependency/response wrappers, and shared query helpers centralize period/date/supplier/mode matching.
 - [Phase 25]: Data quality monitor added as rule-based service/API/UI with export, dashboard/report caveats, and import-preview quality impact summaries.
 - [Phase 26]: Trend analytics is implemented as an additive service consumed by dashboard/report payloads, with deterministic stock forecast, supplier trend labels, export context, and sparse-data caveats.
+- [Phase 27]: Advisor v3 will consume trend/data-quality context, keep deterministic fallback default, and gate optional LLM memo polish behind `ADVISOR_LLM_POLISH=1`.
 
 ### Pending Todos
 
-- Plan Phase 27 AI Advisor v3.
+- Execute Phase 27 AI Advisor v3 plan 27-01.
 
 ### Blockers/Concerns
 
@@ -129,10 +130,10 @@ Items acknowledged at v1.2 milestone close.
 
 ## Session Continuity
 
-Last session: 2026-05-14T02:31:00+07:00
-Stopped at: Completed 26-01-PLAN.md; Phase 27 ready to plan
+Last session: 2026-05-14T02:36:00+07:00
+Stopped at: Planned 27-01-PLAN.md; Phase 27 ready to execute
 Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Plan Phase 27 with `$gsd-plan-phase 27`
+- Execute Phase 27 with `$gsd-execute-phase 27`

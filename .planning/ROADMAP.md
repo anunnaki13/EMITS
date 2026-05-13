@@ -8,7 +8,7 @@
 
 ## Current Status
 
-v1.3 is in progress. Phases 22-26 are complete; remaining phases focus on AI advice and UI/UX polish.
+v1.3 is in progress. Phases 22-26 are complete; Phase 27 is planned; remaining phases focus on AI advisor execution and UI/UX polish.
 
 ## Milestone Goal
 
@@ -111,6 +111,8 @@ Move EMITS from feature-complete enough toward a more operable, maintainable, de
 
 **Requirements:** AI3-01, AI3-02, AI3-03, AI3-04, AI3-05
 
+**Status:** Planned (2026-05-14)
+
 **Success criteria:**
 1. Advisor summarizes trends and data-quality caveats using visible source slices.
 2. Optional LLM narrative polish can be used only when configured, while deterministic fallback remains reliable.
@@ -169,8 +171,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Plan Phase 27:
+Execute Phase 27:
 
 ```bash
-$gsd-plan-phase 27
+$gsd-execute-phase 27
 ```
