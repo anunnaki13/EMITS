@@ -159,8 +159,8 @@ See [v1.1 roadmap archive](milestones/v1.1-ROADMAP.md).
 
 ## Next Step
 
-Start execution planning at Phase 22:
+Execute Phase 22:
 
 ```bash
-$gsd-plan-phase 22
+$gsd-execute-phase 22
 ```
