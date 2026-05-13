@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import io
 import logging
+import re
 from typing import Optional
 import uuid
 
@@ -33,6 +34,10 @@ def _safe_str(val):
     if pd.isna(val) or val is None:
         return ""
     return str(val).strip()
+
+
+def _safe_regex(value: str) -> dict:
+    return {"$regex": re.escape(str(value).strip()), "$options": "i"}
 
 
 def _parse_datetime(val):
@@ -287,15 +292,16 @@ async def get_po_batubara(
     if month:
         conditions.append({"completed_month": month})
     if search:
+        safe_search = re.escape(search)
         conditions.append({
             "$or": [
-                {"po_number": {"$regex": search, "$options": "i"}},
-                {"supplier_name": {"$regex": search, "$options": "i"}},
-                {"no_shipment": {"$regex": search, "$options": "i"}}
+                {"po_number": {"$regex": safe_search, "$options": "i"}},
+                {"supplier_name": {"$regex": safe_search, "$options": "i"}},
+                {"no_shipment": {"$regex": safe_search, "$options": "i"}}
             ]
         })
     if supplier and supplier != "all":
-        conditions.append({"supplier_name": {"$regex": supplier, "$options": "i"}})
+        conditions.append({"supplier_name": _safe_regex(supplier)})
     
     if conditions:
         query = {"$and": conditions} if len(conditions) > 1 else conditions[0]
@@ -313,10 +319,13 @@ async def get_po_batubara(
     }
 
 @router.get("/po-batubara/years")
-async def get_po_years(user: dict = Depends(get_current_user)):
+async def get_po_years(supplier: Optional[str] = None, user: dict = Depends(get_current_user)):
     """Get list of available years with monthly summaries"""
+    match_stage = {"completed_year": {"$ne": None}}
+    if supplier and supplier != "all":
+        match_stage["supplier_name"] = _safe_regex(supplier)
     pipeline = [
-        {"$match": {"completed_year": {"$ne": None}}},
+        {"$match": match_stage},
         {"$group": {
             "_id": {"year": "$completed_year", "month": "$completed_month"},
             "count": {"$sum": 1},
@@ -464,15 +473,16 @@ async def get_merit_orders(
     if month:
         conditions.append({"periode_month": month})
     if search:
+        safe_search = re.escape(search)
         conditions.append({
             "$or": [
-                {"pemasok": {"$regex": search, "$options": "i"}},
-                {"moda": {"$regex": search, "$options": "i"}},
-                {"jenis_kontrak": {"$regex": search, "$options": "i"}}
+                {"pemasok": {"$regex": safe_search, "$options": "i"}},
+                {"moda": {"$regex": safe_search, "$options": "i"}},
+                {"jenis_kontrak": {"$regex": safe_search, "$options": "i"}}
             ]
         })
     if supplier and supplier != "all":
-        conditions.append({"pemasok": {"$regex": supplier, "$options": "i"}})
+        conditions.append({"pemasok": _safe_regex(supplier)})
     
     if conditions:
         query = {"$and": conditions} if len(conditions) > 1 else conditions[0]

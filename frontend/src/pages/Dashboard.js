@@ -33,6 +33,7 @@ import {
   ArrowRight,
   CircleAlert
 } from "lucide-react";
+import { parseDashboardDrilldown } from "@/utils/dashboardDrilldown";
 import {
   BarChart,
   Bar,
@@ -124,13 +125,14 @@ const GaugeChart = ({ percentage, label }) => {
 
 const Dashboard = () => {
   const { getAuthHeader } = useAuth();
+  const initialDrilldown = parseDashboardDrilldown(window.location.search);
   const [stats, setStats] = useState(null);
   const [advancedStats, setAdvancedStats] = useState(null);
   const [operationalStats, setOperationalStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState("all");
-  const [selectedSupplier, setSelectedSupplier] = useState("all");
-  const [selectedMode, setSelectedMode] = useState("all");
+  const [selectedPeriod, setSelectedPeriod] = useState(initialDrilldown.period || "all");
+  const [selectedSupplier, setSelectedSupplier] = useState(initialDrilldown.supplier || "all");
+  const [selectedMode, setSelectedMode] = useState(initialDrilldown.mode || "all");
 
   const fetchData = useCallback(async () => {
     try {
@@ -239,6 +241,7 @@ const Dashboard = () => {
     low: "border-emerald-500/50 bg-emerald-500/10 text-emerald-300",
   };
   const drilldownParams = new URLSearchParams();
+  drilldownParams.set("from", "dashboard");
   if (selectedPeriod && selectedPeriod !== "all") drilldownParams.set("period", selectedPeriod);
   if (selectedSupplier && selectedSupplier !== "all") drilldownParams.set("supplier", selectedSupplier);
   if (selectedMode && selectedMode !== "all") drilldownParams.set("mode", selectedMode);

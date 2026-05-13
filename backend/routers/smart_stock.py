@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import io
 import logging
+import re
 from typing import Optional
 import uuid
 
@@ -15,14 +16,53 @@ router = APIRouter(tags=["Smart Stock"])
 logger = logging.getLogger(__name__)
 
 
+def _normalize_supplier(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+
+def _supplier_matches(candidate: str, supplier: str) -> bool:
+    candidate_norm = _normalize_supplier(candidate)
+    supplier_norm = _normalize_supplier(supplier)
+    return bool(supplier_norm and (supplier_norm == candidate_norm or supplier_norm in candidate_norm))
+
+
+def _supplier_total(zones: dict) -> float:
+    total = 0.0
+    for value in (zones or {}).values():
+        try:
+            total += float(value or 0)
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def _filter_stock_by_supplier(stock: dict, supplier: Optional[str]) -> Optional[dict]:
+    if not supplier or supplier == "all":
+        return stock
+
+    matched_suppliers = {
+        name: zones
+        for name, zones in (stock.get("suppliers") or {}).items()
+        if _supplier_matches(name, supplier)
+    }
+    if not matched_suppliers:
+        return None
+
+    filtered = dict(stock)
+    filtered["suppliers"] = matched_suppliers
+    filtered["total_penerimaan"] = sum(_supplier_total(zones) for zones in matched_suppliers.values())
+    return filtered
+
+
 @router.get("/smart-stock")
 async def get_smart_stock(
     limit: int = Query(100, ge=1, le=50000),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    supplier: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
-    """Get smart stock data with optional date range filter"""
+    """Get smart stock data with optional date range and supplier filter"""
     query = {}
     if start_date or end_date:
         date_query = {}
@@ -32,13 +72,16 @@ async def get_smart_stock(
             date_query["$lte"] = end_date
         query["date"] = date_query
 
-    stocks = await db.smartstock.find(query, {"_id": 0}).sort("date", -1).limit(limit).to_list(limit)
+    raw_stocks = await db.smartstock.find(query, {"_id": 0}).sort("date", -1).limit(limit).to_list(limit)
+    stocks = [item for item in (_filter_stock_by_supplier(stock, supplier) for stock in raw_stocks) if item is not None]
 
     thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+    recent_query = query if query else {"date": {"$gte": thirty_days_ago}}
     recent_stocks = await db.smartstock.find(
-        {"date": {"$gte": thirty_days_ago}},
+        recent_query,
         {"_id": 0}
     ).sort("date", 1).to_list(100)
+    recent_stocks = [item for item in (_filter_stock_by_supplier(stock, supplier) for stock in recent_stocks) if item is not None]
 
     supplier_totals = {}
     for stock in recent_stocks:

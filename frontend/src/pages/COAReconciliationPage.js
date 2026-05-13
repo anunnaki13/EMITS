@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -76,11 +77,17 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
+import DashboardDrilldownBar from "@/components/DashboardDrilldownBar";
+import { buildResetPath, dashboardEmptyText, parseDashboardDrilldown } from "@/utils/dashboardDrilldown";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const COAReconciliationPage = () => {
   const { getAuthHeader, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const drilldown = useMemo(() => parseDashboardDrilldown(location.search), [location.search]);
+  const initialDrilldown = parseDashboardDrilldown(window.location.search);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [data, setData] = useState([]);
@@ -89,7 +96,7 @@ const COAReconciliationPage = () => {
   const [supplierData, setSupplierData] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(initialDrilldown.status || "all");
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [radarData, setRadarData] = useState([]);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
@@ -106,8 +113,8 @@ const COAReconciliationPage = () => {
   const [importMode, setImportMode] = useState("merge");
   const [confirmReplaceAll, setConfirmReplaceAll] = useState(false);
   const [committingImport, setCommittingImport] = useState(false);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState(initialDrilldown.dateFrom || "");
+  const [dateTo, setDateTo] = useState(initialDrilldown.dateTo || "");
   const [fileMapping, setFileMapping] = useState({
     loading: "",
     unloading: "",
@@ -136,14 +143,20 @@ const COAReconciliationPage = () => {
   });
   const PAGE_SIZE = 50;
 
+  const buildDashboardFilterParams = useCallback((includeStatus = true) => {
+    const params = {};
+    if (drilldown.supplier) params.supplier = drilldown.supplier;
+    if (includeStatus && statusFilter !== "all") params.status = statusFilter;
+    if (dateFrom) params.date_from = dateFrom;
+    if (dateTo) params.date_to = dateTo;
+    return params;
+  }, [dateFrom, dateTo, drilldown.supplier, statusFilter]);
+
   const fetchData = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const params = { page, page_size: PAGE_SIZE };
+      const params = { page, page_size: PAGE_SIZE, ...buildDashboardFilterParams(true) };
       if (search) params.search = search;
-      if (statusFilter !== "all") params.status = statusFilter;
-      if (dateFrom) params.date_from = dateFrom;
-      if (dateTo) params.date_to = dateTo;
 
       const response = await axios.get(`${API_URL}/api/coa-reconciliation`, {
         headers: getAuthHeader(),
@@ -163,41 +176,43 @@ const COAReconciliationPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeader, search, statusFilter, dateFrom, dateTo]);
+  }, [buildDashboardFilterParams, getAuthHeader, search]);
 
   const fetchKPIs = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/coa-reconciliation/kpis`, {
-        headers: getAuthHeader()
+        headers: getAuthHeader(),
+        params: buildDashboardFilterParams(true)
       });
       setKpis(response.data);
     } catch (error) {
       console.error("Failed to fetch KPIs:", error);
     }
-  }, [getAuthHeader]);
+  }, [buildDashboardFilterParams, getAuthHeader]);
 
   const fetchTrendData = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/coa-reconciliation/trend`, {
         headers: getAuthHeader(),
-        params: { months: 6 }
+        params: { months: 6, ...buildDashboardFilterParams(true) }
       });
       setTrendData(response.data);
     } catch (error) {
       console.error("Failed to fetch trend data:", error);
     }
-  }, [getAuthHeader]);
+  }, [buildDashboardFilterParams, getAuthHeader]);
 
   const fetchSupplierData = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/coa-reconciliation/supplier-consistency`, {
-        headers: getAuthHeader()
+        headers: getAuthHeader(),
+        params: buildDashboardFilterParams(true)
       });
       setSupplierData(response.data.slice(0, 10));
     } catch (error) {
       console.error("Failed to fetch supplier data:", error);
     }
-  }, [getAuthHeader]);
+  }, [buildDashboardFilterParams, getAuthHeader]);
 
   const fetchImportHistory = useCallback(async () => {
     try {
@@ -212,19 +227,25 @@ const COAReconciliationPage = () => {
   }, [getAuthHeader]);
 
   useEffect(() => {
-    fetchData(1);
     fetchKPIs();
     fetchTrendData();
     fetchSupplierData();
     fetchImportHistory();
-  }, []);
+  }, [fetchKPIs, fetchTrendData, fetchSupplierData, fetchImportHistory]);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       fetchData(1);
     }, 500);
     return () => clearTimeout(debounceTimer);
-  }, [search, statusFilter, dateFrom, dateTo, fetchData]);
+  }, [search, statusFilter, dateFrom, dateTo, drilldown.supplier, fetchData]);
+
+  const resetDashboardFilters = () => {
+    setStatusFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    navigate(buildResetPath(location.pathname, location.search), { replace: true });
+  };
 
   const processCombinedWorkbook = async (file) => {
     setUploading(true);
@@ -689,6 +710,8 @@ const COAReconciliationPage = () => {
         </div>
       </div>
 
+      <DashboardDrilldownBar drilldown={drilldown} onReset={resetDashboardFilters} />
+
       {/* KPI Cards */}
       {kpis && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -996,7 +1019,7 @@ const COAReconciliationPage = () => {
               ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center py-8 text-slate-500">
-                    Tidak ada data. Upload file COA untuk memulai.
+                    {dashboardEmptyText(drilldown, "Tidak ada data. Upload file COA untuk memulai.")}
                   </TableCell>
                 </TableRow>
               ) : (

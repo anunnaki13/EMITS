@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -68,6 +69,8 @@ import {
   DollarSign,
   Package
 } from "lucide-react";
+import DashboardDrilldownBar from "@/components/DashboardDrilldownBar";
+import { buildResetPath, dashboardEmptyText, parseDashboardDrilldown } from "@/utils/dashboardDrilldown";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -78,8 +81,12 @@ const MONTHS = [
 
 const POBatubaraPage = () => {
   const { user, getAuthHeader } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const drilldown = useMemo(() => parseDashboardDrilldown(location.search), [location.search]);
+  const initialDrilldown = parseDashboardDrilldown(window.location.search);
   const [yearsData, setYearsData] = useState([]);
-  const [poData, setPoData] = useState([]);
+  const [poData, setPoData] = useState({});
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -92,8 +99,8 @@ const POBatubaraPage = () => {
   const [importMode, setImportMode] = useState("append");
   const [expandedYears, setExpandedYears] = useState({});
   const [expandedMonths, setExpandedMonths] = useState({});
-  const [selectedYear, setSelectedYear] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(initialDrilldown.yearMonth.year);
+  const [selectedMonth, setSelectedMonth] = useState(initialDrilldown.yearMonth.month);
   const fileInputRef = useRef(null);
 
   const initialFormData = {
@@ -123,30 +130,13 @@ const POBatubaraPage = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  useEffect(() => { fetchYearsData(); }, []);
-
-  const fetchYearsData = async () => {
+  const fetchMonthData = useCallback(async (year, month, supplierFilter = drilldown.supplier) => {
     try {
-      const response = await axios.get(`${API_URL}/api/po-batubara/years`, { headers: getAuthHeader() });
-      setYearsData(response.data.sort((a, b) => b.year - a.year));
-      
-      // Auto expand first year
-      if (response.data.length > 0) {
-        const firstYear = response.data.sort((a, b) => b.year - a.year)[0].year;
-        setExpandedYears({ [firstYear]: true });
-      }
-    } catch (error) {
-      toast.error("Gagal memuat data tahun");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMonthData = async (year, month) => {
-    try {
-      const response = await axios.get(`${API_URL}/api/po-batubara`, { 
+      const params = { year, month, page: 1, page_size: 10000 };
+      if (supplierFilter) params.supplier = supplierFilter;
+      const response = await axios.get(`${API_URL}/api/po-batubara`, {
         headers: getAuthHeader(),
-        params: { year, month, page: 1, page_size: 10000 }
+        params
       });
       const data = response.data.items || response.data;
       return Array.isArray(data) ? data : [];
@@ -154,6 +144,50 @@ const POBatubaraPage = () => {
       toast.error("Gagal memuat data bulan");
       return [];
     }
+  }, [drilldown.supplier, getAuthHeader]);
+
+  const fetchYearsData = useCallback(async () => {
+    try {
+      const params = {};
+      if (drilldown.supplier) params.supplier = drilldown.supplier;
+      const response = await axios.get(`${API_URL}/api/po-batubara/years`, { headers: getAuthHeader(), params });
+      const sortedYears = response.data.sort((a, b) => b.year - a.year);
+      setYearsData(sortedYears);
+      
+      if (sortedYears.length > 0) {
+        const targetYear = drilldown.yearMonth.year || sortedYears[0].year;
+        setSelectedYear(drilldown.yearMonth.year);
+        setSelectedMonth(drilldown.yearMonth.month);
+        setExpandedYears({ [targetYear]: true });
+        if (drilldown.yearMonth.year && drilldown.yearMonth.month) {
+          const key = `${drilldown.yearMonth.year}-${drilldown.yearMonth.month}`;
+          const monthRows = await fetchMonthData(drilldown.yearMonth.year, drilldown.yearMonth.month, drilldown.supplier);
+          setPoData({ [key]: monthRows });
+          setExpandedMonths({ [key]: true });
+        } else {
+          setPoData({});
+          setExpandedMonths({});
+        }
+      } else {
+        setExpandedYears({});
+        setExpandedMonths({});
+        setPoData({});
+      }
+    } catch (error) {
+      toast.error("Gagal memuat data tahun");
+    } finally {
+      setLoading(false);
+    }
+  }, [drilldown.supplier, drilldown.yearMonth.month, drilldown.yearMonth.year, fetchMonthData, getAuthHeader]);
+
+  useEffect(() => { fetchYearsData(); }, [fetchYearsData]);
+
+  const handleResetDashboardFilters = () => {
+    setSelectedYear(null);
+    setSelectedMonth(null);
+    setPoData({});
+    setExpandedMonths({});
+    navigate(buildResetPath(location.pathname, location.search), { replace: true });
   };
 
   const toggleYear = (year) => {
@@ -163,7 +197,7 @@ const POBatubaraPage = () => {
   const toggleMonth = async (year, month) => {
     const key = `${year}-${month}`;
     if (!expandedMonths[key]) {
-      const data = await fetchMonthData(year, month);
+      const data = await fetchMonthData(year, month, drilldown.supplier);
       setPoData(prev => ({ ...prev, [key]: data }));
     }
     setExpandedMonths(prev => ({ ...prev, [key]: !prev[key] }));
@@ -514,6 +548,8 @@ const POBatubaraPage = () => {
         )}
       </div>
 
+      <DashboardDrilldownBar drilldown={drilldown} onReset={handleResetDashboardFilters} />
+
       {/* Years View */}
       {loading ? (
         <Card className="glass-card border-white/5 p-8 text-center">
@@ -523,7 +559,7 @@ const POBatubaraPage = () => {
       ) : yearsData.length === 0 ? (
         <Card className="glass-card border-white/5 p-8 text-center">
           <ShoppingCart className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400">Belum ada data PO Batubara</p>
+          <p className="text-slate-400">{dashboardEmptyText(drilldown, "Belum ada data PO Batubara")}</p>
           <p className="text-slate-500 text-sm mt-2">Upload file Excel atau tambahkan data manual</p>
         </Card>
       ) : (

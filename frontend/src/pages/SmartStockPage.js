@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -36,6 +37,8 @@ import {
   AlertCircle,
   Trash2
 } from "lucide-react";
+import DashboardDrilldownBar from "@/components/DashboardDrilldownBar";
+import { buildResetPath, dashboardEmptyText, parseDashboardDrilldown } from "@/utils/dashboardDrilldown";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -76,12 +79,16 @@ const SUPPLIER_COLORS = {
 
 const SmartStockPage = () => {
   const { getAuthHeader } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const drilldown = useMemo(() => parseDashboardDrilldown(location.search), [location.search]);
+  const initialDrilldown = parseDashboardDrilldown(window.location.search);
   const [loading, setLoading] = useState(true);
   const [stockData, setStockData] = useState([]);
   const [recent30Days, setRecent30Days] = useState([]);
   const [supplierTotals, setSupplierTotals] = useState({});
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(initialDrilldown.dateFrom || "");
+  const [endDate, setEndDate] = useState(initialDrilldown.dateTo || "");
   const [inputDialogOpen, setInputDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -94,16 +101,13 @@ const SmartStockPage = () => {
   const [formZoneB, setFormZoneB] = useState("");
   const [formZoneC, setFormZoneC] = useState("");
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async (filterStartDate = null, filterEndDate = null) => {
+  const fetchData = useCallback(async (filterStartDate = null, filterEndDate = null, supplierFilter = drilldown.supplier) => {
     setLoading(true);
     try {
       const params = {};
       if (filterStartDate) params.start_date = filterStartDate;
       if (filterEndDate) params.end_date = filterEndDate;
+      if (supplierFilter) params.supplier = supplierFilter;
 
       const response = await axios.get(`${API_URL}/api/smart-stock`, {
         headers: getAuthHeader(),
@@ -119,20 +123,27 @@ const SmartStockPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [drilldown.supplier, getAuthHeader]);
+
+  useEffect(() => {
+    setStartDate(drilldown.dateFrom || "");
+    setEndDate(drilldown.dateTo || "");
+    fetchData(drilldown.dateFrom, drilldown.dateTo, drilldown.supplier);
+  }, [drilldown.dateFrom, drilldown.dateTo, drilldown.supplier, fetchData]);
 
   const handleFilter = () => {
     if (startDate && endDate && startDate > endDate) {
       toast.error("Tanggal mulai tidak boleh lebih besar dari tanggal akhir");
       return;
     }
-    fetchData(startDate, endDate);
+    fetchData(startDate, endDate, drilldown.supplier);
   };
 
   const handleResetFilter = () => {
     setStartDate("");
     setEndDate("");
-    fetchData();
+    navigate(buildResetPath(location.pathname, location.search), { replace: true });
+    fetchData(null, null, "");
   };
 
   const handleManualInput = async (e) => {
@@ -169,7 +180,7 @@ const SmartStockPage = () => {
       setFormZoneB("");
       setFormZoneC("");
       
-      fetchData();
+      fetchData(startDate, endDate, drilldown.supplier);
     } catch (error) {
       toast.error(error.response?.data?.detail || "Gagal menyimpan data");
     }
@@ -199,7 +210,7 @@ const SmartStockPage = () => {
       toast.success(response.data.message);
       setUploadDialogOpen(false);
       setSelectedFile(null);
-      fetchData();
+      fetchData(startDate, endDate, drilldown.supplier);
     } catch (error) {
       toast.error(error.response?.data?.detail || "Gagal mengupload file");
     }
@@ -529,6 +540,8 @@ const SmartStockPage = () => {
         </div>
       </div>
 
+      <DashboardDrilldownBar drilldown={drilldown} onReset={handleResetFilter} />
+
       {/* No Delivery Alert */}
       {noDeliveryToday && (
         <Card className="glass-card border-red-500/30 bg-red-500/10">
@@ -765,7 +778,7 @@ const SmartStockPage = () => {
                 ) : stockData.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                      Tidak ada data
+                      {dashboardEmptyText(drilldown, "Tidak ada data")}
                     </td>
                   </tr>
                 ) : (

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import io
 import logging
+import re
 import uuid
 from typing import Optional
 
@@ -79,6 +80,50 @@ def _existing_by_shipment(records: list[dict]) -> dict[str, dict]:
 
 def _has_critical_import_issues(preview: dict) -> bool:
     return any(issue.get("severity") == "critical" for issue in preview.get("issues") or [])
+
+
+def _safe_regex(value: str) -> dict:
+    return {"$regex": re.escape(str(value).strip()), "$options": "i"}
+
+
+def _coa_filter_query(
+    *,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    supplier: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    include_disputes: bool = False,
+    umpire_status: Optional[str] = None,
+) -> dict:
+    conditions = []
+    if include_disputes:
+        conditions.append({"umpire_status": {"$ne": "none"}})
+    if status and status != "all":
+        conditions.append({"status": status})
+    if umpire_status and umpire_status != "all":
+        conditions.append({"umpire_status": umpire_status})
+    if supplier and supplier != "all":
+        conditions.append({"suppliers": _safe_regex(supplier)})
+    if search:
+        safe_search = re.escape(search)
+        conditions.append({
+            "$or": [
+                {"shipment": {"$regex": safe_search, "$options": "i"}},
+                {"suppliers": {"$regex": safe_search, "$options": "i"}}
+            ]
+        })
+    if date_from or date_to:
+        date_filter = {}
+        if date_from:
+            date_filter["$gte"] = date_from
+        if date_to:
+            date_filter["$lte"] = date_to + "T23:59:59"
+        conditions.append({"completed_unloading": date_filter})
+
+    if not conditions:
+        return {}
+    return {"$and": conditions} if len(conditions) > 1 else conditions[0]
 
 
 def _public_preview_response(preview: dict) -> dict:
@@ -236,28 +281,13 @@ async def get_coa_reconciliation(
     page_size: int = Query(50, ge=1, le=50000),
     status: Optional[str] = None,
     search: Optional[str] = None,
+    supplier: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
-    """Get COA reconciliation data with pagination and date filter"""
-    query = {}
-    if status and status != "all":
-        query["status"] = status
-    if search:
-        query["$or"] = [
-            {"shipment": {"$regex": search, "$options": "i"}},
-            {"suppliers": {"$regex": search, "$options": "i"}}
-        ]
-
-    if date_from or date_to:
-        date_filter = {}
-        if date_from:
-            date_filter["$gte"] = date_from
-        if date_to:
-            date_filter["$lte"] = date_to + "T23:59:59"
-        if date_filter:
-            query["completed_unloading"] = date_filter
+    """Get COA reconciliation data with pagination and drilldown filters"""
+    query = _coa_filter_query(status=status, search=search, supplier=supplier, date_from=date_from, date_to=date_to)
 
     skip = (page - 1) * page_size
     total = await db.coa_reconciliation.count_documents(query)
@@ -273,9 +303,16 @@ async def get_coa_reconciliation(
 
 
 @router.get("/coa-reconciliation/kpis")
-async def get_coa_kpis(user: dict = Depends(get_current_user)):
+async def get_coa_kpis(
+    status: Optional[str] = None,
+    supplier: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
     """Get KPIs for COA Reconciliation dashboard"""
-    all_data = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    query = _coa_filter_query(status=status, supplier=supplier, date_from=date_from, date_to=date_to)
+    all_data = await db.coa_reconciliation.find(query, {"_id": 0}).to_list(10000)
 
     coa_settings = await db.app_settings.find_one({"type": "coa"}, {"_id": 0})
     price_per_kcal = coa_settings.get("price_per_kcal_per_ton") if coa_settings else None
@@ -304,16 +341,31 @@ async def get_coa_kpis(user: dict = Depends(get_current_user)):
 
 
 @router.get("/coa-reconciliation/trend")
-async def get_coa_trend(months: int = Query(3, ge=1, le=12), user: dict = Depends(get_current_user)):
+async def get_coa_trend(
+    months: int = Query(3, ge=1, le=12),
+    status: Optional[str] = None,
+    supplier: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
     """Get GCV trend data for line chart"""
-    all_data = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    query = _coa_filter_query(status=status, supplier=supplier, date_from=date_from, date_to=date_to)
+    all_data = await db.coa_reconciliation.find(query, {"_id": 0}).to_list(10000)
     return get_gcv_trend_data(all_data, months)
 
 
 @router.get("/coa-reconciliation/supplier-consistency")
-async def get_supplier_consistency(user: dict = Depends(get_current_user)):
+async def get_supplier_consistency(
+    status: Optional[str] = None,
+    supplier: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
     """Get supplier consistency data for bar chart"""
-    all_data = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
+    query = _coa_filter_query(status=status, supplier=supplier, date_from=date_from, date_to=date_to)
+    all_data = await db.coa_reconciliation.find(query, {"_id": 0}).to_list(10000)
     kpis = calculate_kpis(all_data)
     return kpis.get("supplier_deviations", [])
 
@@ -323,12 +375,21 @@ async def get_dispute_monitor(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=50000),
     umpire_status: Optional[str] = None,
+    status: Optional[str] = None,
+    supplier: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
     """Get all records that have umpire activity (proposed, in_progress, or completed)"""
-    query = {"umpire_status": {"$ne": "none"}}
-    if umpire_status and umpire_status != "all":
-        query["umpire_status"] = umpire_status
+    selected_status = umpire_status or status
+    query = _coa_filter_query(
+        include_disputes=True,
+        umpire_status=selected_status,
+        supplier=supplier,
+        date_from=date_from,
+        date_to=date_to,
+    )
 
     skip = (page - 1) * page_size
     total = await db.coa_reconciliation.count_documents(query)
@@ -336,7 +397,13 @@ async def get_dispute_monitor(
     for item in items:
         item["dispute_workflow"] = _workflow_summary(item)
 
-    all_disputes = await db.coa_reconciliation.find({"umpire_status": {"$ne": "none"}}, {"_id": 0, "umpire_status": 1}).to_list(10000)
+    summary_query = _coa_filter_query(
+        include_disputes=True,
+        supplier=supplier,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    all_disputes = await db.coa_reconciliation.find(summary_query, {"_id": 0, "umpire_status": 1}).to_list(10000)
     summary = {
         "proposed": sum(1 for d in all_disputes if d.get("umpire_status") == "proposed"),
         "in_progress": sum(1 for d in all_disputes if d.get("umpire_status") == "in_progress"),

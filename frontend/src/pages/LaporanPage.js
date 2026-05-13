@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -51,6 +52,8 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import DashboardDrilldownBar from "@/components/DashboardDrilldownBar";
+import { buildResetPath, dashboardEmptyText, parseDashboardDrilldown, periodToDateRange, periodToYearMonth } from "@/utils/dashboardDrilldown";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const REPORT_PERIOD_OPTIONS = [
@@ -69,6 +72,8 @@ const getInitialReportState = () => {
   const params = new URLSearchParams(window.location.search);
   const tab = params.get("tab");
   const mode = params.get("mode");
+  const period = params.get("period") || "all";
+  const periodRange = periodToDateRange(period);
   const validTabs = ["management", "vessel", "barge", "trucking", "biomassa", "po_batubara", "merit_order"];
   const initialTab = validTabs.includes(tab)
     ? tab
@@ -80,14 +85,17 @@ const getInitialReportState = () => {
   return {
     activeTab: initialTab,
     supplier: params.get("supplier") || "all",
-    period: params.get("period") || "all",
-    dateFrom: params.get("date_from") || "",
-    dateTo: params.get("date_to") || ""
+    period,
+    dateFrom: params.get("date_from") || periodRange.dateFrom || "",
+    dateTo: params.get("date_to") || periodRange.dateTo || ""
   };
 };
 
 const LaporanPage = () => {
   const { getAuthHeader } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const drilldown = useMemo(() => parseDashboardDrilldown(location.search), [location.search]);
   const initialState = getInitialReportState();
   const [activeTab, setActiveTab] = useState(initialState.activeTab);
   const [loading, setLoading] = useState(false);
@@ -173,6 +181,11 @@ const LaporanPage = () => {
         if (dateFrom) params.date_from = dateFrom;
         if (dateTo) params.date_to = dateTo;
       }
+      if (["po_batubara", "merit_order"].includes(activeTab)) {
+        const periodParts = periodToYearMonth(filterPeriod);
+        if (periodParts.year) params.year = periodParts.year;
+        if (periodParts.month) params.month = periodParts.month;
+      }
       
       const response = await axios.get(`${API_URL}/api/${endpoint}`, { 
         headers: getAuthHeader(), 
@@ -207,6 +220,11 @@ const LaporanPage = () => {
     setDateFrom("");
     setDateTo("");
     setPagination({ page: 1, total: 0, totalPages: 0 });
+  };
+
+  const resetDashboardFilters = () => {
+    resetFilters();
+    navigate(buildResetPath(location.pathname, location.search), { replace: true });
   };
 
   const getTableColumns = () => {
@@ -642,6 +660,8 @@ const LaporanPage = () => {
         </DropdownMenu>
       </div>
 
+      <DashboardDrilldownBar drilldown={drilldown} onReset={resetDashboardFilters} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glass-card border-white/5 p-4">
           <p className="text-slate-400 text-sm">Total Data</p>
@@ -738,7 +758,7 @@ const LaporanPage = () => {
                       <Loader2 className="w-6 h-6 animate-spin text-purple-400 mx-auto" />
                     </div>
                   ) : !managementReport ? (
-                    <div className="text-center py-8 text-slate-500">Tidak ada data ditemukan</div>
+                    <div className="text-center py-8 text-slate-500">{dashboardEmptyText(drilldown, "Tidak ada data ditemukan")}</div>
                   ) : (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -906,7 +926,7 @@ const LaporanPage = () => {
                     ) : data.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={columns.length + 1} className="text-center py-8 text-slate-500">
-                          Tidak ada data ditemukan
+                          {dashboardEmptyText(drilldown, "Tidak ada data ditemukan")}
                         </TableCell>
                       </TableRow>
                     ) : (

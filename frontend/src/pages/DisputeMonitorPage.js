@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -56,16 +57,26 @@ import {
   Legend,
   Tooltip
 } from "recharts";
+import DashboardDrilldownBar from "@/components/DashboardDrilldownBar";
+import { buildResetPath, dashboardEmptyText, parseDashboardDrilldown } from "@/utils/dashboardDrilldown";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const DISPUTE_STATUSES = new Set(["proposed", "in_progress", "completed"]);
 
 const DisputeMonitorPage = () => {
   const { getAuthHeader } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const drilldown = useMemo(() => parseDashboardDrilldown(location.search), [location.search]);
+  const initialDrilldown = parseDashboardDrilldown(window.location.search);
+  const initialStatus = DISPUTE_STATUSES.has(initialDrilldown.status) ? initialDrilldown.status : "all";
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [summary, setSummary] = useState({ proposed: 0, in_progress: 0, completed: 0, total: 0 });
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [dateFrom, setDateFrom] = useState(initialDrilldown.dateFrom || "");
+  const [dateTo, setDateTo] = useState(initialDrilldown.dateTo || "");
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [radarData, setRadarData] = useState([]);
   const [showResultDialog, setShowResultDialog] = useState(false);
@@ -91,6 +102,9 @@ const DisputeMonitorPage = () => {
     try {
       const params = { page, page_size: PAGE_SIZE };
       if (statusFilter !== "all") params.umpire_status = statusFilter;
+      if (drilldown.supplier) params.supplier = drilldown.supplier;
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
 
       const response = await axios.get(`${API_URL}/api/coa-reconciliation/dispute-monitor`, {
         headers: getAuthHeader(),
@@ -111,11 +125,18 @@ const DisputeMonitorPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeader, statusFilter]);
+  }, [dateFrom, dateTo, drilldown.supplier, getAuthHeader, statusFilter]);
 
   useEffect(() => {
     fetchData(1);
-  }, [statusFilter]);
+  }, [fetchData]);
+
+  const resetDashboardFilters = () => {
+    setStatusFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    navigate(buildResetPath(location.pathname, location.search), { replace: true });
+  };
 
   const handleViewDetail = async (record) => {
     try {
@@ -318,6 +339,8 @@ const DisputeMonitorPage = () => {
         </Button>
       </div>
 
+      <DashboardDrilldownBar drilldown={drilldown} onReset={resetDashboardFilters} />
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-[#0B1221] border-yellow-500/20 p-4">
@@ -408,7 +431,7 @@ const DisputeMonitorPage = () => {
               ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-slate-500">
-                    Tidak ada data dispute. Ajukan umpire dari halaman COA Reconciliation.
+                    {dashboardEmptyText(drilldown, "Tidak ada data dispute. Ajukan umpire dari halaman COA Reconciliation.")}
                   </TableCell>
                 </TableRow>
               ) : (
