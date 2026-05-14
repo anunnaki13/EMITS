@@ -31,11 +31,11 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 ### Production Runtime Evidence (OPS4)
 
-- [ ] **OPS4-01**: Operator can run the full runtime status command on the production VPS and capture an auditable report artifact.
-- [ ] **OPS4-02**: Production smoke check can record status through the admin API and the latest smoke result is visible in the runtime health UI.
-- [ ] **OPS4-03**: Production runbook includes the exact v1.4 release gate, expected artifacts, fallback steps, and evidence storage location.
-- [ ] **OPS4-04**: Build/version metadata visible to admins reflects the deployed git SHA or release tag for static frontend and backend.
-- [ ] **OPS4-05**: If real VPS execution is unavailable during development, the release process records a clear manual gate instead of silently passing runtime verification.
+- [x] **OPS4-01**: Operator can run the full runtime status command on the production VPS and capture an auditable report artifact.
+- [x] **OPS4-02**: Production smoke check can record status through the admin API and the latest smoke result is visible in the runtime health UI.
+- [x] **OPS4-03**: Production runbook includes the exact v1.4 release gate, expected artifacts, fallback steps, and evidence storage location.
+- [x] **OPS4-04**: Build/version metadata visible to admins reflects the deployed git SHA or release tag for static frontend and backend.
+- [x] **OPS4-05**: If real VPS execution is unavailable during development, the release process records a clear manual gate instead of silently passing runtime verification.
 
 ### Repository Hygiene & Secret Safety (REPO4)
 
@@ -75,7 +75,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 |-------------|-------|--------|
 | QA4-01..05 | Phase 29 | Complete |
 | META4-01..04 | Phase 30 | Complete |
-| OPS4-01..05 | Phase 31 | Planned |
+| OPS4-01..05 | Phase 31 | Complete |
 | REPO4-01..04 | Phase 32 | Planned |
 | REG4-01..04 | Phase 33 | Planned |
 
@@ -83,7 +83,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 - v1.4 requirements: 22 total
 - Mapped to phases: 22
 - Unmapped: 0
-- Complete: 9
+- Complete: 14
 
 ---
-*Last updated: 2026-05-14 after Phase 30 verification*
+*Last updated: 2026-05-14 after Phase 31 verification*

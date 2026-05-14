@@ -61,6 +61,14 @@ const formatBytes = (value) => {
   return `${(bytes / Math.pow(1024, index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
+const formatBuildMetadata = (metadata, fallback) => {
+  if (!metadata) return fallback;
+  const release = metadata.release_tag || metadata.app_version;
+  const build = metadata.build_id || metadata.git_sha;
+  if (release && build) return `${release} / ${build}`;
+  return release || build || fallback;
+};
+
 const HealthTile = ({ icon: Icon, label, status, detail, meta }) => (
   <div className="min-h-[132px] rounded-lg border border-white/5 bg-slate-950/35 p-4">
     <div className="flex items-start justify-between gap-3">
@@ -101,10 +109,10 @@ const RuntimeHealthPanel = ({ getAuthHeader }) => {
 
   const diskPercent = Math.min(Math.max(Number(runtime?.disk?.used_percent || 0), 0), 100);
   const overallStatus = runtime?.status || "unknown";
-  const versionText = [
-    runtime?.version?.app_version || "version n/a",
-    runtime?.version?.build_id || "build n/a"
-  ].join(" / ");
+  const backendVersion = runtime?.version?.backend || runtime?.backend?.version || runtime?.version;
+  const frontendVersion = runtime?.version?.frontend || runtime?.frontend?.version;
+  const backendVersionText = formatBuildMetadata(backendVersion, "backend build n/a");
+  const frontendVersionText = formatBuildMetadata(frontendVersion, "frontend build n/a");
 
   return (
     <Card className="glass-card border-white/5 p-5" data-testid="runtime-health-panel">
@@ -117,9 +125,17 @@ const RuntimeHealthPanel = ({ getAuthHeader }) => {
           <p className="mt-2 text-sm text-slate-400">
             Update terakhir: {formatDateTime(runtime?.generated_at)}
           </p>
-          <p className="mt-1 break-words font-mono text-xs text-slate-500">
-            {versionText} / {runtime?.version?.environment || "unknown"}
-          </p>
+          <div className="mt-2 flex flex-wrap gap-2 font-mono text-[11px] text-slate-500">
+            <span className="rounded-md border border-white/5 bg-slate-950/50 px-2 py-1">
+              backend: {backendVersionText}
+            </span>
+            <span className="rounded-md border border-white/5 bg-slate-950/50 px-2 py-1">
+              frontend: {frontendVersionText}
+            </span>
+            <span className="rounded-md border border-white/5 bg-slate-950/50 px-2 py-1">
+              env: {runtime?.version?.environment || "unknown"}
+            </span>
+          </div>
         </div>
         <Button
           type="button"
@@ -151,7 +167,7 @@ const RuntimeHealthPanel = ({ getAuthHeader }) => {
               label="Backend/API"
               status={runtime?.backend?.status}
               detail={`Prefix ${runtime?.backend?.api_prefix || "/api"}`}
-              meta="FastAPI aktif di belakang nginx"
+              meta={`Build ${backendVersionText}`}
             />
             <HealthTile
               icon={Database}
@@ -192,6 +208,9 @@ const RuntimeHealthPanel = ({ getAuthHeader }) => {
                 <span>{diskPercent.toLocaleString("id-ID")}% terpakai</span>
                 <span>{formatBytes(runtime?.disk?.free_bytes)} bebas</span>
               </div>
+              <p className="mt-3 break-words font-mono text-[11px] text-slate-500">
+                Static frontend: {frontendVersionText}
+              </p>
             </div>
 
             <div className="rounded-lg border border-white/5 bg-slate-950/35 p-4">

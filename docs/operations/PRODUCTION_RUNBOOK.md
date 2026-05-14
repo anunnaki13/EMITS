@@ -10,6 +10,7 @@ This runbook is the Phase 22 operational source of truth for deploying, checking
 - Public ingress: nginx, reverse proxying `/api/*` to backend
 - Database: MongoDB on the same host unless `MONGO_URL` points elsewhere
 - Smoke evidence: `/var/log/emits/smoke/*.json`
+- Runtime evidence: `/var/log/emits/runtime/*.txt`
 - Logs:
   - Backend: `journalctl -u emits-backend`
   - Nginx: `/var/log/nginx/emits.access.log`, `/var/log/nginx/emits.error.log`
@@ -54,6 +55,7 @@ The deploy script performs:
 - pre-deploy `mongodump`
 - backend dependency install
 - frontend install/build
+- static frontend `version.json` generation with git/build metadata
 - frontend publish via `rsync --delete`
 - backend restart and nginx reload
 - smoke check with JSON smoke evidence under `SMOKE_EVIDENCE_DIR`
@@ -81,7 +83,49 @@ The command checks:
 - latest deploy and managed backup directories
 - smoke check with JSON smoke evidence
 
+The command writes a timestamped runtime report transcript under `RUNTIME_EVIDENCE_DIR` (default `/var/log/emits/runtime`) and prints both evidence paths at the end:
+
+- runtime report: `/var/log/emits/runtime/runtime-status-<timestamp>.txt`
+- smoke JSON: `/var/log/emits/smoke/status-smoke-<timestamp>.json`
+
 The in-app admin panel at Settings → `Status Operasional` reads `/api/admin/runtime/status`. That endpoint is admin-only and returns allowlisted runtime facts only: version/build metadata, backend, MongoDB, static frontend presence, backup health, latest smoke status, and disk usage.
+
+## v1.4 Release Gate
+
+Run this gate on the production VPS after pulling the release commit or tag:
+
+```bash
+cd /opt/pltu-tenayan/app
+git status --short
+git rev-parse --short HEAD
+
+EMITS_BASE_URL=http://127.0.0.1:8013 \
+EMITS_FRONTEND_URL=http://127.0.0.1 \
+ops/scripts/deploy.sh
+
+EMITS_BASE_URL=http://127.0.0.1:8013 \
+EMITS_FRONTEND_URL=http://127.0.0.1 \
+ops/scripts/runtime_status.sh
+```
+
+Release evidence is complete only when all of these are true:
+
+- `ops/scripts/deploy.sh` completes without error.
+- `ops/scripts/runtime_status.sh` exits 0.
+- The runtime report path and smoke JSON path printed by `runtime_status.sh` exist on the VPS.
+- Settings → `Status Operasional` shows the latest smoke result and backend/frontend build identifiers for the deployed SHA or release tag.
+
+If `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD` are available only in the operator shell, export them before the deploy/runtime commands so smoke status is also recorded through `/api/admin/runtime/smoke-report`. Unset them after the gate. Never write those values into committed files or pasted release notes.
+
+If the real VPS cannot be reached during development, do not mark runtime verification as passed. Record the release as a manual gate with:
+
+- target host and expected command
+- release commit/tag
+- reason the command was not executed
+- owner who must run it
+- expected evidence paths under `/var/log/emits/runtime` and `/var/log/emits/smoke`
+
+Evidence retention policy: keep v1.4 release runtime reports and smoke JSON for at least 90 days, or until the next production milestone audit is accepted. Older routine smoke artifacts may be rotated by host log retention once they are no longer tied to a release gate.
 
 ## Smoke Check Only
 

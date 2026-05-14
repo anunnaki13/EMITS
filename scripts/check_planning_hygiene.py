@@ -109,11 +109,15 @@ def check_current_state(errors: list[str]) -> None:
 
     if "| META4-01..04 | Phase 30 | Complete |" not in requirements:
         errors.append("REQUIREMENTS.md does not mark META4-01..04 complete")
-    phase31_routes = ("$gsd-plan-phase 31", "$gsd-execute-phase 31")
-    if "Phase 31" not in state or not any(route in state for route in phase31_routes):
-        errors.append("STATE.md does not route next work to Phase 31")
-    if not any(route in roadmap for route in phase31_routes):
-        errors.append("ROADMAP.md does not route next work to Phase 31")
+    valid_routes = tuple(
+        f"$gsd-{action}-phase {phase}"
+        for phase in range(31, 34)
+        for action in ("plan", "execute")
+    )
+    if not any(route in state for route in valid_routes):
+        errors.append("STATE.md does not route next work to a current v1.4 phase")
+    if not any(route in roadmap for route in valid_routes):
+        errors.append("ROADMAP.md does not route next work to a current v1.4 phase")
 
 
 def main() -> int:

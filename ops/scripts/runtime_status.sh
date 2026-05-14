@@ -9,6 +9,8 @@ FRONTEND_URL="${EMITS_FRONTEND_URL:-http://127.0.0.1}"
 BACKEND_SERVICE="${EMITS_BACKEND_SERVICE:-emits-backend}"
 DEPLOY_BACKUP_DIR="${EMITS_BACKUP_DIR:-/opt/pltu-tenayan/backups/deploy}"
 PYTHON_BIN="${EMITS_PYTHON_BIN:-$APP_DIR/backend/.venv/bin/python}"
+RUNTIME_EVIDENCE_DIR="${RUNTIME_EVIDENCE_DIR:-/var/log/emits/runtime}"
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 
 status=0
 
@@ -32,6 +34,22 @@ latest_path() {
   fi
   find "$dir" -mindepth 1 -maxdepth 1 -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2-
 }
+
+mkdir -p "$RUNTIME_EVIDENCE_DIR" 2>/dev/null || {
+  sudo mkdir -p "$RUNTIME_EVIDENCE_DIR"
+  sudo chown "$(id -u):$(id -g)" "$RUNTIME_EVIDENCE_DIR" || true
+}
+
+runtime_report="$RUNTIME_EVIDENCE_DIR/runtime-status-$timestamp.txt"
+exec > >(tee "$runtime_report") 2>&1
+
+echo "EMITS runtime status"
+echo "Timestamp UTC: $timestamp"
+echo "App dir: $APP_DIR"
+echo "Backend URL: $BASE_URL"
+echo "Frontend URL: $FRONTEND_URL"
+echo "Runtime report: $runtime_report"
+echo
 
 cd "$APP_DIR"
 
@@ -99,7 +117,6 @@ mkdir -p "$SMOKE_EVIDENCE_DIR" 2>/dev/null || {
   sudo chown "$(id -u):$(id -g)" "$SMOKE_EVIDENCE_DIR" || true
 }
 
-timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 smoke_evidence="$SMOKE_EVIDENCE_DIR/status-smoke-$timestamp.json"
 smoke_args=(
   --base-url "$BASE_URL"
@@ -115,5 +132,9 @@ if "$PYTHON_BIN" "$APP_DIR/ops/scripts/smoke_check.py" "${smoke_args[@]}"; then
 else
   fail "smoke check" "$smoke_evidence"
 fi
+
+echo
+echo "Runtime report: $runtime_report"
+echo "Smoke evidence: $smoke_evidence"
 
 exit "$status"

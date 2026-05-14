@@ -19,12 +19,24 @@ git diff --cached --quiet
 
 echo "==> Updating source"
 git pull --ff-only
+git_sha="$(git rev-parse --short HEAD 2>/dev/null || true)"
+if [ -z "$git_sha" ]; then
+  git_sha="unknown"
+fi
 
 echo "==> Loading backend env for backup"
 set -a
 . "$APP_DIR/backend/.env"
 set +a
 SMOKE_EVIDENCE_DIR="${SMOKE_EVIDENCE_DIR:-/var/log/emits/smoke}"
+if [ -z "${APP_BUILD_ID:-}" ] || [ "$APP_BUILD_ID" = "<git-commit-or-build-id>" ]; then
+  APP_BUILD_ID="$git_sha"
+fi
+if [ -z "${REACT_APP_BUILD_ID:-}" ] || [ "$REACT_APP_BUILD_ID" = "<git-commit-or-build-id>" ]; then
+  REACT_APP_BUILD_ID="$APP_BUILD_ID"
+fi
+REACT_APP_VERSION="${REACT_APP_VERSION:-${APP_VERSION:-}}"
+export REACT_APP_BUILD_ID REACT_APP_VERSION
 
 echo "==> Creating pre-deploy MongoDB backup"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -42,6 +54,27 @@ echo "==> Building frontend"
 cd "$APP_DIR/frontend"
 yarn install --frozen-lockfile
 yarn build
+APP_VERSION_FOR_BUILD="${APP_VERSION:-}" \
+APP_RELEASE_TAG_FOR_BUILD="${APP_RELEASE_TAG:-}" \
+APP_BUILD_ID_FOR_BUILD="$REACT_APP_BUILD_ID" \
+GIT_SHA_FOR_BUILD="$git_sha" \
+python3 - "$APP_DIR/frontend/build/version.json" <<'PY'
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+target = Path(sys.argv[1])
+payload = {
+    "app_version": os.environ.get("APP_VERSION_FOR_BUILD") or None,
+    "release_tag": os.environ.get("APP_RELEASE_TAG_FOR_BUILD") or None,
+    "build_id": os.environ.get("APP_BUILD_ID_FOR_BUILD") or None,
+    "git_sha": os.environ.get("GIT_SHA_FOR_BUILD") or None,
+    "built_at": datetime.now(timezone.utc).isoformat(),
+}
+target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+PY
 
 echo "==> Publishing frontend build to $WEB_ROOT"
 sudo mkdir -p "$WEB_ROOT"

@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import subprocess
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -57,12 +58,78 @@ def _disk_status() -> Dict[str, Any]:
     }
 
 
-def _version_status() -> Dict[str, Optional[str]]:
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _git_revision() -> Optional[str]:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=_repo_root(),
+            capture_output=True,
+            check=True,
+            text=True,
+            timeout=3,
+        )
+    except Exception:
+        return None
+    value = result.stdout.strip()
+    return value or None
+
+
+def _safe_metadata_value(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.startswith("<") and text.endswith(">"):
+        return None
+    return text[:120]
+
+
+def _backend_version_status() -> Dict[str, Optional[str]]:
+    env_build_id = _safe_metadata_value(os.environ.get("APP_BUILD_ID"))
+    git_sha = _git_revision()
+    build_id = env_build_id or git_sha
     return {
         "app_version": os.environ.get("APP_VERSION"),
-        "build_id": os.environ.get("APP_BUILD_ID"),
+        "release_tag": os.environ.get("APP_RELEASE_TAG"),
+        "build_id": build_id,
+        "build_source": "env" if env_build_id else ("git" if git_sha else "unknown"),
+        "git_sha": git_sha,
         "environment": os.environ.get("APP_ENV") or "unknown",
     }
+
+
+def _unknown_frontend_version() -> Dict[str, Optional[str]]:
+    return {
+        "app_version": None,
+        "release_tag": None,
+        "build_id": None,
+        "build_source": "unknown",
+        "git_sha": None,
+        "built_at": None,
+    }
+
+
+def _frontend_version_status(root: Path) -> Dict[str, Optional[str]]:
+    version = _unknown_frontend_version()
+    version_file = root / "version.json"
+    if not version_file.exists():
+        return version
+
+    try:
+        payload = json.loads(version_file.read_text(encoding="utf-8"))
+    except Exception:
+        version["build_source"] = "unreadable"
+        return version
+
+    for key in ("app_version", "release_tag", "build_id", "git_sha", "built_at"):
+        version[key] = _safe_metadata_value(payload.get(key))
+    version["build_source"] = "static-version-json"
+    return version
 
 
 def _frontend_status() -> Dict[str, Any]:
@@ -73,6 +140,7 @@ def _frontend_status() -> Dict[str, Any]:
             "build_present": False,
             "static_root": None,
             "reason": "FRONTEND_STATIC_ROOT belum dikonfigurasi",
+            "version": _unknown_frontend_version(),
         }
 
     root = Path(static_root)
@@ -83,6 +151,7 @@ def _frontend_status() -> Dict[str, Any]:
         "build_present": build_present,
         "static_root": str(root),
         "reason": "Build frontend tersedia" if build_present else "Build frontend statis belum ditemukan",
+        "version": _frontend_version_status(root) if build_present else _unknown_frontend_version(),
     }
 
 
@@ -173,6 +242,8 @@ async def build_runtime_status() -> Dict[str, Any]:
     backup = _safe_backup_health(await get_backup_health())
     disk = _disk_status()
     smoke = _smoke_summary(await latest_smoke_report())
+    backend_version = _backend_version_status()
+    frontend_version = frontend.get("version") or _unknown_frontend_version()
 
     aggregate = _aggregate_status(
         [
@@ -188,10 +259,15 @@ async def build_runtime_status() -> Dict[str, Any]:
     return {
         "status": aggregate,
         "generated_at": _now_iso(),
-        "version": _version_status(),
+        "version": {
+            **backend_version,
+            "backend": backend_version,
+            "frontend": frontend_version,
+        },
         "backend": {
             "status": "healthy",
             "api_prefix": "/api",
+            "version": backend_version,
         },
         "database": database,
         "frontend": frontend,

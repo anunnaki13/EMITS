@@ -2,6 +2,8 @@ import json
 
 import requests
 
+from services import runtime_status
+
 
 FORBIDDEN_RUNTIME_TOKENS = [
     "MONGO_URL",
@@ -28,6 +30,32 @@ def _assert_no_mongo_id_key(payload):
             _assert_no_mongo_id_key(item)
 
 
+def test_runtime_status_reads_frontend_version_metadata(tmp_path, monkeypatch):
+    (tmp_path / "index.html").write_text("<html><div id=\"root\"></div></html>", encoding="utf-8")
+    (tmp_path / "version.json").write_text(
+        json.dumps(
+            {
+                "app_version": "2026.03",
+                "release_tag": "v1.4.0",
+                "build_id": "abc1234",
+                "git_sha": "abc1234",
+                "built_at": "2026-05-14T00:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("FRONTEND_STATIC_ROOT", str(tmp_path))
+
+    frontend = runtime_status._frontend_status()
+
+    assert frontend["status"] == "healthy"
+    assert frontend["build_present"] is True
+    assert frontend["version"]["release_tag"] == "v1.4.0"
+    assert frontend["version"]["build_id"] == "abc1234"
+    assert frontend["version"]["build_source"] == "static-version-json"
+    assert runtime_status._safe_metadata_value("<git-commit-or-build-id>") is None
+
+
 def test_admin_runtime_status_shape_and_secret_free(base_url, admin_headers):
     response = requests.get(f"{base_url}/api/admin/runtime/status", headers=admin_headers, timeout=20)
     assert response.status_code == 200, response.text[:300]
@@ -46,9 +74,37 @@ def test_admin_runtime_status_shape_and_secret_free(base_url, admin_headers):
         "disk",
     }
     assert body["backend"]["api_prefix"] == "/api"
+    assert set(body["version"].keys()) >= {
+        "app_version",
+        "release_tag",
+        "build_id",
+        "build_source",
+        "git_sha",
+        "environment",
+        "backend",
+        "frontend",
+    }
+    assert set(body["version"]["backend"].keys()) >= {
+        "app_version",
+        "release_tag",
+        "build_id",
+        "build_source",
+        "git_sha",
+        "environment",
+    }
+    assert set(body["version"]["frontend"].keys()) >= {
+        "app_version",
+        "release_tag",
+        "build_id",
+        "build_source",
+        "git_sha",
+        "built_at",
+    }
+    assert body["backend"]["version"] == body["version"]["backend"]
     assert body["database"]["status"] in {"healthy", "critical"}
     assert isinstance(body["database"]["collections"], int)
     assert body["frontend"]["status"] in {"healthy", "warning", "unknown"}
+    assert body["frontend"]["version"] == body["version"]["frontend"]
     assert body["smoke"]["status"] in {"pass", "fail", "unknown"}
     assert body["disk"]["status"] in {"healthy", "warning", "critical"}
     _assert_secret_free(body)

@@ -6,7 +6,7 @@ requirements:
   - OPS4-03
   - OPS4-04
   - OPS4-05
-nyquist_status: planned
+nyquist_status: passed
 validation_owner: codex
 ---
 
@@ -34,15 +34,17 @@ git diff --check -- ops docs backend frontend .planning
 
 ## Results
 
+Validated on 2026-05-14:
+
 | Command | Result |
 |---------|--------|
-| `bash -n ops/scripts/runtime_status.sh ops/scripts/deploy.sh` | Pending |
-| `python3 -m py_compile ops/scripts/smoke_check.py` | Pending |
-| `cd backend && pytest tests/test_admin_runtime_status.py` | Pending |
-| `cd frontend && CI=true npm run build` | Pending |
-| `git diff --check -- ops docs backend frontend .planning` | Pending |
+| `bash -n ops/scripts/runtime_status.sh ops/scripts/deploy.sh` | Pass |
+| `python3 -m py_compile backend/services/runtime_status.py ops/scripts/smoke_check.py scripts/check_planning_hygiene.py` | Pass |
+| `cd backend && .venv/bin/pytest tests/test_admin_runtime_status.py` | Pass: 2 passed, 2 skipped because admin credentials are intentionally local-only. |
+| `cd frontend && CI=true npm run build` | Pass; production build compiled successfully. |
+| `git diff --check -- ops docs backend frontend .planning DEPLOYMENT_GUIDE.md scripts/check_planning_hygiene.py` | Pass |
 
 ## Residual Risks
 
-- Real VPS command execution may remain manual if production access is unavailable in this development session.
+- Real VPS command execution remains a release manual gate because this development session did not execute commands on the production VPS.
 - The static frontend build metadata is only as accurate as the release build process that writes `version.json`.

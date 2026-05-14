@@ -385,6 +385,13 @@ cd /opt/pltu-tenayan/app
 ops/scripts/runtime_status.sh
 ```
 
+Script runtime status membuat dua artifact audit:
+
+- `/var/log/emits/runtime/runtime-status-<timestamp>.txt`
+- `/var/log/emits/smoke/status-smoke-<timestamp>.json`
+
+Jika VPS produksi belum bisa dijalankan dari sesi pengembangan, status runtime v1.4 harus dicatat sebagai manual gate, bukan dianggap lulus otomatis. Operator perlu menjalankan `ops/scripts/runtime_status.sh` di VPS dan menyimpan path artifact di catatan release.
+
 ### 12.1 Cek service
 ```bash
 sudo systemctl status pltu-tenayan-backend
@@ -427,6 +434,8 @@ ops/scripts/deploy.sh
 ```
 
 Script tersebut melakukan clean-tree check, `git pull --ff-only`, pre-deploy `mongodump`, install dependency backend, build frontend, publish static build, restart backend, reload nginx, dan menjalankan smoke check.
+
+Saat build static frontend, script juga menulis `version.json` ke output build. File ini dibaca oleh admin runtime status supaya Settings → Status Operasional menampilkan build frontend yang sesuai dengan git SHA atau release tag yang dideploy.
 
 Saat ada update kode baru:
 

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Production QA & Cleanup
-status: executing
-last_updated: "2026-05-14T10:42:00+07:00"
-last_activity: 2026-05-14 — Phase 31 plan ready for execution
+status: planning
+last_updated: "2026-05-14T10:44:48+07:00"
+last_activity: 2026-05-14 — Phase 31 complete; Phase 32 ready for planning
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 2
-  percent: 40
+  completed_plans: 3
+  percent: 60
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** executing Phase 31 production runtime evidence
+**Current focus:** planning Phase 32 repository hygiene and secret safety
 
 ## Current Position
 
-Phase: 31 (Production Runtime Evidence)
-Plan: 31-01 Runtime Evidence Artifact, Release Metadata, And Manual Gate
-Status: Ready for execution
-Last activity: 2026-05-14 — Phase 31 plan created
+Phase: 32 (ready to plan)
+Plan: —
+Status: Phase 31 complete; Phase 32 ready for planning
+Last activity: 2026-05-14 — Phase 31 runtime evidence gate verified locally and manual VPS gate documented
 
 ## Performance Metrics
 
@@ -79,6 +79,7 @@ Last activity: 2026-05-14 — Phase 31 plan created
 | Phase 28 P01 | 12 min | 5 tasks | 7 files |
 | Phase 29 P01 | 34 min | 5 tasks | 18 files |
 | Phase 30 P01 | 8 min | 5 tasks | 24 files |
+| Phase 31 P01 | 12 min | 5 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -114,10 +115,11 @@ Recent decisions affecting current work:
 - [Milestone v1.4]: Production QA & Cleanup selected to close accepted audit debt before larger feature expansion.
 - [Phase 29]: Remaining documented React hook warnings normalized to 0; `build:checked` enforces warning-register parity; Playwright visual smoke covers dashboard, management report, data quality, dispute monitor, and settings runtime status on desktop/tablet; tablet smoke fixed sidebar/menu overlap and report filter overflow.
 - [Phase 30]: Archived validation docs now expose Nyquist metadata or explicit legacy exceptions; v1.3 phase archive index, planning templates, and `scripts/check_planning_hygiene.py` establish repeatable planning hygiene checks.
+- [Phase 31]: Runtime status now writes auditable report transcripts, deploy writes static frontend `version.json`, admin runtime status exposes backend/frontend build metadata, and the v1.4 production runbook defines the release/manual gate.
 
 ### Pending Todos
 
-- Execute Phase 31 production runtime evidence plan.
+- Start Phase 32 repository hygiene and secret safety.
 
 ### Blockers/Concerns
 
@@ -140,15 +142,15 @@ Items acknowledged at v1.2 milestone close.
 | Frontend | Legacy React hook warnings outside LaporanPage | Completed in Phase 29 | v1.3 audit |
 | Process | Nyquist metadata backfill for validation files | Completed in Phase 30 | v1.3 audit |
 | UI QA | Browser screenshot automation for dashboard/report surfaces | Completed in Phase 29 | v1.3 audit |
-| Deployment | Run full runtime status script on real VPS after deployment | Operational follow-up | v1.3 audit |
+| Deployment | Run full runtime status script on real VPS after deployment | Manual release gate documented in Phase 31 | v1.3 audit |
 | Analytics | Persisted data-quality snapshots and statistical forecasts | Future enhancement | v1.3 audit |
 
 ## Session Continuity
 
-Last session: 2026-05-14T10:42:00+07:00
-Stopped at: Phase 31 plan ready for execution
+Last session: 2026-05-14T10:44:48+07:00
+Stopped at: Phase 31 complete; Phase 32 ready for planning
 Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Execute Phase 31 with `$gsd-execute-phase 31`.
+- Start Phase 32 with `$gsd-plan-phase 32`.
