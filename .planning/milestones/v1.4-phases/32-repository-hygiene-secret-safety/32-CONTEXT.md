@@ -21,8 +21,9 @@ scanning, and provide a release hygiene check.
 
 - `.planning/ROADMAP.md` Phase 32 success criteria.
 - `.planning/REQUIREMENTS.md` REPO4-01..04.
-- Current worktree shows intentional local-only dirt in
-  `README.md`, `backend/.env`, and `frontend/.env`.
+- Current worktree shows intentional local-only dirt in `backend/.env` and
+  `frontend/.env`; duplicate uppercase `README.md` tracking was removed after
+  milestone close.
 - `.gitignore` contained individual `frontend/node_modules/.cache/default-development/*.pack`
   entries appended by prior build-cache churn.
 - Existing credential scanner lives at `scripts/check_credentials.sh`.

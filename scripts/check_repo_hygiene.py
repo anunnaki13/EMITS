@@ -18,7 +18,6 @@ from pathlib import Path
 
 
 INTENTIONAL_LOCAL_ONLY = {
-    "README.md": "pre-existing tracked deletion; canonical repo docs live in readme.md and project docs",
     "backend/.env": "local backend runtime secrets/config; never commit real values",
     "frontend/.env": "local frontend runtime config; never commit real values",
 }

@@ -37,8 +37,8 @@ completed_at: "2026-05-14T12:31:09+07:00"
 
 ## Residual Risks
 
-- `README.md`, `backend/.env`, and `frontend/.env` remain
-  local-only dirty paths by policy; removing them from tracking should be a
-  separate operator-approved cleanup.
+- `backend/.env` and `frontend/.env` remain local-only dirty paths by policy;
+  the duplicate uppercase `README.md` tracking was removed after milestone
+  close as a separate operator-approved cleanup.
 - Legacy scanner exemptions remain documented in `scripts/check_credentials.sh`
   and `docs/audit/CREDENTIAL_HYGIENE.md`.

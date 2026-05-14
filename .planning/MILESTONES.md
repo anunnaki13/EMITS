@@ -35,7 +35,7 @@
 
 - Real `ops/scripts/runtime_status.sh` execution and evidence retention still happen as an operator release gate on the production VPS.
 - Release artifacts under `ops/release-artifacts/` are ignored by git and must be retained or attached to release notes by the operator.
-- Local-only tracked dirt remains documented for `README.md`, `backend/.env`, and `frontend/.env`; legacy generated metadata was removed after v1.4 close.
+- Local-only tracked dirt remains documented for `backend/.env` and `frontend/.env`; duplicate uppercase `README.md` tracking was removed after v1.4 close.
 - Future expansion candidates: GitHub Actions/CI, persisted data-quality snapshots, statistical forecasting, workflow assignment, and multi-provider LLM routing.
 
 ---

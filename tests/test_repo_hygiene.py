@@ -4,7 +4,6 @@ from scripts.check_repo_hygiene import classify_entries, parse_status
 def test_classify_entries_allows_documented_local_only_worktree_changes():
     entries = parse_status(
         "\n".join([
-            " D README.md",
             " M backend/.env",
             " M frontend/.env",
         ])
@@ -13,7 +12,6 @@ def test_classify_entries_allows_documented_local_only_worktree_changes():
     allowed, blocking = classify_entries(entries)
 
     assert [entry.path for entry in allowed] == [
-        "README.md",
         "backend/.env",
         "frontend/.env",
     ]
