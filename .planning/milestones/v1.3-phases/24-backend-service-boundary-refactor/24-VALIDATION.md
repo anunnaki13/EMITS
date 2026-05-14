@@ -1,3 +1,12 @@
+---
+phase: 24
+slug: backend-service-boundary-refactor
+status: archived
+nyquist_status: legacy_exception
+nyquist_exception: "Archived before v1.4 metadata standard; validation evidence preserved in this file and phase verification."
+metadata_reviewed: "2026-05-14"
+---
+
 # Phase 24 Validation Plan - Backend Service Boundary Refactor
 
 Date: 2026-05-14
@@ -22,4 +31,3 @@ ops/scripts/pytest_with_local_credentials.sh tests/test_service_boundaries.py te
 - Routers are visibly thinner and import service builders.
 - No live LLM calls are required.
 - No committed secrets are added.
-

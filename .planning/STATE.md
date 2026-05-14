@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Production QA & Cleanup
-status: executing
-last_updated: "2026-05-14T10:11:26+07:00"
-last_activity: 2026-05-14 — Phase 30 planned; Plan 30-01 ready for execution
+status: planning
+last_updated: "2026-05-14T10:19:40+07:00"
+last_activity: 2026-05-14 — Phase 30 complete; Phase 31 ready for planning
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 2
-  completed_plans: 1
-  percent: 20
+  completed_plans: 2
+  percent: 40
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** executing Phase 30 GSD metadata and archive hygiene
+**Current focus:** planning Phase 31 production runtime evidence
 
 ## Current Position
 
-Phase: 30 (executing)
-Plan: 30-01 Metadata Backfill, Archive Index, And Planning Hygiene Gate
-Status: Plan 30-01 ready for execution
-Last activity: 2026-05-14 — Phase 30 planned; Plan 30-01 ready for execution
+Phase: 31 (ready to plan)
+Plan: —
+Status: Phase 30 complete; Phase 31 ready for planning
+Last activity: 2026-05-14 — Phase 30 complete; planning hygiene verified
 
 ## Performance Metrics
 
@@ -78,6 +78,7 @@ Last activity: 2026-05-14 — Phase 30 planned; Plan 30-01 ready for execution
 | Phase 27 P01 | 17 min | 5 tasks | 11 files |
 | Phase 28 P01 | 12 min | 5 tasks | 7 files |
 | Phase 29 P01 | 34 min | 5 tasks | 18 files |
+| Phase 30 P01 | 8 min | 5 tasks | 24 files |
 
 ## Accumulated Context
 
@@ -112,10 +113,11 @@ Recent decisions affecting current work:
 - [Milestone v1.3]: Audit found 37/37 requirements satisfied, 7/7 phases verified, no critical gaps, and non-blocking tech debt only.
 - [Milestone v1.4]: Production QA & Cleanup selected to close accepted audit debt before larger feature expansion.
 - [Phase 29]: Remaining documented React hook warnings normalized to 0; `build:checked` enforces warning-register parity; Playwright visual smoke covers dashboard, management report, data quality, dispute monitor, and settings runtime status on desktop/tablet; tablet smoke fixed sidebar/menu overlap and report filter overflow.
+- [Phase 30]: Archived validation docs now expose Nyquist metadata or explicit legacy exceptions; v1.3 phase archive index, planning templates, and `scripts/check_planning_hygiene.py` establish repeatable planning hygiene checks.
 
 ### Pending Todos
 
-- Start Phase 30 GSD metadata and archive hygiene.
+- Start Phase 31 production runtime evidence.
 
 ### Blockers/Concerns
 
@@ -131,22 +133,22 @@ Items acknowledged at v1.2 milestone close.
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| Process | SUMMARY/VALIDATION GSD metadata backfill | Optional | v1.2 audit |
+| Process | SUMMARY/VALIDATION GSD metadata backfill | Completed in Phase 30 | v1.2 audit |
 | Frontend | React hook dependency warnings register | Documented | v1.2 audit |
 | Deployment | Use nginx static frontend on real VPS | Operational follow-up | v1.2 audit |
 | AI | Optional LLM polish over deterministic advisor | Future enhancement | v1.2 audit |
 | Frontend | Legacy React hook warnings outside LaporanPage | Completed in Phase 29 | v1.3 audit |
-| Process | Nyquist metadata backfill for validation files | Optional | v1.3 audit |
+| Process | Nyquist metadata backfill for validation files | Completed in Phase 30 | v1.3 audit |
 | UI QA | Browser screenshot automation for dashboard/report surfaces | Completed in Phase 29 | v1.3 audit |
 | Deployment | Run full runtime status script on real VPS after deployment | Operational follow-up | v1.3 audit |
 | Analytics | Persisted data-quality snapshots and statistical forecasts | Future enhancement | v1.3 audit |
 
 ## Session Continuity
 
-Last session: 2026-05-14T10:11:26+07:00
-Stopped at: Phase 30 planned; Plan 30-01 ready for execution
-Resume file: .planning/phases/30-gsd-metadata-phase-archive-hygiene/30-01-PLAN.md
+Last session: 2026-05-14T10:19:40+07:00
+Stopped at: Phase 30 complete; Phase 31 ready for planning
+Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Execute Phase 30 Plan 30-01, then run the planning hygiene check.
+- Start Phase 31 with `$gsd-plan-phase 31`.

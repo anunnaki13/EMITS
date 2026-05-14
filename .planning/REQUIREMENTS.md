@@ -24,10 +24,10 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 ### GSD Metadata & Planning Hygiene (META4)
 
-- [ ] **META4-01**: Current and archived phase validation files expose consistent Nyquist metadata or an explicit documented exception.
-- [ ] **META4-02**: Phase directories from shipped milestones are archived and discoverable from milestone archives without bloating the active `.planning/phases/` workspace.
-- [ ] **META4-03**: GSD health/progress output no longer points users to stale active requirements or phase paths after milestone archive.
-- [ ] **META4-04**: Future phase completion docs have a consistent template for SUMMARY, VERIFICATION, VALIDATION, requirement frontmatter, and residual-risk notes.
+- [x] **META4-01**: Current and archived phase validation files expose consistent Nyquist metadata or an explicit documented exception.
+- [x] **META4-02**: Phase directories from shipped milestones are archived and discoverable from milestone archives without bloating the active `.planning/phases/` workspace.
+- [x] **META4-03**: GSD health/progress output no longer points users to stale active requirements or phase paths after milestone archive.
+- [x] **META4-04**: Future phase completion docs have a consistent template for SUMMARY, VERIFICATION, VALIDATION, requirement frontmatter, and residual-risk notes.
 
 ### Production Runtime Evidence (OPS4)
 
@@ -74,7 +74,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | QA4-01..05 | Phase 29 | Complete |
-| META4-01..04 | Phase 30 | Planned |
+| META4-01..04 | Phase 30 | Complete |
 | OPS4-01..05 | Phase 31 | Planned |
 | REPO4-01..04 | Phase 32 | Planned |
 | REG4-01..04 | Phase 33 | Planned |
@@ -83,7 +83,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 - v1.4 requirements: 22 total
 - Mapped to phases: 22
 - Unmapped: 0
-- Complete: 5
+- Complete: 9
 
 ---
-*Last updated: 2026-05-14 after Phase 29 verification*
+*Last updated: 2026-05-14 after Phase 30 verification*

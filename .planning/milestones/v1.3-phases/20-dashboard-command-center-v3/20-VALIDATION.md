@@ -1,3 +1,12 @@
+---
+phase: 20
+slug: dashboard-command-center-v3
+status: archived
+nyquist_status: legacy_exception
+nyquist_exception: "Archived before v1.4 metadata standard; validation evidence preserved in this file and phase verification."
+metadata_reviewed: "2026-05-14"
+---
+
 # Phase 20 Validation — Dashboard Command Center v3
 
 Date: 2026-05-13

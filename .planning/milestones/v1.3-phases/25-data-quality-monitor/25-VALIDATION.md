@@ -1,3 +1,12 @@
+---
+phase: 25
+slug: data-quality-monitor
+status: archived
+nyquist_status: legacy_exception
+nyquist_exception: "Archived before v1.4 metadata standard; validation evidence preserved in this file and phase verification."
+metadata_reviewed: "2026-05-14"
+---
+
 # Phase 25 Validation - Data Quality Monitor
 
 Date: 2026-05-14

@@ -1,3 +1,12 @@
+---
+phase: 23
+slug: dashboard-drilldown-integration
+status: archived
+nyquist_status: legacy_exception
+nyquist_exception: "Archived before v1.4 metadata standard; validation evidence preserved in this file and phase verification."
+metadata_reviewed: "2026-05-14"
+---
+
 # Phase 23 Validation Plan - Dashboard Drilldown Integration
 
 Date: 2026-05-14
@@ -58,4 +67,3 @@ Manual browser smoke:
 - Real production data may contain supplier label variants not present in seed/test data.
 - Some destination metrics may be aggregated from partially normalized historical records.
 - Frontend build may still report pre-existing hook warnings documented in `docs/quality/REACT_HOOK_WARNINGS.md`; Phase 23 must not add new warnings.
-

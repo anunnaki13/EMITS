@@ -1,3 +1,12 @@
+---
+phase: 28
+slug: operator-ui-ux-polish
+status: archived
+nyquist_status: legacy_exception
+nyquist_exception: "Archived before v1.4 metadata standard; validation evidence preserved in this file and phase verification."
+metadata_reviewed: "2026-05-14"
+---
+
 # Phase 28 Validation - Operator UI/UX Polish
 
 Date: 2026-05-14
@@ -24,4 +33,3 @@ cd frontend && npm run build
 ## Residual Risk To Watch
 
 - Remaining hook warnings in other legacy CRUD pages are intentionally documented rather than broad-refactored in this phase.
-

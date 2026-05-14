@@ -5,7 +5,7 @@ requirements:
   - META4-02
   - META4-03
   - META4-04
-nyquist_status: planned
+nyquist_status: passed
 validation_owner: codex
 ---
 
@@ -26,3 +26,13 @@ validation_owner: codex
 python3 scripts/check_planning_hygiene.py
 git diff --check -- .planning scripts/check_planning_hygiene.py
 ```
+
+## Results
+
+Validated on 2026-05-14:
+
+| Command | Result |
+|---------|--------|
+| `python3 -m py_compile scripts/check_planning_hygiene.py` | Pass |
+| `python3 scripts/check_planning_hygiene.py` | Pass; validation metadata, archive index, active workspace, templates, and current next-step state verified. |
+| `git diff --check -- .planning scripts/check_planning_hygiene.py` | Pass |

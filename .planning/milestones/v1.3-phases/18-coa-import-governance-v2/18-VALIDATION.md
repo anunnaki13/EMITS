@@ -1,3 +1,12 @@
+---
+phase: 18
+slug: coa-import-governance-v2
+status: archived
+nyquist_status: legacy_exception
+nyquist_exception: "Archived before v1.4 metadata standard; validation evidence preserved in this file and phase verification."
+metadata_reviewed: "2026-05-14"
+---
+
 # Phase 18 Validation — COA Import Governance v2
 
 Date: 2026-05-13

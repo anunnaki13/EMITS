@@ -30,12 +30,13 @@
 - [Roadmap archive](milestones/v1.3-ROADMAP.md)
 - [Requirements archive](milestones/v1.3-REQUIREMENTS.md)
 - [Milestone audit](milestones/v1.3-MILESTONE-AUDIT.md)
+- [Phase archive index](milestones/v1.3-phases/INDEX.md)
 
 ### Deferred
 
-- Legacy React hook warnings remain documented in `docs/quality/REACT_HOOK_WARNINGS.md`.
-- Nyquist metadata exists unevenly across validation files and can be backfilled later.
-- Visual QA was build/review based; browser screenshot automation remains a future hardening item.
+- Legacy React hook warnings were closed in Phase 29 of v1.4.
+- Nyquist validation metadata was backfilled or explicitly excepted in Phase 30 of v1.4.
+- Browser screenshot automation was added in Phase 29 of v1.4.
 - Full `ops/scripts/runtime_status.sh` should still be run on the real VPS after deployment.
 - Data-quality scans and forecasts remain deterministic/rule-based; persisted snapshots or statistical prediction can be future phases.
 
