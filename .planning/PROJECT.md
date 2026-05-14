@@ -105,7 +105,7 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 - [x] META4-01..04: GSD validation metadata, phase archive hygiene, and planning health checks.
 - [x] OPS4-01..05: Production runtime verification on the real VPS with auditable evidence.
 - [x] REPO4-01..04: Repository hygiene, artifact handling, build-cache churn control, and credential guardrails.
-- [ ] REG4-01..04: Consolidated regression/release gate for backend, frontend, smoke, and documentation checks.
+- [x] REG4-01..04: Consolidated regression/release gate for backend, frontend, smoke, and documentation checks.
 
 ### Out of Scope
 

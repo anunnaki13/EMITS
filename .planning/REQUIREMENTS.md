@@ -46,10 +46,10 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 ### Regression & Release Gate (REG4)
 
-- [ ] **REG4-01**: One command runs the focused backend regression suite for auth, dashboard, COA/import, reports, data quality, trends, advisor, and runtime status.
-- [ ] **REG4-02**: One command runs the frontend production build and verifies the hook-warning budget against the warning register.
-- [ ] **REG4-03**: Release gate includes smoke-check execution or a clearly marked skip reason when production services are unavailable.
-- [ ] **REG4-04**: Release gate writes a compact artifact summary with command results, warnings, skipped checks, git SHA/tag, and next action.
+- [x] **REG4-01**: One command runs the focused backend regression suite for auth, dashboard, COA/import, reports, data quality, trends, advisor, and runtime status.
+- [x] **REG4-02**: One command runs the frontend production build and verifies the hook-warning budget against the warning register.
+- [x] **REG4-03**: Release gate includes smoke-check execution or a clearly marked skip reason when production services are unavailable.
+- [x] **REG4-04**: Release gate writes a compact artifact summary with command results, warnings, skipped checks, git SHA/tag, and next action.
 
 ## Future Requirements
 
@@ -77,13 +77,13 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 | META4-01..04 | Phase 30 | Complete |
 | OPS4-01..05 | Phase 31 | Complete |
 | REPO4-01..04 | Phase 32 | Complete |
-| REG4-01..04 | Phase 33 | Planned |
+| REG4-01..04 | Phase 33 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 22 total
 - Mapped to phases: 22
 - Unmapped: 0
-- Complete: 18
+- Complete: 22
 
 ---
-*Last updated: 2026-05-14 after Phase 32 verification*
+*Last updated: 2026-05-14 after Phase 33 verification*
