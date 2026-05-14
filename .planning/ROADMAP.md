@@ -9,7 +9,7 @@
 
 ## Current Status
 
-v1.4 is in progress. Phase 29 is complete; Phase 30 is ready for planning.
+v1.4 is in progress. Phase 30 Plan 30-01 is ready for execution.
 
 ## Milestone Goal
 
@@ -48,7 +48,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 **Requirements:** META4-01, META4-02, META4-03, META4-04
 
-**Status:** Planned
+**Status:** Planned - Plan 30-01 ready
 
 **Success criteria:**
 1. Shipped phase validation docs expose consistent Nyquist metadata or documented exceptions.
@@ -128,8 +128,8 @@ Coverage: 22/22 active v1.4 requirements mapped; 5/22 complete.
 
 ## Next Step
 
-Plan Phase 30:
+Execute Phase 30:
 
 ```bash
-$gsd-plan-phase 30
+$gsd-execute-phase 30
 ```
