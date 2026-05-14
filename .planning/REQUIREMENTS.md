@@ -39,10 +39,10 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 ### Repository Hygiene & Secret Safety (REPO4)
 
-- [ ] **REPO4-01**: Pre-existing tracked local dirt (`.emergent/*`, `README.md`, `backend/.env`, `frontend/.env`) is resolved or explicitly documented without committing secrets.
-- [ ] **REPO4-02**: Frontend build-cache artifacts no longer cause `.gitignore` churn or accidental generated-file commits during normal build/test workflows.
-- [ ] **REPO4-03**: Credential scanning continues to block real secrets while documented local test credentials remain outside committed artifacts.
-- [ ] **REPO4-04**: A repository hygiene check can distinguish intentional local-only files from release-blocking dirty worktree changes.
+- [x] **REPO4-01**: Pre-existing tracked local dirt (`.emergent/*`, `README.md`, `backend/.env`, `frontend/.env`) is resolved or explicitly documented without committing secrets.
+- [x] **REPO4-02**: Frontend build-cache artifacts no longer cause `.gitignore` churn or accidental generated-file commits during normal build/test workflows.
+- [x] **REPO4-03**: Credential scanning continues to block real secrets while documented local test credentials remain outside committed artifacts.
+- [x] **REPO4-04**: A repository hygiene check can distinguish intentional local-only files from release-blocking dirty worktree changes.
 
 ### Regression & Release Gate (REG4)
 
@@ -76,14 +76,14 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 | QA4-01..05 | Phase 29 | Complete |
 | META4-01..04 | Phase 30 | Complete |
 | OPS4-01..05 | Phase 31 | Complete |
-| REPO4-01..04 | Phase 32 | Planned |
+| REPO4-01..04 | Phase 32 | Complete |
 | REG4-01..04 | Phase 33 | Planned |
 
 **Coverage:**
 - v1.4 requirements: 22 total
 - Mapped to phases: 22
 - Unmapped: 0
-- Complete: 14
+- Complete: 18
 
 ---
-*Last updated: 2026-05-14 after Phase 31 verification*
+*Last updated: 2026-05-14 after Phase 32 verification*

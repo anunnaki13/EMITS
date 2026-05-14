@@ -9,7 +9,7 @@
 
 ## Current Status
 
-v1.4 is in progress. Phase 31 is complete; Phase 32 repository hygiene is ready for planning.
+v1.4 is in progress. Phase 32 is complete; Phase 33 regression and release gate is ready for planning.
 
 ## Milestone Goal
 
@@ -22,7 +22,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 | 29 | Frontend Warning & Visual QA | Remove or strictly account for frontend warnings and add browser visual smoke coverage for key operator/admin pages. | QA4-01..05 | Complete |
 | 30 | GSD Metadata & Phase Archive Hygiene | Make planning state, archived phase docs, Nyquist metadata, and future completion templates consistent and discoverable. | META4-01..04 | Complete |
 | 31 | Production Runtime Evidence | Capture real production runtime/smoke evidence and make release version metadata visible and auditable. | OPS4-01..05 | Complete |
-| 32 | Repository Hygiene & Secret Safety | Resolve or document local artifact dirt, stop build-cache churn, and keep credential scanning effective. | REPO4-01..04 | 4 |
+| 32 | Repository Hygiene & Secret Safety | Resolve or document local artifact dirt, stop build-cache churn, and keep credential scanning effective. | REPO4-01..04 | Complete |
 | 33 | Regression & Release Gate | Provide one release gate that runs backend, frontend, smoke, warning-budget, and artifact-summary checks. | REG4-01..04 | 4 |
 
 ## Phase Details
@@ -77,7 +77,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 **Requirements:** REPO4-01, REPO4-02, REPO4-03, REPO4-04
 
-**Status:** Planned
+**Status:** Complete
 
 **Success criteria:**
 1. Pre-existing local dirt is either resolved safely or documented as intentional local-only state without committing secrets.
@@ -106,10 +106,10 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 | QA4-01..05 | Phase 29 | Complete |
 | META4-01..04 | Phase 30 | Complete |
 | OPS4-01..05 | Phase 31 | Complete |
-| REPO4-01..04 | Phase 32 | Planned |
+| REPO4-01..04 | Phase 32 | Complete |
 | REG4-01..04 | Phase 33 | Planned |
 
-Coverage: 22/22 active v1.4 requirements mapped; 14/22 complete.
+Coverage: 22/22 active v1.4 requirements mapped; 18/22 complete.
 
 ## Completed Milestones
 
@@ -128,8 +128,8 @@ Coverage: 22/22 active v1.4 requirements mapped; 14/22 complete.
 
 ## Next Step
 
-Plan Phase 32:
+Plan Phase 33:
 
 ```bash
-$gsd-plan-phase 32
+$gsd-plan-phase 33
 ```

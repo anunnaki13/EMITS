@@ -215,3 +215,14 @@ Tracked source boundaries:
   - Python/Node caches and build output
 
 Current local dirty artifacts may exist on the working host because older snapshots tracked or generated them. Do not commit secrets or runtime state. Use `.env.example` / `ops/env/*.example` for documentation, and handle tracked-file cleanup in a dedicated hygiene change only after confirming the active deployment no longer depends on those files.
+
+Run the release hygiene gate before tagging or deploying source changes:
+
+```bash
+python3 scripts/check_repo_hygiene.py
+```
+
+The gate allows the documented local-only runtime paths above when they are
+unstaged, runs the credential scanner, and blocks unexpected dirty source files
+or individual frontend webpack cache pack entries in `.gitignore`. See
+`docs/operations/REPO_HYGIENE.md` for the full allowlist and policy.
