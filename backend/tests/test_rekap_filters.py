@@ -28,7 +28,7 @@ REKAP_CASES = [
     {
         "path": "/api/biomassa",
         "factory": "tests.factories.biomassa.make_biomassa",
-        "date_field": "periode",
+        "date_field": "ta",
         "search_field": "shipment_code",
     },
 ]
@@ -85,6 +85,75 @@ def test_rekap_date_range_and_supplier_filters_preserve_pagination(case, base_ur
     assert_pagination_shape(body, expected_page=1, expected_page_size=10)
     assert body["total"] == 1
     assert [item["id"] for item in body["items"]] == [in_range["id"]]
+
+
+@pytest.mark.parametrize("case", REKAP_CASES)
+def test_rekap_default_sort_uses_latest_operational_date(case, base_url, admin_headers):
+    marker = f"PT SORT {uuid.uuid4().hex[:10].upper()}"
+    make_doc = _load_factory(case["factory"])
+
+    older = make_doc(
+        suppliers=marker,
+        **{
+            case["date_field"]: "2022-01-15 08:00",
+            case["search_field"]: f"SORT-OLD-{uuid.uuid4().hex[:8]}",
+        },
+    )
+    newer = make_doc(
+        suppliers=marker,
+        **{
+            case["date_field"]: "2026-04-15 08:00",
+            case["search_field"]: f"SORT-NEW-{uuid.uuid4().hex[:8]}",
+        },
+    )
+
+    r = requests.get(
+        f"{base_url}{case['path']}",
+        headers=admin_headers,
+        params={"page": 1, "page_size": 10, "supplier": marker},
+        timeout=10,
+    )
+
+    assert r.status_code == 200, f"{case['path']}: {r.status_code} {r.text[:300]}"
+    body = r.json()
+    assert_pagination_shape(body, expected_page=1, expected_page_size=10)
+    assert body["total"] == 2
+    assert [item["id"] for item in body["items"]] == [newer["id"], older["id"]]
+
+
+def test_po_batubara_default_sort_uses_latest_arrival(base_url, admin_headers):
+    from tests.factories.po_batubara import make_po_batubara
+
+    marker = f"PT PO SORT {uuid.uuid4().hex[:10].upper()}"
+    older = make_po_batubara(
+        supplier_name=marker,
+        po_number=f"PO-SORT-OLD-{uuid.uuid4().hex[:8]}",
+        no_shipment=f"SORT-OLD-{uuid.uuid4().hex[:8]}",
+        completed_year=2022,
+        completed_month=1,
+        time_arrival="2022-01-15 08:00",
+    )
+    newer = make_po_batubara(
+        supplier_name=marker,
+        po_number=f"PO-SORT-NEW-{uuid.uuid4().hex[:8]}",
+        no_shipment=f"SORT-NEW-{uuid.uuid4().hex[:8]}",
+        completed_year=2026,
+        completed_month=4,
+        time_arrival="2026-04-15 08:00",
+    )
+
+    r = requests.get(
+        f"{base_url}/api/po-batubara",
+        headers=admin_headers,
+        params={"page": 1, "page_size": 10, "supplier": marker},
+        timeout=10,
+    )
+
+    assert r.status_code == 200, f"/api/po-batubara: {r.status_code} {r.text[:300]}"
+    body = r.json()
+    assert_pagination_shape(body, expected_page=1, expected_page_size=10)
+    assert body["total"] == 2
+    assert [item["id"] for item in body["items"]] == [newer["id"], older["id"]]
 
 
 def test_rekap_combines_search_supplier_and_date_filters(base_url, admin_headers):
