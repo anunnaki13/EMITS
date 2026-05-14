@@ -109,9 +109,10 @@ def check_current_state(errors: list[str]) -> None:
 
     if "| META4-01..04 | Phase 30 | Complete |" not in requirements:
         errors.append("REQUIREMENTS.md does not mark META4-01..04 complete")
-    if "Phase 31" not in state or "$gsd-plan-phase 31" not in state:
+    phase31_routes = ("$gsd-plan-phase 31", "$gsd-execute-phase 31")
+    if "Phase 31" not in state or not any(route in state for route in phase31_routes):
         errors.append("STATE.md does not route next work to Phase 31")
-    if "$gsd-plan-phase 31" not in roadmap:
+    if not any(route in roadmap for route in phase31_routes):
         errors.append("ROADMAP.md does not route next work to Phase 31")
 
 

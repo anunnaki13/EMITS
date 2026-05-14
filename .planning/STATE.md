@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Production QA & Cleanup
-status: planning
-last_updated: "2026-05-14T10:19:40+07:00"
-last_activity: 2026-05-14 — Phase 30 complete; Phase 31 ready for planning
+status: executing
+last_updated: "2026-05-14T10:42:00+07:00"
+last_activity: 2026-05-14 — Phase 31 plan ready for execution
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 2
+  total_plans: 3
   completed_plans: 2
   percent: 40
 ---
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** planning Phase 31 production runtime evidence
+**Current focus:** executing Phase 31 production runtime evidence
 
 ## Current Position
 
-Phase: 31 (ready to plan)
-Plan: —
-Status: Phase 30 complete; Phase 31 ready for planning
-Last activity: 2026-05-14 — Phase 30 complete; planning hygiene verified
+Phase: 31 (Production Runtime Evidence)
+Plan: 31-01 Runtime Evidence Artifact, Release Metadata, And Manual Gate
+Status: Ready for execution
+Last activity: 2026-05-14 — Phase 31 plan created
 
 ## Performance Metrics
 
@@ -117,7 +117,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Start Phase 31 production runtime evidence.
+- Execute Phase 31 production runtime evidence plan.
 
 ### Blockers/Concerns
 
@@ -145,10 +145,10 @@ Items acknowledged at v1.2 milestone close.
 
 ## Session Continuity
 
-Last session: 2026-05-14T10:19:40+07:00
-Stopped at: Phase 30 complete; Phase 31 ready for planning
+Last session: 2026-05-14T10:42:00+07:00
+Stopped at: Phase 31 plan ready for execution
 Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Start Phase 31 with `$gsd-plan-phase 31`.
+- Execute Phase 31 with `$gsd-execute-phase 31`.

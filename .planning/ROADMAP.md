@@ -9,7 +9,7 @@
 
 ## Current Status
 
-v1.4 is in progress. Phase 30 is complete; Phase 31 is ready for planning.
+v1.4 is in progress. Phase 31 production runtime evidence is planned and ready for execution.
 
 ## Milestone Goal
 
@@ -21,7 +21,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 |---|-------|------|--------------|------------------|
 | 29 | Frontend Warning & Visual QA | Remove or strictly account for frontend warnings and add browser visual smoke coverage for key operator/admin pages. | QA4-01..05 | Complete |
 | 30 | GSD Metadata & Phase Archive Hygiene | Make planning state, archived phase docs, Nyquist metadata, and future completion templates consistent and discoverable. | META4-01..04 | Complete |
-| 31 | Production Runtime Evidence | Capture real production runtime/smoke evidence and make release version metadata visible and auditable. | OPS4-01..05 | 5 |
+| 31 | Production Runtime Evidence | Capture real production runtime/smoke evidence and make release version metadata visible and auditable. | OPS4-01..05 | In Progress |
 | 32 | Repository Hygiene & Secret Safety | Resolve or document local artifact dirt, stop build-cache churn, and keep credential scanning effective. | REPO4-01..04 | 4 |
 | 33 | Regression & Release Gate | Provide one release gate that runs backend, frontend, smoke, warning-budget, and artifact-summary checks. | REG4-01..04 | 4 |
 
@@ -62,7 +62,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 
 **Requirements:** OPS4-01, OPS4-02, OPS4-03, OPS4-04, OPS4-05
 
-**Status:** Planned
+**Status:** Ready for Execution
 
 **Success criteria:**
 1. Full runtime status command produces an auditable production report artifact.
@@ -105,7 +105,7 @@ Turn the accepted v1.3 tech debt into concrete release-quality gates: clean fron
 |-------------------|------------|--------|
 | QA4-01..05 | Phase 29 | Complete |
 | META4-01..04 | Phase 30 | Complete |
-| OPS4-01..05 | Phase 31 | Planned |
+| OPS4-01..05 | Phase 31 | In Progress |
 | REPO4-01..04 | Phase 32 | Planned |
 | REG4-01..04 | Phase 33 | Planned |
 
@@ -128,8 +128,8 @@ Coverage: 22/22 active v1.4 requirements mapped; 9/22 complete.
 
 ## Next Step
 
-Plan Phase 31:
+Execute Phase 31:
 
 ```bash
-$gsd-plan-phase 31
+$gsd-execute-phase 31
 ```
