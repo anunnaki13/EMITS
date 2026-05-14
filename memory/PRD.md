@@ -169,4 +169,4 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 
 ## Test Credentials
 - **Email**: admin@example.com
-- **Password**: adminpassword
+- **Password**: ${TEST_ADMIN_PASSWORD}

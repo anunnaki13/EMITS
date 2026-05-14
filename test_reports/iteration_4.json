@@ -18,7 +18,7 @@
   },
   
   "passed_tests": [
-    "1. Login with admin@example.com / adminpassword - SUCCESS",
+    "1. Login with admin@example.com / ${TEST_ADMIN_PASSWORD} - SUCCESS",
     "2. Submenu 'Merit Order' visible in dropdown 'Rekap Penerimaan BB' - SUCCESS",
     "3. Navigation to /merit-order page - SUCCESS",
     "4. Data table displays 58 records with all columns - SUCCESS",
@@ -36,7 +36,7 @@
   "test_details": {
     "login": {
       "status": "PASS",
-      "credentials": "admin@example.com / adminpassword",
+      "credentials": "admin@example.com / ${TEST_ADMIN_PASSWORD}",
       "notes": "Login successful, redirected to dashboard with toast 'Login berhasil!'"
     },
     "sidebar_navigation": {

@@ -16,15 +16,29 @@ Internet
    |
    v
 Nginx (80/443)
-   |---- /api/*  -> FastAPI Uvicorn (127.0.0.1:8001)
+   |---- /api/*  -> FastAPI Uvicorn (127.0.0.1:8013)
    |
-   ---- /*      -> React build static files (/var/www/pltu-tenayan/frontend/build)
+   ---- /*      -> React build static files (/var/www/emits)
 
 FastAPI
    |
    v
 MongoDB
 ```
+
+### Catatan: Postur VPS Produksi Saat Ini (2026-05-13)
+
+Panduan umum ini menggunakan port internal standar **8013** untuk artefak operasional EMITS:
+
+- Backend uvicorn: port **8013**, dikelola via systemd template `ops/systemd/emits-backend.service.example`
+- Frontend: React static build disajikan nginx dari `/var/www/emits`
+- Nginx: `ops/nginx/emits.conf.example` reverse-proxy `/api/*` ke `127.0.0.1:8013`
+- MongoDB: `localhost:27017` (single-host, bukan MongoDB Atlas/external)
+- `REACT_APP_BACKEND_URL`: origin publik nginx jika sudah aktif, atau `http://103.150.197.225:8013` sebagai fallback langsung
+
+Runbook kanonis Phase 22: [docs/operations/PRODUCTION_RUNBOOK.md](docs/operations/PRODUCTION_RUNBOOK.md).
+
+---
 
 ## 2. Spesifikasi VPS Minimum
 
@@ -78,8 +92,8 @@ sudo npm install -g yarn
 ├── venv/                    # virtualenv python backend
 └── logs/
 
-/var/www/pltu-tenayan/
-└── frontend-build/          # hasil yarn build frontend
+/var/www/
+└── emits/                   # hasil yarn build frontend untuk static nginx
 ```
 
 ## 5. Clone Source Code
@@ -118,6 +132,11 @@ DB_NAME=pltu_tenayan
 JWT_SECRET=ganti-dengan-secret-yang-kuat
 CORS_ORIGINS=https://your-domain.com,https://www.your-domain.com
 OPENROUTER_API_KEY=isi-jika-memakai-default-global-key
+APP_VERSION=2026.03
+APP_BUILD_ID=<git-commit-or-build-id>
+APP_ENV=production
+FRONTEND_STATIC_ROOT=/var/www/emits
+SMOKE_EVIDENCE_DIR=/var/log/emits/smoke
 ```
 
 Catatan penting:
@@ -131,13 +150,13 @@ Catatan penting:
 ```bash
 source /opt/pltu-tenayan/venv/bin/activate
 cd /opt/pltu-tenayan/app/backend
-uvicorn server:app --host 127.0.0.1 --port 8001
+uvicorn server:app --host 127.0.0.1 --port 8013
 ```
 
 Tes cepat:
 
 ```bash
-curl http://127.0.0.1:8001/api/health
+curl http://127.0.0.1:8013/api/health
 ```
 
 Jika response sehat, hentikan proses manual dan lanjut ke systemd.
@@ -154,9 +173,21 @@ Contoh isi jika frontend dan backend berada di domain yang sama:
 REACT_APP_BACKEND_URL=https://your-domain.com
 ```
 
+Untuk fallback langsung jika nginx/domain belum aktif:
+```env
+REACT_APP_BACKEND_URL=http://103.150.197.225:8013
+```
+
+Untuk jalur produksi static nginx, gunakan origin nginx yang sama dengan frontend. Nginx akan mem-proxy `/api/*` ke backend internal.
+
+Untuk dev lokal:
+```env
+REACT_APP_BACKEND_URL=http://localhost:8013
+```
+
 Penting:
 - backend route harus tetap dipanggil dengan prefix `/api`
-- nilai ini harus domain publik, bukan `localhost`
+- nilai ini harus domain publik, bukan `localhost` (kecuali untuk dev lokal)
 
 ### 7.2 Install Dependency dan Build
 
@@ -169,8 +200,8 @@ yarn build
 ### 7.3 Salin Build ke Direktori Web
 
 ```bash
-sudo mkdir -p /var/www/pltu-tenayan/frontend-build
-sudo rsync -av --delete /opt/pltu-tenayan/app/frontend/build/ /var/www/pltu-tenayan/frontend-build/
+sudo mkdir -p /var/www/emits
+sudo rsync -av --delete /opt/pltu-tenayan/app/frontend/build/ /var/www/emits/
 ```
 
 ---
@@ -195,8 +226,9 @@ mongosh --eval 'db.runCommand({ ping: 1 })'
 ### Opsi B — MongoDB Eksternal / Managed
 Gunakan connection string penuh pada `MONGO_URL`, misalnya:
 
+# Set MONGO_URL in backend/.env; example shape mongodb://localhost:27017 (single-host VPS topology per ADR-001).
 ```env
-MONGO_URL=mongodb+srv://user:password@cluster.mongodb.net/?retryWrites=true&w=majority
+MONGO_URL=${MONGO_URL}
 DB_NAME=pltu_tenayan
 ```
 
@@ -209,6 +241,8 @@ DB_NAME=pltu_tenayan
 ---
 
 ## 9. Menjalankan Backend dengan systemd
+
+Template siap pakai ada di `ops/systemd/emits-backend.service.example`. Salin template tersebut ke `/etc/systemd/system/emits-backend.service`, lalu sesuaikan path jika instalasi tidak memakai `/opt/pltu-tenayan/app`.
 
 Buat service file:
 - `/etc/systemd/system/pltu-tenayan-backend.service`
@@ -225,7 +259,7 @@ User=www-data
 Group=www-data
 WorkingDirectory=/opt/pltu-tenayan/app/backend
 Environment="PATH=/opt/pltu-tenayan/venv/bin"
-ExecStart=/opt/pltu-tenayan/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8001
+ExecStart=/opt/pltu-tenayan/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8013
 Restart=always
 RestartSec=5
 
@@ -253,6 +287,8 @@ journalctl -u pltu-tenayan-backend -f
 
 ## 10. Setup Nginx
 
+Template siap pakai ada di `ops/nginx/emits.conf.example`. Template ini menggunakan backend port `8013`, React static root `/var/www/emits`, dan upload limit `100M`.
+
 Buat file config:
 - `/etc/nginx/sites-available/pltu-tenayan`
 
@@ -263,13 +299,13 @@ server {
     listen 80;
     server_name your-domain.com www.your-domain.com;
 
-    root /var/www/pltu-tenayan/frontend-build;
+    root /var/www/emits;
     index index.html;
 
     client_max_body_size 50M;
 
     location /api/ {
-        proxy_pass http://127.0.0.1:8001/api/;
+        proxy_pass http://127.0.0.1:8013/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -327,6 +363,35 @@ sudo certbot renew --dry-run
 
 ## 12. Checklist Verifikasi Setelah Deploy
 
+Phase 19 menyediakan smoke check otomatis:
+
+```bash
+cd /opt/pltu-tenayan/app
+set -a
+. backend/.env
+set +a
+backend/.venv/bin/python ops/scripts/smoke_check.py \
+  --base-url http://127.0.0.1:8013 \
+  --frontend-url http://127.0.0.1 \
+  --json-output /var/log/emits/smoke/manual-smoke-$(date -u +%Y%m%dT%H%M%SZ).json
+```
+
+Smoke check ini mencakup frontend, backend health, MongoDB, login, dashboard, COA, dan management report.
+
+Untuk status gabungan backend, static nginx, systemd, nginx config, disk, backup, dan smoke evidence:
+
+```bash
+cd /opt/pltu-tenayan/app
+ops/scripts/runtime_status.sh
+```
+
+Script runtime status membuat dua artifact audit:
+
+- `/var/log/emits/runtime/runtime-status-<timestamp>.txt`
+- `/var/log/emits/smoke/status-smoke-<timestamp>.json`
+
+Jika VPS produksi belum bisa dijalankan dari sesi pengembangan, status runtime v1.4 harus dicatat sebagai manual gate, bukan dianggap lulus otomatis. Operator perlu menjalankan `ops/scripts/runtime_status.sh` di VPS dan menyimpan path artifact di catatan release.
+
 ### 12.1 Cek service
 ```bash
 sudo systemctl status pltu-tenayan-backend
@@ -345,10 +410,11 @@ Buka:
 - `https://your-domain.com/dashboard`
 
 ### 12.4 Cek login API
+# Source from gitignored memory/test_credentials.md — see docs/audit/CREDENTIAL_HYGIENE.md
 ```bash
-curl -X POST "https://your-domain.com/api/auth/login" \
+curl -X POST "http://103.150.197.225:8013/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"adminpassword"}'
+  -d "{\"email\":\"admin@example.com\",\"password\":\"${TEST_ADMIN_PASSWORD}\"}"
 ```
 
 ### 12.5 Cek upload dan export
@@ -359,6 +425,17 @@ curl -X POST "https://your-domain.com/api/auth/login" \
 ---
 
 ## 13. Prosedur Update Deployment
+
+Phase 19 menyediakan helper deploy repeatable:
+
+```bash
+cd /opt/pltu-tenayan/app
+ops/scripts/deploy.sh
+```
+
+Script tersebut melakukan clean-tree check, `git pull --ff-only`, pre-deploy `mongodump`, install dependency backend, build frontend, publish static build, restart backend, reload nginx, dan menjalankan smoke check.
+
+Saat build static frontend, script juga menulis `version.json` ke output build. File ini dibaca oleh admin runtime status supaya Settings → Status Operasional menampilkan build frontend yang sesuai dengan git SHA atau release tag yang dideploy.
 
 Saat ada update kode baru:
 
@@ -378,7 +455,7 @@ pip install -r /opt/pltu-tenayan/app/backend/requirements.txt
 cd /opt/pltu-tenayan/app/frontend
 yarn install
 yarn build
-sudo rsync -av --delete /opt/pltu-tenayan/app/frontend/build/ /var/www/pltu-tenayan/frontend-build/
+sudo rsync -av --delete /opt/pltu-tenayan/app/frontend/build/ /var/www/emits/
 ```
 
 ### Restart backend dan reload nginx
@@ -465,7 +542,7 @@ Penyebab umum:
 Cek:
 ```bash
 cat /opt/pltu-tenayan/app/frontend/.env
-sudo ls -la /var/www/pltu-tenayan/frontend-build
+sudo ls -la /var/www/emits
 sudo nginx -t
 ```
 
@@ -491,7 +568,7 @@ Cek:
 ```bash
 sudo systemctl status pltu-tenayan-backend
 journalctl -u pltu-tenayan-backend -n 100 --no-pager
-curl http://127.0.0.1:8001/api/health
+curl http://127.0.0.1:8013/api/health
 ```
 
 ### 17.4 Upload Excel gagal
@@ -520,9 +597,9 @@ Sebelum go-live, pastikan:
 - [ ] Backend `.env` sudah benar
 - [ ] Frontend `.env` sudah berisi domain publik
 - [ ] MongoDB dapat diakses dari backend
-- [ ] `uvicorn` berjalan di port internal `8001`
+- [ ] `uvicorn` berjalan di port internal `8013`
 - [ ] Nginx proxy `/api` ke backend
-- [ ] React build sudah disalin ke direktori web
+- [ ] React build sudah disalin ke `/var/www/emits` untuk static nginx
 - [ ] SSL aktif
 - [ ] Login berhasil
 - [ ] Upload Excel berhasil
@@ -547,3 +624,15 @@ Jika aplikasi berkembang lebih besar, langkah evolusi berikutnya yang disarankan
 ## 20. Kesimpulan
 
 Untuk tahap sekarang, model deployment paling stabil adalah satu VPS dengan Nginx + systemd + FastAPI + MongoDB, dengan frontend React dibuild statis. Struktur ini sederhana, mudah di-debug, murah untuk awal, dan sudah cukup baik untuk aplikasi operasional internal maupun semi-produksi selama backup, SSL, logging, dan kontrol environment dijaga dengan benar.
+
+---
+
+## 21. Service Recovery (post-restart)
+
+Untuk post-restart atau operasi berulang, gunakan runbook kanonis:
+
+- [docs/operations/PRODUCTION_RUNBOOK.md](docs/operations/PRODUCTION_RUNBOOK.md)
+- `sudo systemctl restart emits-backend`
+- `sudo systemctl reload nginx`
+- `backend/.venv/bin/python ops/scripts/smoke_check.py --base-url http://127.0.0.1:8013 --frontend-url http://127.0.0.1`
+- `ops/scripts/runtime_status.sh`

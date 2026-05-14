@@ -13,7 +13,7 @@
   },
   
   "passed_tests": [
-    "1. Login with admin@example.com / adminpassword - SUCCESS",
+    "1. Login with admin@example.com / ${TEST_ADMIN_PASSWORD} - SUCCESS",
     "2. Dropdown menu 'Rekap Penerimaan BB' visible and expandable - SUCCESS",
     "3. Navigation to /po-batubara page - SUCCESS",
     "4. Year data display (2025: 142 PO, 2024: 68 PO, 2023: 91 PO) - SUCCESS",
@@ -29,7 +29,7 @@
   "test_details": {
     "login": {
       "status": "PASS",
-      "credentials": "admin@example.com / adminpassword",
+      "credentials": "admin@example.com / ${TEST_ADMIN_PASSWORD}",
       "notes": "Login successful, redirected to dashboard with toast 'Login berhasil!'"
     },
     "dropdown_navigation": {

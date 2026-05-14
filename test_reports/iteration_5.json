@@ -13,7 +13,7 @@
   },
   
   "passed_tests": [
-    "1. Login with admin@example.com / adminpassword - SUCCESS",
+    "1. Login with admin@example.com / ${TEST_ADMIN_PASSWORD} - SUCCESS",
     "2. Dashboard title 'Dashboard Ringkasan Penerimaan Bahan Bakar' - SUCCESS",
     "3. Panel Monitoring Kontrak (Gauge) showing 100.0% Realisasi PO - SUCCESS",
     "4. Summary stats 6 bulan (Vessel: 4, Barge: 15, Trucking: 56, Biomassa: 16) - SUCCESS",
@@ -30,7 +30,7 @@
   "test_details": {
     "login": {
       "status": "PASS",
-      "credentials": "admin@example.com / adminpassword",
+      "credentials": "admin@example.com / ${TEST_ADMIN_PASSWORD}",
       "notes": "Login successful, redirected to dashboard with toast 'Login berhasil!'"
     },
     "dashboard_title": {

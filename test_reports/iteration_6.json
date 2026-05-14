@@ -18,7 +18,7 @@
   },
   
   "passed_tests": [
-    "1. Login with admin@example.com / adminpassword - SUCCESS",
+    "1. Login with admin@example.com / ${TEST_ADMIN_PASSWORD} - SUCCESS",
     "2. COA Reconciliation page loads with title 'COA Reconciliation & Dispute Monitor' - SUCCESS",
     "3. KPI Card: High Deviation Alert shows 88 lots with GCV > 100 kCal/kg - SUCCESS",
     "4. KPI Card: Potential Loss shows Rp 85.4M (1,723,108.22 MT bermasalah) - SUCCESS",
@@ -82,7 +82,7 @@
   
   "test_credentials": {
     "email": "admin@example.com",
-    "password": "adminpassword"
+    "password": "${TEST_ADMIN_PASSWORD}"
   },
   
   "retest_needed": false,
