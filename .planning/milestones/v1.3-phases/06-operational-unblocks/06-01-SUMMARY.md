@@ -46,7 +46,7 @@ metrics:
 
 # Phase 6 Plan 01: OpenRouter Backend Integration Summary
 
-One-liner: Migrated LLM provider from emergentintegrations/Gemini to OpenRouter via httpx with 3-retry backoff, HTTP 503 Indonesian error mapping, and full env-var + doc rename.
+One-liner: Migrated LLM provider from legacy-ai-sdk/Gemini to OpenRouter via httpx with 3-retry backoff, HTTP 503 Indonesian error mapping, and full env-var + doc rename.
 
 ## Tasks Completed
 
@@ -56,23 +56,23 @@ One-liner: Migrated LLM provider from emergentintegrations/Gemini to OpenRouter 
 | 06-01-02 | Exception handler + server.py cleanup | 2280d1e | server.py |
 | 06-01-03 | Env-var rename + requirements + 8 docs | 2957340 | requirements.txt, .env, .env.example, 7 .md files |
 
-## Emergentintegrations Removal Audit
+## Legacy AI SDK Removal Audit
 
 | File | Line | Action |
 |------|------|--------|
-| server.py | 19 | Removed `from emergentintegrations.llm.chat import LlmChat, UserMessage` |
-| server.py | 2273 | Removed second `from emergentintegrations.llm.chat import LlmChat, UserMessage` |
-| requirements.txt | 21 | Removed `emergentintegrations==0.1.0` |
-| app/ai/emergent_wrapper.py | (kept as file; no longer imported) | EmergentLLMClientWrapper still exists on disk but is unreachable — no plan deletes it (safe carry-forward) |
+| server.py | 19 | Removed `from legacy-ai-sdk.llm.chat import LlmChat, UserMessage` |
+| server.py | 2273 | Removed second `from legacy-ai-sdk.llm.chat import LlmChat, UserMessage` |
+| requirements.txt | 21 | Removed `legacy-ai-sdk==0.1.0` |
+| app/ai/legacy_llm_wrapper.py | (kept as file; no longer imported) | LegacyLLMClientWrapper still exists on disk but is unreachable — no plan deletes it (safe carry-forward) |
 
-Grep gate: `grep -c "from emergentintegrations" server.py` == **0** (both sites clean).
+Grep gate: `grep -c "from legacy-ai-sdk" server.py` == **0** (both sites clean).
 
 ## Factory Update Diff
 
 Old `client.py` factory:
 ```python
-from app.ai.emergent_wrapper import EmergentLLMClientWrapper
-return EmergentLLMClientWrapper(api_key=os.environ.get("EMERGENT_LLM_KEY", ""))
+from app.ai.legacy_llm_wrapper import LegacyLLMClientWrapper
+return LegacyLLMClientWrapper(api_key=os.environ.get("LEGACY_LLM_KEY", ""))
 ```
 
 New `client.py` factory:
@@ -98,7 +98,7 @@ AI_FAKE=1 branch preserved verbatim.
 | frontend/public/docs/documentation.md | 2 |
 | frontend/public/docs/readme.md | 1 |
 
-Total: 17 replacements across 8 files. Grep gate: 0 residual `EMERGENT_LLM_KEY` in inner-repo markdown.
+Total: 17 replacements across 8 files. Grep gate: 0 residual `LEGACY_LLM_KEY` in inner-repo markdown.
 
 ## Test Run Output
 
@@ -135,6 +135,6 @@ No new network endpoints, auth paths, or schema changes introduced. The `openrou
 - [x] `pltu-tenayan-full-backup/backend/tests/test_openrouter_client.py` exists (4 tests)
 - [x] `pltu-tenayan-full-backup/backend/.env.example` exists
 - [x] Inner repo commits exist: 3f84aa8, 2280d1e, 2957340
-- [x] `grep -c "from emergentintegrations" server.py` == 0
-- [x] `grep -c "EMERGENT_LLM_KEY" backend/.env` == 0
+- [x] `grep -c "from legacy-ai-sdk" server.py` == 0
+- [x] `grep -c "LEGACY_LLM_KEY" backend/.env` == 0
 - [x] `grep -c "OPENROUTER_DEFAULT_MODEL=openai/gpt-4o-mini" backend/.env` == 1

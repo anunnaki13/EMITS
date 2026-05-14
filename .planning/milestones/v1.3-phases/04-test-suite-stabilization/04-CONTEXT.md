@@ -8,10 +8,10 @@
 
 A single command — `pytest backend/tests -q` — exits 0 on a clean checkout against an isolated test database, with explicit coverage for: auth (login/role/expired/me), pagination contract on the seven list endpoints, Excel upload (one fixture-driven test per receipt mode), COA reconciliation (KPI + trend + supplier-consistency + export), AI endpoints (mocked, no LLM budget), and dashboard (`/stats`, `/advanced`). Output: TEST-01..07 closed, conftest extended to spawn the backend automatically, an `AIClient` Protocol introduced as a stub seam, and four sanitized synthetic Excel fixtures committed to the repo.
 
-**In scope:** TEST-01..07 (REQUIREMENTS.md lines 35-41); conftest extension (auto-spawn uvicorn subprocess); `AIClient` Protocol introduction + production wrap of existing `EmergentLLMClient` behind it (zero behavior change); FakeAIClient stub for tests; isolated `pltu_tenayan_test_*` database lifecycle (seed → run → teardown); four sanitized synthetic xlsx fixtures (vessel/barge/trucking/biomassa); test coverage gaps for vessels/barges/trucking/biomassa pagination + Excel upload + AI endpoints + dashboard happy-path.
+**In scope:** TEST-01..07 (REQUIREMENTS.md lines 35-41); conftest extension (auto-spawn uvicorn subprocess); `AIClient` Protocol introduction + production wrap of existing `LegacyLLMClient` behind it (zero behavior change); FakeAIClient stub for tests; isolated `pltu_tenayan_test_*` database lifecycle (seed → run → teardown); four sanitized synthetic xlsx fixtures (vessel/barge/trucking/biomassa); test coverage gaps for vessels/barges/trucking/biomassa pagination + Excel upload + AI endpoints + dashboard happy-path.
 
 **Out of scope:**
-- LLM provider migration (Gemini → OpenRouter) and `EmergentLLMClient` rename — captured as deferred idea, owned by a future dedicated phase (propose insert via `/gsd-phase` after Phase 4; candidate position: between Phase 4 and Phase 5, or fold into Phase 6 Operational Unblocks).
+- LLM provider migration (Gemini → OpenRouter) and `LegacyLLMClient` rename — captured as deferred idea, owned by a future dedicated phase (propose insert via `/gsd-phase` after Phase 4; candidate position: between Phase 4 and Phase 5, or fold into Phase 6 Operational Unblocks).
 - Refactoring existing 7 test files (1634 lines) from `requests`-against-HTTP to `TestClient` in-process — explicitly rejected during discussion (preserve Phase-2 conftest pattern; auto-spawn subprocess closes TEST-01 without rewriting working tests).
 - Real-Excel-sample parser verification — owned by Phase 6 OPS-02 (synthetic fixtures here only validate that parser paths execute end-to-end against committed `.xlsx` files; they do not assert numerical correctness against production samples).
 - CI / GitHub Actions setup — Phase 4 boundary is "single local command exits 0"; remote CI is a later concern.
@@ -29,9 +29,9 @@ A single command — `pytest backend/tests -q` — exits 0 on a clean checkout a
 - **D-03:** The session-scoped fixture passes the test DB name to the running backend via a `MONGO_TEST_DB_NAME` env var that the backend's startup config reads when present (overriding `DB_NAME`). The backend already reads `DB_NAME` from env per Phase-3 plan 03-05 reconciliation; the override is additive, not a refactor.
 
 ### AI mock seam
-- **D-04:** Phase 4 introduces an `AIClient` Protocol (or ABC) in the backend (e.g., `app/ai/client.py`). The existing `EmergentLLMClient` is wrapped behind this interface — **no rename, no rewrite**. Production code paths inject the `AIClient`-typed dependency; concrete provider stays `EmergentLLMClient` for now.
+- **D-04:** Phase 4 introduces an `AIClient` Protocol (or ABC) in the backend (e.g., `app/ai/client.py`). The existing `LegacyLLMClient` is wrapped behind this interface — **no rename, no rewrite**. Production code paths inject the `AIClient`-typed dependency; concrete provider stays `LegacyLLMClient` for now.
 - **D-05:** Tests stub the interface via a `FakeAIClient` defined in `tests/fakes/ai_client.py`. The fake returns canned response shapes per AI module (general, blending, boiler, contract, logistics, smart-stock, COA). No external HTTP, no LLM budget consumed.
-- **D-06:** Production wiring uses FastAPI dependency injection (`Depends(get_ai_client)` returning the concrete `EmergentLLMClient`). The conftest spawns the test backend subprocess with `AI_FAKE=1` in its environment; `get_ai_client()` reads that env var at the FastAPI app boundary and returns `FakeAIClient` when set. **Amended 2026-05-11:** the original wording said "the conftest overrides `get_ai_client`" using `app.dependency_overrides`. Phase 4 RESEARCH §Focus 1 proved `app.dependency_overrides` does NOT cross the subprocess boundary that D-11/D-12 mandate; the env-var seam is the correct structural answer. The seam is identical for production migration purposes (the future OpenRouter phase swaps the implementation `get_ai_client()` returns when `AI_FAKE` is unset).
+- **D-06:** Production wiring uses FastAPI dependency injection (`Depends(get_ai_client)` returning the concrete `LegacyLLMClient`). The conftest spawns the test backend subprocess with `AI_FAKE=1` in its environment; `get_ai_client()` reads that env var at the FastAPI app boundary and returns `FakeAIClient` when set. **Amended 2026-05-11:** the original wording said "the conftest overrides `get_ai_client`" using `app.dependency_overrides`. Phase 4 RESEARCH §Focus 1 proved `app.dependency_overrides` does NOT cross the subprocess boundary that D-11/D-12 mandate; the env-var seam is the correct structural answer. The seam is identical for production migration purposes (the future OpenRouter phase swaps the implementation `get_ai_client()` returns when `AI_FAKE` is unset).
 - **D-07:** Provider migration (Gemini → OpenRouter) is intentionally NOT done in Phase 4. The interface seam is precisely so that the migration phase can swap implementations without touching tests. This is the `IMPLICIT-005` boundary Phase 4 must respect.
 
 ### Excel fixture provenance
@@ -93,7 +93,7 @@ A single command — `pytest backend/tests -q` — exits 0 on a clean checkout a
 
 ### Backend code anchors (read for shape, not modification scope)
 - `pltu-tenayan-full-backup/backend/server.py` — main FastAPI app. Phase 4 reads endpoint signatures, request models, dependency wiring. Modification is limited to the `AIClient` injection seam (D-04, D-06) and the `MONGO_TEST_DB_NAME` env-var read (D-03).
-- `pltu-tenayan-full-backup/backend/.env` — env-var contract (`MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGINS`, `EMERGENT_LLM_KEY`). Phase 4 adds `MONGO_TEST_DB_NAME` as an optional override.
+- `pltu-tenayan-full-backup/backend/.env` — env-var contract (`MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGINS`, `LEGACY_LLM_KEY`). Phase 4 adds `MONGO_TEST_DB_NAME` as an optional override.
 - `pltu-tenayan-full-backup/backend/requirements.txt` — pytest 9.0.2 + requests 2.32.5 already present; no new test deps unless `pytest-asyncio` is needed for any async fixture (planner decides).
 
 </canonical_refs>
@@ -115,7 +115,7 @@ A single command — `pytest backend/tests -q` — exits 0 on a clean checkout a
 
 ### Integration Points
 - **`server.py` startup config**: Phase 4 adds an env-var read (`MONGO_TEST_DB_NAME`) that overrides `DB_NAME` when set. Smallest possible patch — read at startup, no per-request branching.
-- **AI client construction site in `server.py`**: currently `EmergentLLMClient(...)` is instantiated and used directly. Phase 4 wraps the construction in a FastAPI `Depends(get_ai_client)` provider. All AI endpoints accept the dependency-injected client. Tests override the provider.
+- **AI client construction site in `server.py`**: currently `LegacyLLMClient(...)` is instantiated and used directly. Phase 4 wraps the construction in a FastAPI `Depends(get_ai_client)` provider. All AI endpoints accept the dependency-injected client. Tests override the provider.
 - **Backend lifecycle fixture vs LOCAL_SETUP runbook**: the auto-spawn subprocess invocation MUST match the runbook's uvicorn command (`source .venv/bin/activate` + `uvicorn server:app --host 0.0.0.0 --port 8013`). Drift between the two is a documentation bug — keep them in sync.
 
 </code_context>
@@ -124,7 +124,7 @@ A single command — `pytest backend/tests -q` — exits 0 on a clean checkout a
 ## Specific Ideas
 
 - The user explicitly raised provider migration (Gemini → OpenRouter) during AI-mock discussion. The provider-agnostic interface (D-04) is the structural answer that lets Phase 4 finish without prejudicing the future migration. The user agreed.
-- "ubah namanya, buatkan atau desainkan yang terbaru" — the user asked for `EmergentLLMClient` to be renamed and redesigned. This is captured in `<deferred>` as a future-phase task; Phase 4 does not act on it.
+- "ubah namanya, buatkan atau desainkan yang terbaru" — the user asked for `LegacyLLMClient` to be renamed and redesigned. This is captured in `<deferred>` as a future-phase task; Phase 4 does not act on it.
 
 </specifics>
 
@@ -133,11 +133,11 @@ A single command — `pytest backend/tests -q` — exits 0 on a clean checkout a
 
 ### LLM provider migration to OpenRouter
 - **Origin:** User raised during Phase-4 AI-mock discussion (2026-05-11): "saya menggunakan openrouter bukan gemini seperti yang sekarang".
-- **Why deferred:** PROJECT.md "Out of Scope" line 87 (IMPLICIT-005) and ROADMAP Phase 6 boundary. Switching providers + renaming `EmergentLLMClient` is a new capability, not implementation clarification.
+- **Why deferred:** PROJECT.md "Out of Scope" line 87 (IMPLICIT-005) and ROADMAP Phase 6 boundary. Switching providers + renaming `LegacyLLMClient` is a new capability, not implementation clarification.
 - **Proposed home:** A new dedicated phase (candidate label: "AI Provider Migration"), inserted via `/gsd-phase` after Phase 4 and before / merged with Phase 6 Operational Unblocks. The phase would:
-  1. Replace `emergentintegrations` with the OpenRouter Python client (or `httpx` direct).
-  2. Rename `EmergentLLMClient` to a provider-agnostic name (e.g., `OpenRouterClient`, or rename the wrapper to `LLMClient` keeping `AIClient` as the Protocol).
-  3. Update `EMERGENT_LLM_KEY` env var to `OPENROUTER_API_KEY`.
+  1. Replace `legacy-ai-sdk` with the OpenRouter Python client (or `httpx` direct).
+  2. Rename `LegacyLLMClient` to a provider-agnostic name (e.g., `OpenRouterClient`, or rename the wrapper to `LLMClient` keeping `AIClient` as the Protocol).
+  3. Update `LEGACY_LLM_KEY` env var to `OPENROUTER_API_KEY`.
   4. Re-run Phase-4 AI tests against the new implementation through the same `AIClient` interface — no test changes expected.
 - **Phase 4 enabler:** D-04..D-07 (the `AIClient` Protocol + dependency injection) is precisely the seam this future phase plugs into. Phase 4 makes the migration plug-and-play.
 

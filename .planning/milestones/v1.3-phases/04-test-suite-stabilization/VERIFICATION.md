@@ -150,7 +150,7 @@ All pass against empty test DB (empty-DB tolerant pattern).
 
 AI seam wiring verified:
 - `app/ai/client.py`: `AIClient` Protocol + `get_ai_client()` branches on `AI_FAKE=1`
-- `app/ai/emergent_wrapper.py`: `EmergentLLMClientWrapper` wraps `EmergentLLMClient` (no rename)
+- `app/ai/legacy_llm_wrapper.py`: `LegacyLLMClientWrapper` wraps `LegacyLLMClient` (no rename)
 - `server.py:20`: `from app.ai.client import AIClient, get_ai_client`
 - `server.py:2622`: `ai: AIClient = Depends(get_ai_client)` on POST /api/ai/query
 - `server.py:3599`: `ai: AIClient = Depends(get_ai_client)` on POST /api/smart-blending/recommend
@@ -174,7 +174,7 @@ Both pass against empty test DB.
 |---|---|---|---|
 | `backend/pytest.ini` | pytest config with testpaths, pythonpath, markers | VERIFIED | pythonpath = . confirmed; markers registered; --asyncio-mode=auto |
 | `backend/app/ai/client.py` | AIClient Protocol + get_ai_client() | VERIFIED | 31 lines; Protocol with send_message; branches on AI_FAKE=1 |
-| `backend/app/ai/emergent_wrapper.py` | EmergentLLMClientWrapper | VERIFIED | Wraps LlmChat; no rename of EmergentLLMClient |
+| `backend/app/ai/legacy_llm_wrapper.py` | LegacyLLMClientWrapper | VERIFIED | Wraps LlmChat; no rename of LegacyLLMClient |
 | `backend/tests/fakes/ai_client.py` | FakeAIClient with canned responses | VERIFIED | BLENDING_JSON with all 4 CONS-blending keys; GENERAL_RESPONSE for general |
 | `backend/tests/factories/` (8 modules) | Factory functions for all 8 entity types | VERIFIED | vessel, barge, trucking, biomassa, coa, merit_order, po_batubara, user |
 | `backend/tests/helpers/pagination.py` | assert_pagination_shape() | VERIFIED | Checks all 5 keys + formula |
@@ -282,7 +282,7 @@ Live `pltu_tenayan`.vessels count = 111 before and after test run — matches Ph
 ### AI Seam Correctness: Verified
 
 - `AIClient` Protocol: `app/ai/client.py` with `@runtime_checkable`
-- `EmergentLLMClientWrapper` wraps `EmergentLLMClient` (no rename) — correct per D-04
+- `LegacyLLMClientWrapper` wraps `LegacyLLMClient` (no rename) — correct per D-04
 - `get_ai_client()` branches on `AI_FAKE=1` env var — correct per D-06 amendment
 - `Depends(get_ai_client)` on exactly 2 LLM endpoints (POST /api/ai/query, POST /api/smart-blending/recommend)
 - 6 quick `/api/ai/quick/*` endpoints do NOT use `Depends(get_ai_client)` — correct
@@ -301,7 +301,7 @@ Live `pltu_tenayan`.vessels count = 111 before and after test run — matches Ph
 | 1 | 10 pre-existing test failures (merit_order, po_batubara, coa_paginated, fuel_composition_donut) | Phase 5/6 cleanup | VALIDATION.md row 04-04-03b; explicitly documented in 04-04-SUMMARY.md carry-forward table |
 | 2 | COA data seeding in `_seed_baseline_data` (for test_coa_reconciliation_paginated) | Phase 5/6 cleanup | 04-03-SUMMARY §Deferred; 04-04-SUMMARY §Carry-Forward |
 | 3 | Excel header-variant edge cases | Phase 6 OPS-02 | CONTEXT.md D-10; HEADER_VARIANTS.md pointer committed |
-| 4 | LLM provider migration (Gemini → OpenRouter) + EmergentLLMClient rename | Phase 6 or inserted phase | CONTEXT.md §Deferred; IMPLICIT-005 boundary respected |
+| 4 | LLM provider migration (Gemini → OpenRouter) + LegacyLLMClient rename | Phase 6 or inserted phase | CONTEXT.md §Deferred; IMPLICIT-005 boundary respected |
 | 5 | Frontend test surface (Jest / RTL) | Future phase | CONTEXT.md out-of-scope |
 | 6 | CI / GitHub Actions pipeline | Post-milestone-v1.0 | CONTEXT.md out-of-scope |
 | 7 | pytest --cov-fail-under threshold | Polish phase | CONTEXT.md out-of-scope |

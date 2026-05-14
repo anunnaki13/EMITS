@@ -29,7 +29,7 @@ key-files:
     - .planning/decisions/ADR-002-fastapi-python-backend.md
     - .planning/decisions/ADR-003-react-frontend-stack.md
     - .planning/decisions/ADR-004-jwt-bcrypt-three-role-auth.md
-    - .planning/decisions/ADR-005-gemini-via-emergentintegrations.md
+    - .planning/decisions/ADR-005-gemini-via-legacy-ai-sdk.md
     - .planning/decisions/ADR-006-api-prefix-and-frontend-base-url.md
     - .planning/decisions/ADR-007-persistence-projection-uuid-iso.md
     - .planning/decisions/ADR-008-pagination-shape.md
@@ -40,7 +40,7 @@ key-decisions:
   - "ADR-002 locks FastAPI 0.110.x on Python 3.11+ as the backend framework; OpenAPI generation feeds Phase-3 plan-03 API_REFERENCE regeneration (D-04)"
   - "ADR-003 locks React 19 + React Router 7 + Tailwind + Shadcn/UI (vendored Radix); AUTHFIX-04 carries the Radix Select ResizeObserver evaluation forward"
   - "ADR-004 locks JWT (HS256, 24h) + bcrypt + admin/operator/viewer; HTTP error map 400/401/403/404/500 reconciled per Phase-2 D-AUTH-01 / D-AUTH-02; cross-link to AUTH_CONTRACT.md"
-  - "ADR-005 locks Google Gemini (gemini-2.5-flash) via emergentintegrations as v1 LLM provider; BudgetExceededError documented as environmental, not code defect"
+  - "ADR-005 locks Google Gemini (gemini-2.5-flash) via legacy-ai-sdk as v1 LLM provider; BudgetExceededError documented as environmental, not code defect"
   - "ADR-006 locks /api/* prefix on backend + REACT_APP_BACKEND_URL on frontend; no /api/v1 versioning in v1"
   - "ADR-007 locks Mongo {_id: 0} projection + uuid.uuid4() id field + ISO 8601 datetimes"
   - "ADR-008 locks pagination envelope {items, total, page, page_size, total_pages}; default page=1, page_size=50; caps 500 / 50000"
@@ -89,7 +89,7 @@ completed: 2026-05-10
 | ADR-002 | FastAPI on Python 3.11+ as Backend Stack | IMPLICIT-002 (PROJECT.md L87) | `backend/server.py:1,37` + `backend/requirements.txt` (fastapi 0.110.1, bcrypt, motor, pandas, openpyxl, xlrd, reportlab) | — |
 | ADR-003 | React 19 + Router 7 + Tailwind + Shadcn/UI | IMPLICIT-003 (PROJECT.md L88) | `frontend/package.json` (react ^19, react-router-dom ^7.5.1, @radix-ui/react-select ^2.2.2, tailwind, axios, recharts, jspdf, xlsx) | — |
 | ADR-004 | JWT + bcrypt + 3-role Auth Model | IMPLICIT-004 (PROJECT.md L90) | `backend/server.py:15-16,45-56,577,586-597,599-604` | CONS-auth-header |
-| ADR-005 | Gemini via emergentintegrations as v1 AI Provider | IMPLICIT-005 (PROJECT.md L94) | `backend/server.py:19,2260-2261,2619` + `backend/requirements.txt:20,33,34` | CONS-ai-query-endpoint, CONS-smart-blending-endpoint (operational note) |
+| ADR-005 | Gemini via legacy-ai-sdk as v1 AI Provider | IMPLICIT-005 (PROJECT.md L94) | `backend/server.py:19,2260-2261,2619` + `backend/requirements.txt:20,33,34` | CONS-ai-query-endpoint, CONS-smart-blending-endpoint (operational note) |
 | ADR-006 | /api/* Prefix + REACT_APP_BACKEND_URL | IMPLICIT-006 (PROJECT.md L91) | `backend/server.py:60` + `frontend/src/contexts/AuthContext.js:6` | CONS-api-base |
 | ADR-007 | Projection {_id:0} + UUID id + ISO 8601 | IMPLICIT-007 (PROJECT.md L92) | `backend/server.py:13,14,590,614,714,726` | CONS-projection-id-contract |
 | ADR-008 | Pagination Envelope {items,total,page,page_size,total_pages} | IMPLICIT-008 (PROJECT.md L93) | `backend/server.py:685-722` (verbatim snippet 716-722) | CONS-pagination-shape, CONS-smart-stock-endpoint, CONS-coa-reconciliation-endpoint |
@@ -110,7 +110,7 @@ This plan is structurally **one atomic commit for all 8 ADR files** (per Task 3 
 - `.planning/decisions/ADR-002-fastapi-python-backend.md` — Locks FastAPI 0.110.x on Python 3.11+ + supporting library set
 - `.planning/decisions/ADR-003-react-frontend-stack.md` — Locks React 19 + Router 7 + Tailwind + Shadcn/UI (vendored Radix), CRA + craco + Yarn
 - `.planning/decisions/ADR-004-jwt-bcrypt-three-role-auth.md` — Locks JWT (HS256, 24h) + bcrypt + admin/operator/viewer + 400/401/403/404/500 error map; cross-links AUTH_CONTRACT.md
-- `.planning/decisions/ADR-005-gemini-via-emergentintegrations.md` — Locks Gemini-2.5-flash via emergentintegrations as v1 LLM provider; BudgetExceededError documented as environmental
+- `.planning/decisions/ADR-005-gemini-via-legacy-ai-sdk.md` — Locks Gemini-2.5-flash via legacy-ai-sdk as v1 LLM provider; BudgetExceededError documented as environmental
 - `.planning/decisions/ADR-006-api-prefix-and-frontend-base-url.md` — Locks `/api/*` backend prefix + `REACT_APP_BACKEND_URL` frontend base
 - `.planning/decisions/ADR-007-persistence-projection-uuid-iso.md` — Locks `{_id:0}` Mongo projection + `uuid.uuid4()` id + ISO 8601 datetimes + audit metadata field names
 - `.planning/decisions/ADR-008-pagination-shape.md` — Locks `{items, total, page, page_size, total_pages}` envelope; default page=1, page_size=50; caps 500 / 50000 (smart-stock)
@@ -131,7 +131,7 @@ The plan listed code anchors against `backend/server.py` line numbers. At execut
 - `server.py:577` — `def create_token(...)` ✓
 - `server.py:599` — `def require_role(...)` ✓
 - `server.py:15-16` — `import jwt` + `import bcrypt` ✓
-- `server.py:19` — `from emergentintegrations.llm.chat import LlmChat, UserMessage` ✓
+- `server.py:19` — `from legacy-ai-sdk.llm.chat import LlmChat, UserMessage` ✓
 - `server.py:714` — `db.vessels.find(query, {"_id": 0}).sort(...)` ✓
 - `server.py:716-722` — pagination return shape ✓ (snippet copied verbatim into ADR-008)
 
@@ -163,7 +163,7 @@ None - this plan is pure documentation; no environment variables, no external se
 - FOUND: .planning/decisions/ADR-002-fastapi-python-backend.md
 - FOUND: .planning/decisions/ADR-003-react-frontend-stack.md
 - FOUND: .planning/decisions/ADR-004-jwt-bcrypt-three-role-auth.md
-- FOUND: .planning/decisions/ADR-005-gemini-via-emergentintegrations.md
+- FOUND: .planning/decisions/ADR-005-gemini-via-legacy-ai-sdk.md
 - FOUND: .planning/decisions/ADR-006-api-prefix-and-frontend-base-url.md
 - FOUND: .planning/decisions/ADR-007-persistence-projection-uuid-iso.md
 - FOUND: .planning/decisions/ADR-008-pagination-shape.md

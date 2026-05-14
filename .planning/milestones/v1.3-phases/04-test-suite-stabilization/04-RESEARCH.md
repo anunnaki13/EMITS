@@ -17,9 +17,9 @@
 - D-03: Session-scoped fixture passes test DB name via `MONGO_TEST_DB_NAME` env var that the backend's startup config reads when present (overrides `DB_NAME`).
 
 **AI mock seam**
-- D-04: Phase 4 introduces an `AIClient` Protocol (or ABC) in `app/ai/client.py`. Existing `EmergentLLMClient` wrapped behind the interface — NO rename, NO rewrite.
+- D-04: Phase 4 introduces an `AIClient` Protocol (or ABC) in `app/ai/client.py`. Existing `LegacyLLMClient` wrapped behind the interface — NO rename, NO rewrite.
 - D-05: `FakeAIClient` in `tests/fakes/ai_client.py`. Returns canned response shapes. No external HTTP, no LLM budget consumed.
-- D-06: Production wiring: `Depends(get_ai_client)` returning `EmergentLLMClient`. Conftest overrides `get_ai_client` to return `FakeAIClient` for test session.
+- D-06: Production wiring: `Depends(get_ai_client)` returning `LegacyLLMClient`. Conftest overrides `get_ai_client` to return `FakeAIClient` for test session.
 - D-07: Provider migration (Gemini → OpenRouter) NOT done in Phase 4.
 
 **Excel fixture provenance**
@@ -39,7 +39,7 @@
 - Exact mechanism for `MONGO_TEST_DB_NAME` override in `server.py`
 
 ### Deferred Ideas (OUT OF SCOPE)
-- LLM provider migration (Gemini → OpenRouter) + `EmergentLLMClient` rename
+- LLM provider migration (Gemini → OpenRouter) + `LegacyLLMClient` rename
 - Excel header-variant edge cases (Phase 6 OPS-02)
 - `pytest --cov-fail-under` coverage threshold enforcement
 - Frontend test surface (Jest / RTL)
@@ -66,7 +66,7 @@
 
 Phase 4 must transform a test suite that depends on a hand-spun backend and inline credentials into one that is fully self-contained: the session-scoped conftest fixture auto-spawns (or reuses) the backend, injects a throwaway database name, seeds collections via factory helpers, stubs the AI layer so no LLM budget is consumed, and drops the test DB on teardown. All 7 new TEST-NN requirements are closed by writing new test files that follow the established `requests`-against-HTTP pattern from Phase 2.
 
-The two central technical challenges are the AI mock seam and the backend lifecycle fixture. The AI mock seam requires introducing a `Protocol`-typed interface around `EmergentLLMClient` and using FastAPI's `app.dependency_overrides` to substitute `FakeAIClient` before any test runs. The backend lifecycle fixture must safely detect and probe a pre-existing backend (using the `/api/health` endpoint), or spawn a fresh uvicorn subprocess with the test DB env var injected, kill only what it spawned, and drop the isolated DB on teardown.
+The two central technical challenges are the AI mock seam and the backend lifecycle fixture. The AI mock seam requires introducing a `Protocol`-typed interface around `LegacyLLMClient` and using FastAPI's `app.dependency_overrides` to substitute `FakeAIClient` before any test runs. The backend lifecycle fixture must safely detect and probe a pre-existing backend (using the `/api/health` endpoint), or spawn a fresh uvicorn subprocess with the test DB env var injected, kill only what it spawned, and drop the isolated DB on teardown.
 
 An important codebase discovery: four existing test files (test_dashboard_advanced.py, test_coa_reconciliation.py, test_merit_order.py, test_po_batubara.py) contain inline `"<TEST_ADMIN_PASSWORD>"` literals that are currently exempted from the credential scanner. CREDENTIAL_HYGIENE.md explicitly names these as "TODO Phase 4 TEST-02". Phase 4 must sanitize these files as part of closing TEST-02, removing scanner exemptions as it goes. This is load-bearing work that is not explicitly called out in CONTEXT.md's in-scope list but is required by the CREDENTIAL_HYGIENE.md contract.
 
@@ -97,9 +97,9 @@ Use `app.dependency_overrides` at the **session** scope, not per-test. This matc
 
 **Critical insight:** Because Phase 4 uses a real subprocess (not TestClient), `app.dependency_overrides` in the conftest process does NOT propagate to the subprocess's `app` instance. This changes the strategy entirely.
 
-**Resolution:** `app.dependency_overrides` is only useful with `TestClient`-in-process testing. Since Phase 4 uses a real subprocess backend (D-12), the AI stub must be achieved **inside the subprocess** — i.e., the backend must read the `MONGO_TEST_DB_NAME` env var at startup and also check a test-mode flag to swap in `FakeAIClient`. The simplest mechanism: if `MONGO_TEST_DB_NAME` is set, the `get_ai_client()` provider returns a `FakeAIClient` instead of instantiating `EmergentLLMClient`.
+**Resolution:** `app.dependency_overrides` is only useful with `TestClient`-in-process testing. Since Phase 4 uses a real subprocess backend (D-12), the AI stub must be achieved **inside the subprocess** — i.e., the backend must read the `MONGO_TEST_DB_NAME` env var at startup and also check a test-mode flag to swap in `FakeAIClient`. The simplest mechanism: if `MONGO_TEST_DB_NAME` is set, the `get_ai_client()` provider returns a `FakeAIClient` instead of instantiating `LegacyLLMClient`.
 
-Alternatively, `FakeAIClient` can be wired as the default when `EMERGENT_LLM_KEY` is absent or when `AI_FAKE=1` env var is set. The conftest sets `AI_FAKE=1` in the subprocess environment at spawn time.
+Alternatively, `FakeAIClient` can be wired as the default when `LEGACY_LLM_KEY` is absent or when `AI_FAKE=1` env var is set. The conftest sets `AI_FAKE=1` in the subprocess environment at spawn time.
 
 ### Code/config example
 
@@ -117,12 +117,12 @@ import os
 from app.ai.client import AIClient
 
 def get_ai_client() -> AIClient:
-    if os.environ.get("AI_FAKE") == "1" or not os.environ.get("EMERGENT_LLM_KEY"):
+    if os.environ.get("AI_FAKE") == "1" or not os.environ.get("LEGACY_LLM_KEY"):
         from tests.fakes.ai_client import FakeAIClient  # only imported in test mode
         return FakeAIClient()
-    from emergentintegrations.llm.chat import LlmChat
-    from backend_wrappers import EmergentLLMClientWrapper  # D-04 wrapper
-    return EmergentLLMClientWrapper(api_key=os.environ["EMERGENT_LLM_KEY"])
+    from legacy-ai-sdk.llm.chat import LlmChat
+    from backend_wrappers import LegacyLLMClientWrapper  # D-04 wrapper
+    return LegacyLLMClientWrapper(api_key=os.environ["LEGACY_LLM_KEY"])
 
 # Each AI endpoint that currently calls LlmChat directly becomes:
 @api_router.post("/ai/query")
@@ -154,8 +154,8 @@ Both `Protocol` (from `typing`) and `ABC` (from `abc`) allow defining an interfa
 
 ### Recommended approach
 **Use `typing.Protocol` with `@runtime_checkable`.** Rationale:
-1. `EmergentLLMClient` from `emergentintegrations` is a third-party class that cannot be subclassed for inheritance without risk of breaking its internal behavior.
-2. Protocol's structural typing means `EmergentLLMClientWrapper` and `FakeAIClient` are both `AIClient`-compatible as long as they implement the declared methods — no `class EmergentLLMClientWrapper(AIClient)` declaration needed.
+1. `LegacyLLMClient` from `legacy-ai-sdk` is a third-party class that cannot be subclassed for inheritance without risk of breaking its internal behavior.
+2. Protocol's structural typing means `LegacyLLMClientWrapper` and `FakeAIClient` are both `AIClient`-compatible as long as they implement the declared methods — no `class LegacyLLMClientWrapper(AIClient)` declaration needed.
 3. `@runtime_checkable` enables `isinstance(client, AIClient)` checks if needed.
 4. Protocol is mypy-friendly and the codebase already has mypy in `requirements.txt` (`mypy==1.19.1`).
 
@@ -184,12 +184,12 @@ class AIClient(Protocol):
 The wrapper that adapts `LlmChat` to this interface:
 
 ```python
-# backend/app/ai/emergent_wrapper.py
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+# backend/app/ai/legacy_llm_wrapper.py
+from legacy-ai-sdk.llm.chat import LlmChat, UserMessage
 from .client import AIClient
 
-class EmergentLLMClientWrapper:
-    """Wraps EmergentLLMClient (LlmChat) behind AIClient. No rename per D-07."""
+class LegacyLLMClientWrapper:
+    """Wraps LegacyLLMClient (LlmChat) behind AIClient. No rename per D-07."""
 
     def __init__(self, api_key: str, provider: str = "gemini", model: str = "gemini-2.5-flash"):
         self._api_key = api_key
@@ -396,7 +396,7 @@ except subprocess.TimeoutExpired:
 - Race condition: spawn subprocess, PID file write, then another test runner (different pytest session) reads the PID file and kills the process. Mitigated by using a test-DB-name that includes `SESSION_ID` (UUID prefix), so two runners targeting the same mongod use distinct databases.
 - uvicorn `--reload` flag: DO NOT add `--reload`. Hot-reload forks child processes, causing PID tracking to break.
 - Subprocess stdout/stderr: capture with `stdout=subprocess.PIPE` to avoid polluting test output. The pipe must be drained or the process will block when the pipe buffer fills. Either use `stdout=subprocess.DEVNULL` or drain in a separate thread. Simplest: `stdout=open("/tmp/emits-test-server.log", "w"), stderr=subprocess.STDOUT`.
-- `EMERGENT_LLM_KEY`: if not present in env and `AI_FAKE` is not set, `get_ai_client()` will raise. Always inject `AI_FAKE=1` when spawning.
+- `LEGACY_LLM_KEY`: if not present in env and `AI_FAKE` is not set, `get_ai_client()` will raise. Always inject `AI_FAKE=1` when spawning.
 
 ### Source citations
 - `[VERIFIED: server.py:4487-4489]` — `/api/health` endpoint exists and returns `{"status": "healthy"}`.
@@ -870,7 +870,7 @@ Excel upload endpoints (`/api/upload/vessel`, etc.) call `await db.<collection>.
 These return `Response` objects with byte-stream content (not JSON). Tests for these endpoints must not call `.json()` — use `r.content` and check `r.status_code == 200` plus `r.headers["content-type"]`.
 
 ### 11.8 Existing test files hardcode `BASE_URL` fallbacks pointing to production
-`test_coa_reconciliation.py:10`: `BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://supply-chain-ai-40.preview.emergentagent.com')`. If `REACT_APP_BACKEND_URL` is not set, this will try to reach a production URL and fail. Phase 4 must ensure `REACT_APP_BACKEND_URL` is always set in the test environment (the conftest can do this via `os.environ.setdefault`).
+`test_coa_reconciliation.py:10`: `BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://supply-chain-ai-40.preview.legacy-preview.com')`. If `REACT_APP_BACKEND_URL` is not set, this will try to reach a production URL and fail. Phase 4 must ensure `REACT_APP_BACKEND_URL` is always set in the test environment (the conftest can do this via `os.environ.setdefault`).
 
 ### 11.9 `test_po_batubara.py` and `test_merit_order.py` may assert on production data counts
 Read lines indicate they may check `data["total"] > 0`. In a fresh test DB with no seeded data, these would fail. Phase 4 must seed at least one record of each type into the test DB before the relevant test class runs.
@@ -894,7 +894,7 @@ The existing `cleanup_audit_probe_users` fixture (conftest.py:71-93) runs agains
   - `backend/tests/conftest.py` — add `_backend_lifecycle`, `TEST_DB_NAME`, `_drop_test_db`
   - `backend/server.py` — add `MONGO_TEST_DB_NAME` override at startup (1 line); add `get_ai_client()` provider; add `AI_FAKE` check; refactor AI endpoint to use `Depends(get_ai_client)`
   - NEW `backend/app/ai/client.py` — `AIClient` Protocol
-  - NEW `backend/app/ai/emergent_wrapper.py` — `EmergentLLMClientWrapper`
+  - NEW `backend/app/ai/legacy_llm_wrapper.py` — `LegacyLLMClientWrapper`
   - NEW `backend/tests/fakes/__init__.py`
   - NEW `backend/tests/fakes/ai_client.py` — `FakeAIClient`
   - NEW `backend/tests/factories/__init__.py`
@@ -1051,13 +1051,13 @@ All five questions resolved during plan-checker revision pass:
 
 1. **`pytest.ini` placement: RESOLVED — `pltu-tenayan-full-backup/backend/pytest.ini`.** Plan 04-01 places it in the inner directory with `testpaths = tests`. The canonical command `pytest backend/tests -q` runs from `pltu-tenayan-full-backup/` and pytest discovers `backend/pytest.ini` via standard rootdir detection.
 
-2. **`EMERGENT_LLM_KEY` graceful handling under `AI_FAKE=1`: RESOLVED — `get_ai_client()` short-circuits BEFORE any `EMERGENT_LLM_KEY` read.** Plan 04-01 Task 1 wires `get_ai_client()` to check `AI_FAKE` first and return `FakeAIClient()` immediately, never touching `EMERGENT_LLM_KEY`. The two LLM endpoints' inline `api_key = os.environ.get("EMERGENT_LLM_KEY")` reads are moved into the `EmergentLLMClientWrapper` constructor (only instantiated on the production path), so the test subprocess never reads the env var.
+2. **`LEGACY_LLM_KEY` graceful handling under `AI_FAKE=1`: RESOLVED — `get_ai_client()` short-circuits BEFORE any `LEGACY_LLM_KEY` read.** Plan 04-01 Task 1 wires `get_ai_client()` to check `AI_FAKE` first and return `FakeAIClient()` immediately, never touching `LEGACY_LLM_KEY`. The two LLM endpoints' inline `api_key = os.environ.get("LEGACY_LLM_KEY")` reads are moved into the `LegacyLLMClientWrapper` constructor (only instantiated on the production path), so the test subprocess never reads the env var.
 
 3. **`test_po_batubara.py` and `test_merit_order.py` assertions against empty test DB: RESOLVED — A4 partially confirmed. test_po_batubara.py is SAFE (every assertion guarded `if len(data) > 0`); test_merit_order.py is NOT SAFE (`assert len(data) > 0` at line 71 and `assert len(data) >= 1` at line 314 fail against empty DB).** Plan 04-01 Task 3 adds a session-scoped `_seed_baseline_data` fixture that inserts ≥3 deterministic merit_order documents into the test DB at session start using the merit_order factory. This unblocks the existing test_merit_order.py without modifying its assertions. test_po_batubara.py needs no seeding.
 
 4. **Two-repo commit boundary: RESOLVED — same protocol as Phases 1-3.** Backend changes (server.py, conftest.py, new test files, xlsx fixtures) commit to `pltu-tenayan-full-backup/` inner repo. Planning docs (SUMMARY.md, STATE.md, ROADMAP.md updates) commit to outer repo. Each plan's `files_modified` makes the boundary explicit per file path.
 
-5. **`test_coa_reconciliation.py` line 10 fallback URL: RESOLVED — fixed in Plan 04-01.** The hardcoded `'https://supply-chain-ai-40.preview.emergentagent.com'` fallback is replaced with `'http://localhost:18013'` (matching `PHASE4_TEST_PORT`) during the credential sanitization pass (Plan 04-01 Task 3). Listed in Plan 04-01 `files_modified` and called out in the Task 3 action.
+5. **`test_coa_reconciliation.py` line 10 fallback URL: RESOLVED — fixed in Plan 04-01.** The hardcoded `'https://supply-chain-ai-40.preview.legacy-preview.com'` fallback is replaced with `'http://localhost:18013'` (matching `PHASE4_TEST_PORT`) during the credential sanitization pass (Plan 04-01 Task 3). Listed in Plan 04-01 `files_modified` and called out in the Task 3 action.
 
 ---
 

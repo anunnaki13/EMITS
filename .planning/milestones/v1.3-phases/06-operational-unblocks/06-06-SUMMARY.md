@@ -46,7 +46,7 @@ completed: 2026-05-11
 
 ## Accomplishments
 
-- Authenticated OpenRouter cutover completed: `OPENROUTER_API_KEY` saved in `backend/.env`, `OPENROUTER_DEFAULT_MODEL=openai/gpt-4o-mini`, and no `EMERGENT_LLM_KEY=` remains.
+- Authenticated OpenRouter cutover completed: `OPENROUTER_API_KEY` saved in `backend/.env`, `OPENROUTER_DEFAULT_MODEL=openai/gpt-4o-mini`, and no `LEGACY_LLM_KEY=` remains.
 - Backend restarted cleanly on port `8013`; final PID observed: `133327`; `/api/health` returned `200`.
 - Smart Blending live smoke passed for target GCV `4000`, `4200`, and `4500`; each returned HTTP `200`, `blend_items=2`, and `meets_target=True`.
 - AI Chat API smoke passed: list conversations `200`, create conversation `201`, send message `200` with non-empty AI content, get messages `200` with count `2`, and the new conversation persisted in the list.
@@ -58,7 +58,7 @@ completed: 2026-05-11
 |-------|--------|
 | `OPENROUTER_API_KEY` format | `sk-or-*` present; value redacted |
 | `OPENROUTER_DEFAULT_MODEL` | `openai/gpt-4o-mini` |
-| `EMERGENT_LLM_KEY=` | `0` matches |
+| `LEGACY_LLM_KEY=` | `0` matches |
 | Backend health | `curl http://localhost:8013/api/health` -> `200` |
 | Backend PID | `133327` |
 | Smart Blending GCV 4000 | `status=200`, `blend_items=2`, `meets_target=True` |

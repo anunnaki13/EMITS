@@ -19,7 +19,7 @@ Make EMITS deployment and runtime operations repeatable, documented, and cleanly
 - Added focused pytest credential helper: `ops/scripts/pytest_with_local_credentials.sh`.
 - Added canonical operations runbook: `docs/operations/PRODUCTION_RUNBOOK.md`.
 - Updated `DEPLOYMENT_GUIDE.md`, `LOCAL_SETUP.md`, and `backend/tests/TEST-RUNNER.md`.
-- Updated `.gitignore` for `.env`, `.emergent/`, and `backend/emergentintegrations/` going forward.
+- Updated `.gitignore` for `.env`, `.legacy-ai/`, and `backend/legacy-ai-sdk/` going forward.
 
 ## Notes
 

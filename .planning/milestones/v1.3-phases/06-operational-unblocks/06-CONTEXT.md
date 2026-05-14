@@ -6,10 +6,10 @@
 <domain>
 ## Phase Boundary
 
-Resolve four operational blockers that have been carried forward since project ingest: (a) the Smart Blending AI is non-functional because the `EMERGENT_LLM_KEY` (Gemini-via-emergentintegrations) budget is exhausted AND a latent data-path bug surfaced by Phase 5 leaves smart-stock aggregation returning zeros; (b) the smart-blending UX surfaces raw `BadGatewayError` to the user when the LLM call fails; (c) the Excel parser has never been verified against a real-shape sample; (d) the AI chat UI does not surface persisted conversation history. Phase 6 closes all four via OpenRouter migration (using the `AIClient` Protocol seam built in Phase 4), a smart-blending-related data-correctness audit, a parser regression-fixture pass against the three real production xlsx files already in the repo, and a sidebar+main AI chat UI that shows cross-session history from the canonical `ai_chat_history` collection (ADR-012).
+Resolve four operational blockers that have been carried forward since project ingest: (a) the Smart Blending AI is non-functional because the `LEGACY_LLM_KEY` (Gemini-via-legacy-ai-sdk) budget is exhausted AND a latent data-path bug surfaced by Phase 5 leaves smart-stock aggregation returning zeros; (b) the smart-blending UX surfaces raw `BadGatewayError` to the user when the LLM call fails; (c) the Excel parser has never been verified against a real-shape sample; (d) the AI chat UI does not surface persisted conversation history. Phase 6 closes all four via OpenRouter migration (using the `AIClient` Protocol seam built in Phase 4), a smart-blending-related data-correctness audit, a parser regression-fixture pass against the three real production xlsx files already in the repo, and a sidebar+main AI chat UI that shows cross-session history from the canonical `ai_chat_history` collection (ADR-012).
 
 **In scope:**
-- OPS-01: Provider migration (Gemini-via-emergentintegrations → OpenRouter) + smart-blending data-correctness audit (smart-stock summary, sumberpemakaian aggregations, blending suggestion endpoint) + 3 successful Smart Blending recommendations against live data on target-GCV parameter sets 4000 / 4200 / 4500.
+- OPS-01: Provider migration (Gemini-via-legacy-ai-sdk → OpenRouter) + smart-blending data-correctness audit (smart-stock summary, sumberpemakaian aggregations, blending suggestion endpoint) + 3 successful Smart Blending recommendations against live data on target-GCV parameter sets 4000 / 4200 / 4500.
 - OPS-02: Retry-with-backoff in the smart-blending request path + user-facing Indonesian-localized error toast with retry button + clear error message when budget exhausted (no raw `BadGatewayError` / `BudgetExceededError` surfaced).
 - OPS-03: Excel parser verification using the three real production xlsx samples already in the repo (`pltu-tenayan-full-backup/Loading.xlsx`, `Unloading.xlsx`, `Lab_Internal.xlsx`) as proxies for the missing `total penerimaan.xlsx` (which the operator has not yet provided; deferred to Phase 7 polish). Discrepancies fixed in the parser code; a sanitized regression-fixture subset (~50 rows per mode) committed.
 - OPS-04: Frontend AI chat UI with sidebar (list of user's prior conversations, recent-first, auto-generated titles from first user message) + main panel (messages in the selected conversation) + lazy-load older messages on scroll + "New conversation" button. Reads from the canonical `ai_chat_history` collection (ADR-012) — NOT `ai_conversations` (the ROADMAP §"Phase 6" SC-4 wording is stale per Phase 5 lock-in and is reconciled at planning time).
@@ -32,13 +32,13 @@ Resolve four operational blockers that have been carried forward since project i
 
 - **D-01:** **OpenRouter is the new LLM provider.** All Smart Blending + AI-query endpoints route through OpenRouter via the `AIClient` Protocol seam that Phase 4 introduced. The choice is locked: no hybrid, no fallback chain — single-provider for milestone v1.0. Future polish phase may revisit if cost / availability becomes an operator concern.
 
-- **D-02:** **Rename `EmergentLLMClient` → `OpenRouterClient` + `emergent_wrapper.py` → `openrouter_client.py`.** The class implements the `AIClient` Protocol that Phase 4 introduced (`app/ai/client.py`). The new `OpenRouterClient` constructor reads `OPENROUTER_API_KEY` from env, hits the OpenRouter HTTPS API directly via `httpx` (no `emergentintegrations` dependency). `get_ai_client()` factory in `app/ai/client.py` continues to branch on `AI_FAKE=1` to return `FakeAIClient` for tests; otherwise returns the new `OpenRouterClient`.
+- **D-02:** **Rename `LegacyLLMClient` → `OpenRouterClient` + `legacy_llm_wrapper.py` → `openrouter_client.py`.** The class implements the `AIClient` Protocol that Phase 4 introduced (`app/ai/client.py`). The new `OpenRouterClient` constructor reads `OPENROUTER_API_KEY` from env, hits the OpenRouter HTTPS API directly via `httpx` (no `legacy-ai-sdk` dependency). `get_ai_client()` factory in `app/ai/client.py` continues to branch on `AI_FAKE=1` to return `FakeAIClient` for tests; otherwise returns the new `OpenRouterClient`.
 
-- **D-03:** **Env-var rename:** `EMERGENT_LLM_KEY` → `OPENROUTER_API_KEY` across `backend/.env`, `backend/.env.example`, MIGRATION_RUNBOOK.md, LOCAL_SETUP.md (any references), CREDENTIAL_HYGIENE.md. The `OPENROUTER_API_KEY` is sourced from the operator's OpenRouter account (operator action — see runbook).
+- **D-03:** **Env-var rename:** `LEGACY_LLM_KEY` → `OPENROUTER_API_KEY` across `backend/.env`, `backend/.env.example`, MIGRATION_RUNBOOK.md, LOCAL_SETUP.md (any references), CREDENTIAL_HYGIENE.md. The `OPENROUTER_API_KEY` is sourced from the operator's OpenRouter account (operator action — see runbook).
 
 - **D-04:** **Default model = `openai/gpt-4o-mini`** (user-selected 2026-05-11). Pricing: ~$0.15 / $0.60 per 1M input/output tokens via OpenRouter. JSON mode (`response_format: {"type": "json_object"}`) is mature on this model. Handles Indonesian language prompts reliably. Cost characteristics: smart-blending recommendation prompts are ~2k input + ~1k output → ~$0.0009 per call (sub-rupiah). AI chat messages similar. The model identifier is configurable via env var `OPENROUTER_DEFAULT_MODEL` (default `openai/gpt-4o-mini`) so future operator changes don't require a code deploy. Decision rationale (per user feedback): OpenRouter migration was chosen for model variety + cost flexibility; defaulting to a premium model (e.g., Claude Sonnet at $3/$15) would defeat that purpose. If `gpt-4o-mini` response quality becomes inadequate, operator swaps the env var to a higher-tier model without touching code.
 
-- **D-05:** **`emergentintegrations` dependency** is REMOVED from `requirements.txt` once `OpenRouterClient` lands. `httpx` is the only new outbound HTTP dependency; it's already in the FastAPI / Starlette dependency tree, so the requirements diff is `-emergentintegrations` and no addition.
+- **D-05:** **`legacy-ai-sdk` dependency** is REMOVED from `requirements.txt` once `OpenRouterClient` lands. `httpx` is the only new outbound HTTP dependency; it's already in the FastAPI / Starlette dependency tree, so the requirements diff is `-legacy-ai-sdk` and no addition.
 
 ### Smart-blending data-correctness audit (D-06..D-08 — closes OPS-01 data side)
 
@@ -121,8 +121,8 @@ Resolve four operational blockers that have been carried forward since project i
 - `.planning/intel/constraints.md` — CONS-blending-ai-output (FakeAIClient + OpenRouter response must be valid JSON parseable by the smart-blending endpoint's `json.loads`).
 
 ### Phase-4 carry-forward (the seam Phase 6 plugs into)
-- `pltu-tenayan-full-backup/backend/app/ai/client.py` — `AIClient` Protocol + `get_ai_client()` factory with `AI_FAKE=1` branch. Phase 6 swaps the production branch from `EmergentLLMClientWrapper` to `OpenRouterClient`.
-- `pltu-tenayan-full-backup/backend/app/ai/emergent_wrapper.py` — current production AI client wrapper (Phase 4 lift). Phase 6 RENAMES this file to `openrouter_client.py` and rewrites the implementation (same Protocol contract, new HTTP backend).
+- `pltu-tenayan-full-backup/backend/app/ai/client.py` — `AIClient` Protocol + `get_ai_client()` factory with `AI_FAKE=1` branch. Phase 6 swaps the production branch from `LegacyLLMClientWrapper` to `OpenRouterClient`.
+- `pltu-tenayan-full-backup/backend/app/ai/legacy_llm_wrapper.py` — current production AI client wrapper (Phase 4 lift). Phase 6 RENAMES this file to `openrouter_client.py` and rewrites the implementation (same Protocol contract, new HTTP backend).
 - `pltu-tenayan-full-backup/backend/tests/fakes/ai_client.py` — `FakeAIClient` (Phase 4); Phase 6 does NOT modify, only validates it still satisfies the contract under the new implementation.
 - `pltu-tenayan-full-backup/backend/tests/conftest.py` — `_backend_lifecycle` spawns subprocess with `AI_FAKE=1`. No change needed.
 
@@ -132,9 +132,9 @@ Resolve four operational blockers that have been carried forward since project i
 
 ### Code targets (Phase 6 modifies)
 - `pltu-tenayan-full-backup/backend/server.py` — (a) smart-blending aggregation field-name fixes; (b) wrap LLM call in retry-with-backoff; (c) new/extended AI conversation endpoints per D-18; (d) `LLMUnavailableError` → HTTP 503 mapping.
-- `pltu-tenayan-full-backup/backend/.env` — env-var rename `EMERGENT_LLM_KEY` → `OPENROUTER_API_KEY`.
+- `pltu-tenayan-full-backup/backend/.env` — env-var rename `LEGACY_LLM_KEY` → `OPENROUTER_API_KEY`.
 - `pltu-tenayan-full-backup/backend/.env.example` — sync.
-- `pltu-tenayan-full-backup/backend/requirements.txt` — remove `emergentintegrations`.
+- `pltu-tenayan-full-backup/backend/requirements.txt` — remove `legacy-ai-sdk`.
 - `pltu-tenayan-full-backup/frontend/src/` — chat UI components (sidebar + main + toast); planner identifies exact paths.
 
 ### Real Excel samples (proxy for OPS-03)
@@ -164,7 +164,7 @@ Resolve four operational blockers that have been carried forward since project i
 - **`/api/ai/query` + `/api/smart-blending/recommend`** endpoints (Phase 4 wired with `Depends(get_ai_client)`) — Phase 6 retry-with-backoff wraps these calls.
 
 ### Established Patterns
-- **Env-var driven credentials** — `OPENROUTER_API_KEY` follows the same pattern as `EMERGENT_LLM_KEY` did. Memory/test_credentials.md (gitignored) is NOT used for OpenRouter (operator-managed; production-time env source).
+- **Env-var driven credentials** — `OPENROUTER_API_KEY` follows the same pattern as `LEGACY_LLM_KEY` did. Memory/test_credentials.md (gitignored) is NOT used for OpenRouter (operator-managed; production-time env source).
 - **`AI_FAKE=1` env-var branch** in `get_ai_client()` — preserved verbatim. Phase 6 only swaps the non-fake branch.
 - **Two-repo commit boundary** — backend code, frontend code, `.env`, requirements.txt commit to `pltu-tenayan-full-backup/`. ADRs (if any new), SUMMARY.md, STATE.md commit to outer planning repo.
 - **Indonesian-localized UI strings** — existing UI is Indonesian (REQ-i18n-indonesian-ui); new chat UI + error toasts MUST match.

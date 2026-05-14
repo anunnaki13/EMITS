@@ -49,5 +49,5 @@ Phase 23 removed prior warnings from COA, Dispute Monitor, PO Batubara, and Smar
 
 - Direct page visits without dashboard query params remain supported because the shared parser returns inactive/default state.
 - No live production deployment was performed in this phase.
-- Unrelated local dirty files (`.env`, `.emergent`, `README.md`) were not staged or modified by this phase.
+- Unrelated local dirty files (`.env`, `.legacy-ai`, `README.md`) were not staged or modified by this phase.
 

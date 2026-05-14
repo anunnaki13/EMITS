@@ -46,7 +46,7 @@ key-files:
 
 key-decisions:
   - "Smart-blending response wraps AI JSON in ai_recommendation key (not top-level) — CONS-blending-ai-output keys asserted under body['ai_recommendation']"
-  - "test_no_outbound_llm_calls_observed uses HTTP-call markers only (not emergentintegrations module import) — module import occurs at server startup regardless of AI_FAKE"
+  - "test_no_outbound_llm_calls_observed uses HTTP-call markers only (not legacy-ai-sdk module import) — module import occurs at server startup regardless of AI_FAKE"
   - "test_clean_checkout_gate uses subprocess pytest --collect-only (not full run) to avoid recursive lifecycle fixture spawn"
   - "Pre-existing failures (test_fuel_composition_donut, test_coa_reconciliation_paginated, test_merit_order, test_po_batubara) documented as carry-forward — not introduced by this plan"
 
@@ -111,7 +111,7 @@ FakeAIClient routing: `session_id = f"smart-blending-{uuid4()}"` at server.py:37
 ## Decisions Made
 
 1. Smart-blending CONS keys are under `body["ai_recommendation"]` — not top-level per plan template assumption. Corrected after reading server.py:3794.
-2. `test_no_outbound_llm_calls_observed` excludes `emergentintegrations.llm.chat` from markers because the module IS imported at server startup (server.py:2263) regardless of AI_FAKE=1 — only HTTP host markers are reliable LLM-call indicators.
+2. `test_no_outbound_llm_calls_observed` excludes `legacy-ai-sdk.llm.chat` from markers because the module IS imported at server startup (server.py:2263) regardless of AI_FAKE=1 — only HTTP host markers are reliable LLM-call indicators.
 3. Carry-forward documented rather than COA seeding (lower-risk for atomicity).
 
 ## Deviations from Plan

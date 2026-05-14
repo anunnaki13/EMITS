@@ -101,7 +101,7 @@ All 8 ADR files exist at `.planning/decisions/`:
 | ADR-002-fastapi-python-backend.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-002.` | Yes (PROJECT.md L87) | `server.py:1,37` + requirements.txt | — |
 | ADR-003-react-frontend-stack.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-003.` | Yes (PROJECT.md L88) | `frontend/package.json` | — |
 | ADR-004-jwt-bcrypt-three-role-auth.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-004.` | Yes (PROJECT.md L90) | `server.py:15-16,45-56,577,586-597,599-604` | CONS-auth-header |
-| ADR-005-gemini-via-emergentintegrations.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-005.` | Yes (PROJECT.md L94) | `server.py:19,2260-2261,2619` | CONS-ai-query-endpoint |
+| ADR-005-gemini-via-legacy-ai-sdk.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-005.` | Yes (PROJECT.md L94) | `server.py:19,2260-2261,2619` | CONS-ai-query-endpoint |
 | ADR-006-api-prefix-and-frontend-base-url.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-006.` | Yes (PROJECT.md L91) | `server.py:60` + `frontend/src/contexts/AuthContext.js:6` | CONS-api-base |
 | ADR-007-persistence-projection-uuid-iso.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-007.` | Yes (PROJECT.md L92) | `server.py:13,14,590,614,714,726` | CONS-projection-id-contract |
 | ADR-008-pagination-shape.md | `Accepted (locked, 2026-05-10) — promoted from IMPLICIT-008.` | Yes (PROJECT.md L93) | `server.py:685-722` (verbatim snippet) | CONS-pagination-shape |

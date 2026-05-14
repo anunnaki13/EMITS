@@ -39,9 +39,9 @@ Verdict: PASS
 
 The following local files remain dirty and intentionally uncommitted because they are outside Phase 19 source scope or pre-existing runtime artifacts:
 
-- `.emergent/emergent.yml` deleted locally
-- `.emergent/summary.txt` deleted locally
+- `.legacy-ai/legacy-ai.yml` deleted locally
+- `.legacy-ai/summary.txt` deleted locally
 - `README.md` deleted locally
 - `backend/.env` modified locally
 - `frontend/.env` modified locally
-- `backend/emergentintegrations/` untracked/generated locally
+- `backend/legacy-ai-sdk/` untracked/generated locally

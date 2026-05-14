@@ -26,6 +26,6 @@ metadata_reviewed: "2026-05-14"
 ## Manual Review Gates
 
 - Confirm `server.py` is meaningfully smaller after plans 01-03.
-- Confirm stale `routers/ai.py` is not mounted while it still contains `emergentintegrations` or `ai_conversations`.
+- Confirm stale `routers/ai.py` is not mounted while it still contains `legacy-ai-sdk` or `ai_conversations`.
 - Confirm UI filter controls do not overlap on mobile width.
 - Confirm dashboard redesign is not accidentally implemented in Phase 7; keep it for Phase 8/dedicated dashboard phase.

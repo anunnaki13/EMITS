@@ -83,7 +83,7 @@ Reconcile every committed doc against the live VPS install, formalize IMPLICIT-0
 - `pltu-tenayan-full-backup/backend/server.py` — Motor client init (IMPLICIT-001 proof), JWT/role decorators (IMPLICIT-004), `/api/*` router prefix (IMPLICIT-006).
 - `pltu-tenayan-full-backup/backend/requirements.txt` — Python dep stack (IMPLICIT-002 proof).
 - `pltu-tenayan-full-backup/frontend/package.json` — JS dep stack (IMPLICIT-003 proof).
-- `pltu-tenayan-full-backup/backend/services/` — emergentintegrations / Gemini wiring (IMPLICIT-005).
+- `pltu-tenayan-full-backup/backend/services/` — legacy-ai-sdk / Gemini wiring (IMPLICIT-005).
 - Pagination shape sample sites: any list endpoint in server.py returning `{ items, total, page, page_size, total_pages }` (IMPLICIT-008).
 
 </canonical_refs>
@@ -117,7 +117,7 @@ Reconcile every committed doc against the live VPS install, formalize IMPLICIT-0
   2. ADR-002: FastAPI/Python backend stack (← IMPLICIT-002)
   3. ADR-003: React 19 + Tailwind + Shadcn frontend stack (← IMPLICIT-003)
   4. ADR-004: JWT + bcrypt + 3-role auth model (← IMPLICIT-004; cross-link AUTH_CONTRACT.md)
-  5. ADR-005: Gemini via emergentintegrations as AI provider (← IMPLICIT-005)
+  5. ADR-005: Gemini via legacy-ai-sdk as AI provider (← IMPLICIT-005)
   6. ADR-006: `/api/*` route prefix + REACT_APP_BACKEND_URL frontend resolution (← IMPLICIT-006)
   7. ADR-007: Persistence contract — `_id` projection, application-level UUID, ISO 8601 datetimes (← IMPLICIT-007 + CONS-projection-id-contract)
   8. ADR-008: Pagination shape `{items,total,page,page_size,total_pages}` (← IMPLICIT-008 + CONS-pagination-shape)

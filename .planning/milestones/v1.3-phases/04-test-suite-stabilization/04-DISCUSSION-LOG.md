@@ -28,20 +28,20 @@
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| Stub EmergentLLMClient via DI | Ganti class dengan FakeEmergentLLMClient di conftest fixture. Test fokus ke request validation + response shape transformation di server.py. Tidak butuh network lib tambahan. Maintenance minimal. | (free-text response) |
-| HTTP-level mock pakai respx | Install respx, intercept httpx request ke emergent endpoint. Lebih realistic. Tambah 1 dependency. Payload lib harus di-mirror. | |
+| Stub LegacyLLMClient via DI | Ganti class dengan FakeLegacyLLMClient di conftest fixture. Test fokus ke request validation + response shape transformation di server.py. Tidak butuh network lib tambahan. Maintenance minimal. | (free-text response) |
+| HTTP-level mock pakai respx | Install respx, intercept httpx request ke legacy-ai endpoint. Lebih realistic. Tambah 1 dependency. Payload lib harus di-mirror. | |
 | Kombinasi: stub default, respx untuk 1-2 critical endpoint | Mostly stub (cepat), tapi 1-2 AI endpoint pakai respx untuk catch integration drift. | |
 
-**User's free-text response:** "ok, jadi perbaiki ini masalah AI ini, tidak masalah stub ke EmergentLLMClient, namun ubah namanya, buatkan atau desainkan yang terbaru, dimana saya menggunakan openrouter bukan gemini seperti yang sekarang"
+**User's free-text response:** "ok, jadi perbaiki ini masalah AI ini, tidak masalah stub ke LegacyLLMClient, namun ubah namanya, buatkan atau desainkan yang terbaru, dimana saya menggunakan openrouter bukan gemini seperti yang sekarang"
 
-**Claude's redirect:** Provider migration (Gemini → OpenRouter) is scope creep per PROJECT.md "Out of Scope" line 87 (IMPLICIT-005) and ROADMAP Phase 6 boundary. Proposed: introduce `AIClient` Protocol/ABC in Phase 4 as the structural seam, wrap existing `EmergentLLMClient` behind it (no rename, no rewrite), test against the interface. Deferred provider migration + rename to a dedicated future phase.
+**Claude's redirect:** Provider migration (Gemini → OpenRouter) is scope creep per PROJECT.md "Out of Scope" line 87 (IMPLICIT-005) and ROADMAP Phase 6 boundary. Proposed: introduce `AIClient` Protocol/ABC in Phase 4 as the structural seam, wrap existing `LegacyLLMClient` behind it (no rename, no rewrite), test against the interface. Deferred provider migration + rename to a dedicated future phase.
 
 ### Round 2 — Confirmation
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| Setuju — introduce AIClient interface + stub interface | Phase 4: abstract Protocol/ABC `AIClient`, production wraps EmergentLLMClient di balik interface (no rename, no rewrite). Test stub interface. OpenRouter migration di-defer ke phase tersendiri. | ✓ |
-| Tetap stub class konkret EmergentLLMClient (lebih cepat) | Tidak introduce interface. Test stub class langsung. Saat migrasi OpenRouter nanti, test perlu di-update karena class name berubah. Lebih cepat sekarang, lebih kerja nanti. | |
+| Setuju — introduce AIClient interface + stub interface | Phase 4: abstract Protocol/ABC `AIClient`, production wraps LegacyLLMClient di balik interface (no rename, no rewrite). Test stub interface. OpenRouter migration di-defer ke phase tersendiri. | ✓ |
+| Tetap stub class konkret LegacyLLMClient (lebih cepat) | Tidak introduce interface. Test stub class langsung. Saat migrasi OpenRouter nanti, test perlu di-update karena class name berubah. Lebih cepat sekarang, lebih kerja nanti. | |
 | Insert Phase 4.5 atau prioritas-ulang Phase 6 — OpenRouter dulu | Stop Phase 4. Pakai /gsd-phase untuk insert atau rearrange ROADMAP supaya OpenRouter migration dikerjakan dulu, Phase 4 setelahnya. | |
 
 **User's choice:** Setuju — introduce AIClient interface + stub interface (Recommended)

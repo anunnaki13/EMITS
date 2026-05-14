@@ -41,7 +41,7 @@ created: 2026-05-11
 | 06-01-01 | 01 | 1 | OPS-01 (provider) | T-llm-key-leak / mitigated | `OpenRouterClient.send_message()` returns LLM text via OpenRouter; `Authorization: Bearer ${OPENROUTER_API_KEY}` only from env | unit (respx mock) | `pytest tests/test_openrouter_client.py -x` | ❌ W0 | ⬜ pending |
 | 06-01-02 | 01 | 1 | OPS-01 (factory) | — | `get_ai_client()` returns `OpenRouterClient` when `AI_FAKE` unset; returns `FakeAIClient` when `AI_FAKE=1` | unit | `pytest tests/test_openrouter_client.py::test_factory -x` | ❌ W0 | ⬜ pending |
 | 06-01-03 | 01 | 1 | OPS-02 | T-llm-unavailable-bubble | After 3 retries, raises `LLMUnavailableError` → 503 with Indonesian body `{"detail": "Layanan AI sementara tidak tersedia. Silakan coba lagi sebentar."}` | unit + integration | `pytest tests/test_openrouter_client.py::test_retry_exhaustion -x` | ❌ W0 | ⬜ pending |
-| 06-01-04 | 01 | 1 | OPS-01 (env+deps) | — | `emergentintegrations` removed from requirements.txt; both server.py import sites (lines 19, 2263) cleaned; env-var renamed across all 8 doc files | static | `grep -c emergentintegrations server.py requirements.txt = 0`; `grep -c EMERGENT_LLM_KEY {.env,*.md} = 0` (outside historical references) | ❌ W0 | ⬜ pending |
+| 06-01-04 | 01 | 1 | OPS-01 (env+deps) | — | `legacy-ai-sdk` removed from requirements.txt; both server.py import sites (lines 19, 2263) cleaned; env-var renamed across all 8 doc files | static | `grep -c legacy-ai-sdk server.py requirements.txt = 0`; `grep -c LEGACY_LLM_KEY {.env,*.md} = 0` (outside historical references) | ❌ W0 | ⬜ pending |
 | 06-02-01 | 02 | 1 | OPS-01 (data) | T-aggregation-field-drift | `db.smartstock.aggregate($sum: "$total_penerimaan")` returns non-zero against seeded test DB | unit | `pytest tests/test_smart_blending_data.py::test_smartstock_sum -x` | ❌ W0 | ⬜ pending |
 | 06-02-02 | 02 | 1 | OPS-01 (data) | T-aggregation-field-drift | `db.sumberpemakaian.aggregate($sum: "$total_pemakaian")` returns non-zero | unit | `pytest tests/test_smart_blending_data.py::test_sumberpemakaian_sum -x` | ❌ W0 | ⬜ pending |
 | 06-02-03 | 02 | 1 | OPS-01 (integration) | — | `/api/ai/quick/smart-stock` returns `current_stock != 0` against seeded DB (Phase-5 hotfix coercion still holds for null safety) | integration | `pytest tests/test_smart_blending_data.py::test_smart_stock_endpoint -x` | ❌ W0 | ⬜ pending |
@@ -71,9 +71,9 @@ Wave 0 = prerequisite scaffolding before Wave-2 plans can start. Plan 06-01 + 06
 
 - [ ] `pltu-tenayan-full-backup/backend/app/ai/openrouter_client.py` — implements AIClient Protocol; httpx + 3-retry; LLMUnavailableError
 - [ ] `pltu-tenayan-full-backup/backend/app/ai/client.py` — updated factory branches on `AI_FAKE`; default returns OpenRouterClient
-- [ ] `pltu-tenayan-full-backup/backend/server.py` — emergentintegrations imports removed (lines 19 + 2263), 7 aggregation field-names fixed, LLMUnavailableError handler wired, env var read from `OPENROUTER_API_KEY` / `OPENROUTER_DEFAULT_MODEL`
+- [ ] `pltu-tenayan-full-backup/backend/server.py` — legacy-ai-sdk imports removed (lines 19 + 2263), 7 aggregation field-names fixed, LLMUnavailableError handler wired, env var read from `OPENROUTER_API_KEY` / `OPENROUTER_DEFAULT_MODEL`
 - [ ] `pltu-tenayan-full-backup/backend/.env` + `.env.example` — env var renamed
-- [ ] `pltu-tenayan-full-backup/backend/requirements.txt` — `emergentintegrations` removed
+- [ ] `pltu-tenayan-full-backup/backend/requirements.txt` — `legacy-ai-sdk` removed
 - [ ] `pltu-tenayan-full-backup/backend/tests/test_openrouter_client.py` — 3+ tests (factory, send_message, retry_exhaustion)
 - [ ] `pltu-tenayan-full-backup/backend/tests/test_smart_blending_data.py` — 3 tests (smartstock sum, sumberpemakaian sum, integration smart-stock endpoint)
 - [ ] `pltu-tenayan-full-backup/backend/tests/test_upload_excel.py` — extended with 3 COA regression tests

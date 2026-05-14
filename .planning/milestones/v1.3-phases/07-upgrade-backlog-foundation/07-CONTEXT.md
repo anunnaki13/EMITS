@@ -22,7 +22,7 @@ This phase is not a dashboard redesign phase. Dashboard UX was raised during dis
 
 - **D-01:** Start with refactor-first. Extract routers/models while preserving existing API behavior and keeping the Phase-4 test suite green, then add filtering. This is the selected option from user choice `1,1`.
 - **D-02:** Avoid a broad "big bang" rewrite. Plans should be sequenced as small contract-preserving slices, with tests after each major extraction.
-- **D-03:** Existing `backend/routers/auth.py`, `backend/routers/data.py`, and `backend/routers/ai.py` are not authoritative. They appear stale or incomplete: `routers/ai.py` still references `emergentintegrations` and `ai_conversations`, which Phase 6/ADR-012 superseded. Planner must either rewrite them from current `server.py` behavior or replace them; do not blindly mount stale routers.
+- **D-03:** Existing `backend/routers/auth.py`, `backend/routers/data.py`, and `backend/routers/ai.py` are not authoritative. They appear stale or incomplete: `routers/ai.py` still references `legacy-ai-sdk` and `ai_conversations`, which Phase 6/ADR-012 superseded. Planner must either rewrite them from current `server.py` behavior or replace them; do not blindly mount stale routers.
 - **D-04:** Keep auth dependencies (`get_current_user`, `require_role`, token helpers) importable from a stable place. If moved, all routers and tests must use one canonical source. The auth validation handler behavior for `/api/auth/*` returning 400 on malformed auth bodies must be preserved.
 
 ### Router Extraction Scope
@@ -107,7 +107,7 @@ This phase is not a dashboard redesign phase. Dashboard UX was raised during dis
 - `pltu-tenayan-full-backup/backend/models/__init__.py` — existing extracted models; use as baseline but clean as needed.
 - `pltu-tenayan-full-backup/backend/routers/auth.py` — existing router candidate; must be reconciled against current `server.py`.
 - `pltu-tenayan-full-backup/backend/routers/data.py` — existing rekap router candidate; may be stale but useful for helper patterns.
-- `pltu-tenayan-full-backup/backend/routers/ai.py` — stale example; do not mount without removing `emergentintegrations` and `ai_conversations`.
+- `pltu-tenayan-full-backup/backend/routers/ai.py` — stale example; do not mount without removing `legacy-ai-sdk` and `ai_conversations`.
 - `pltu-tenayan-full-backup/backend/utils/auth.py` and `pltu-tenayan-full-backup/backend/utils/database.py` — existing shared utility candidates.
 - `pltu-tenayan-full-backup/backend/tests/` — contract preservation gate. Relevant files include `test_auth_session.py`, `test_auth_roles.py`, `test_pagination_shape.py`, `test_upload_excel.py`, `test_coa_reconciliation.py`, `test_dashboard_advanced.py`, `test_smart_blending_data.py`.
 

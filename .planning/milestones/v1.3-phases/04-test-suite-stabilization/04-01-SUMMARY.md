@@ -28,7 +28,7 @@ tech_stack:
   added:
     - pytest-asyncio==0.24.0 (async test support)
     - app/ai/client.py AIClient Protocol (D-04)
-    - app/ai/emergent_wrapper.py EmergentLLMClientWrapper (D-04)
+    - app/ai/legacy_llm_wrapper.py LegacyLLMClientWrapper (D-04)
     - tests/fakes/ai_client.py FakeAIClient (D-05)
   patterns:
     - subprocess lifecycle with env injection (AI_FAKE=1, MONGO_TEST_DB_NAME)
@@ -39,7 +39,7 @@ key_files:
   created:
     - pltu-tenayan-full-backup/backend/pytest.ini
     - pltu-tenayan-full-backup/backend/app/ai/client.py
-    - pltu-tenayan-full-backup/backend/app/ai/emergent_wrapper.py
+    - pltu-tenayan-full-backup/backend/app/ai/legacy_llm_wrapper.py
     - pltu-tenayan-full-backup/backend/tests/fakes/ai_client.py
     - pltu-tenayan-full-backup/backend/tests/factories/ (8 modules)
     - pltu-tenayan-full-backup/backend/tests/helpers/pagination.py
@@ -79,7 +79,7 @@ metrics:
 
 | Task | Name | Commit | Key Files |
 |------|------|--------|-----------|
-| 1 | AI seam + server.py DB override + pytest.ini | e0ebb9c | app/ai/client.py, app/ai/emergent_wrapper.py, tests/fakes/ai_client.py, server.py, pytest.ini |
+| 1 | AI seam + server.py DB override + pytest.ini | e0ebb9c | app/ai/client.py, app/ai/legacy_llm_wrapper.py, tests/fakes/ai_client.py, server.py, pytest.ini |
 | 2 | conftest lifecycle + factories + helpers + xlsx | f601537 | tests/conftest.py, tests/factories/ (8 mods), tests/helpers/, tests/fixtures/excel/ (4 xlsx) |
 | 3 | Credential sanitization + scanner cleanup | 736e18a | 4 test files, check_credentials.sh, CREDENTIAL_HYGIENE.md |
 

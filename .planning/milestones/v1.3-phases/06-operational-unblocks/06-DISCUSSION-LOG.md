@@ -13,8 +13,8 @@
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| OpenRouter migration | Swap implementation di balik AIClient Protocol Phase 4. Rename EmergentLLMClient → OpenRouterClient. EMERGENT_LLM_KEY → OPENROUTER_API_KEY. Test seam tidak berubah. | ✓ |
-| Gemini budget refill saja | Operator beli kuota EMERGENT_LLM_KEY. Same code, same vendor. Vendor lock-in tetap. | |
+| OpenRouter migration | Swap implementation di balik AIClient Protocol Phase 4. Rename LegacyLLMClient → OpenRouterClient. LEGACY_LLM_KEY → OPENROUTER_API_KEY. Test seam tidak berubah. | ✓ |
+| Gemini budget refill saja | Operator beli kuota LEGACY_LLM_KEY. Same code, same vendor. Vendor lock-in tetap. | |
 | Hybrid — OpenRouter primary, Gemini fallback | Dual provider routing. Complex testing + monitoring. | |
 
 **User's choice:** OpenRouter migration (Recommended)

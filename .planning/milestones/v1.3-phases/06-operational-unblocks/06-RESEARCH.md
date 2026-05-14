@@ -13,10 +13,10 @@
 
 **OPS-01 (Provider + Data):**
 - D-01: OpenRouter is the new LLM provider. Single-provider, no hybrid fallback.
-- D-02: Rename `EmergentLLMClient` → `OpenRouterClient`; `emergent_wrapper.py` → `openrouter_client.py`. Implements `AIClient` Protocol from `app/ai/client.py`. `get_ai_client()` factory keeps `AI_FAKE=1` branch untouched.
-- D-03: Env-var rename `EMERGENT_LLM_KEY` → `OPENROUTER_API_KEY` across `.env`, `.env.example`, `MIGRATION_RUNBOOK.md`, `LOCAL_SETUP.md`, `DEPLOYMENT_GUIDE.md`, `CREDENTIAL_HYGIENE.md`, `documentation.md`, `readme.md` (all six docs have confirmed references).
+- D-02: Rename `LegacyLLMClient` → `OpenRouterClient`; `legacy_llm_wrapper.py` → `openrouter_client.py`. Implements `AIClient` Protocol from `app/ai/client.py`. `get_ai_client()` factory keeps `AI_FAKE=1` branch untouched.
+- D-03: Env-var rename `LEGACY_LLM_KEY` → `OPENROUTER_API_KEY` across `.env`, `.env.example`, `MIGRATION_RUNBOOK.md`, `LOCAL_SETUP.md`, `DEPLOYMENT_GUIDE.md`, `CREDENTIAL_HYGIENE.md`, `documentation.md`, `readme.md` (all six docs have confirmed references).
 - D-04: Default model = `openai/gpt-4o-mini` (user-selected 2026-05-11). Configurable via `OPENROUTER_DEFAULT_MODEL` env var (default `openai/gpt-4o-mini`).
-- D-05: Remove `emergentintegrations` from `requirements.txt`. `httpx` is the only outbound HTTP dep; it is already present (`httpx==0.28.1`).
+- D-05: Remove `legacy-ai-sdk` from `requirements.txt`. `httpx` is the only outbound HTTP dep; it is already present (`httpx==0.28.1`).
 - D-06: Bundle data audit into OPS-01. Phase 5 CP2 surfaced `/api/ai/quick/smart-stock` returning zeros — aggregation field names don't match smartstock doc schema.
 - D-07: Fix mode: correct field names in `server.py`. Add unit test per fix in `test_smart_blending_data.py`.
 - D-08: Validation gate: 3 live smoke calls (target GCV 4000/4200/4500) at cutover.
@@ -74,7 +74,7 @@
 
 Phase 6 closes four operational blockers that have persisted since system ingest. The research confirms all four are unblockable with surgical changes that don't disturb the Phase-4 test suite.
 
-**OPS-01 (LLM migration + data audit):** The `AIClient` Protocol seam Phase 4 introduced makes the provider swap safe — only `emergent_wrapper.py` changes, and the `AI_FAKE=1` branch is untouched. The `emergentintegrations` import also appears at `server.py:19` (top-level, before the class definition at line 2263) — both must be removed. `httpx==0.28.1` is already in `requirements.txt`. The OpenRouter API is OpenAI-compatible; the endpoint is `https://openrouter.ai/api/v1/chat/completions`. For `openai/gpt-4o-mini` with `response_format: {"type": "json_object"}`, the system or user prompt MUST contain the word "JSON" — the existing smart-blending prompt at `server.py:3771` already says "Respons HANYA dengan JSON yang valid" — this satisfies the requirement. The smart-stock aggregations at lines 2395-2400 and 2863-2885 reference `$tonase`, `$batubara_mt`, `$biomassa_mt` on the `smartstock` and `sumberpemakaian` collections — but live schema verification shows `smartstock` docs use `total_penerimaan` (not `tonase`) for per-entry totals, and `sumberpemakaian` docs use `total_pemakaian` (not `batubara_mt`/`biomassa_mt`). The quick-smart-stock endpoint and get_database_context function's AI context builder both have field mismatches.
+**OPS-01 (LLM migration + data audit):** The `AIClient` Protocol seam Phase 4 introduced makes the provider swap safe — only `legacy_llm_wrapper.py` changes, and the `AI_FAKE=1` branch is untouched. The `legacy-ai-sdk` import also appears at `server.py:19` (top-level, before the class definition at line 2263) — both must be removed. `httpx==0.28.1` is already in `requirements.txt`. The OpenRouter API is OpenAI-compatible; the endpoint is `https://openrouter.ai/api/v1/chat/completions`. For `openai/gpt-4o-mini` with `response_format: {"type": "json_object"}`, the system or user prompt MUST contain the word "JSON" — the existing smart-blending prompt at `server.py:3771` already says "Respons HANYA dengan JSON yang valid" — this satisfies the requirement. The smart-stock aggregations at lines 2395-2400 and 2863-2885 reference `$tonase`, `$batubara_mt`, `$biomassa_mt` on the `smartstock` and `sumberpemakaian` collections — but live schema verification shows `smartstock` docs use `total_penerimaan` (not `tonase`) for per-entry totals, and `sumberpemakaian` docs use `total_pemakaian` (not `batubara_mt`/`biomassa_mt`). The quick-smart-stock endpoint and get_database_context function's AI context builder both have field mismatches.
 
 **OPS-02 (Error UX):** No retry-with-backoff or `LLMUnavailableError` exists today — `server.py:3809-3811` catches a bare `Exception` and returns a raw 500 with `str(e)`. The `sonner` toast library is already in `frontend/package.json` (`sonner==2.0.3`) and mounted in `App.js`. The frontend error classification pattern is documented in the UI-SPEC.
 
@@ -82,7 +82,7 @@ Phase 6 closes four operational blockers that have persisted since system ingest
 
 **OPS-04 (AI Chat UI):** The live `ai_chat_history` collection has 10 documents across 4 unique `session_id` values (2 users). Each document has fields: `id`, `user_id`, `session_id`, `module`, `query`, `response`, `parameters`, `created_at`. There is NO `conversation_id` field. The `session_id` field is the natural grouping key — it already embeds the user_id and a UUID (format: `tenayan-ai-{user_id}-{uuid}`). Phase 6 can use `session_id` as the `conversation_id` without any schema migration to the existing 10 records. New records written by the new chat endpoint will set `conversation_id` equal to a newly-generated UUID (not the session_id format); the existing sessions endpoint infrastructure at lines 2967-3048 can be adapted or the new `/api/ai/conversations/*` endpoints can coexist alongside it.
 
-**Primary recommendation:** Implement `OpenRouterClient` as a clean rewrite of `emergent_wrapper.py` using `httpx.AsyncClient` with 3-retry exponential backoff and `LLMUnavailableError`. Fix the two field-name mismatches in smart-stock aggregations. Use `session_id` as the conversation grouping key for the chat UI without schema migration.
+**Primary recommendation:** Implement `OpenRouterClient` as a clean rewrite of `legacy_llm_wrapper.py` using `httpx.AsyncClient` with 3-retry exponential backoff and `LLMUnavailableError`. Fix the two field-name mismatches in smart-stock aggregations. Use `session_id` as the conversation grouping key for the chat UI without schema migration.
 
 ---
 
@@ -131,7 +131,7 @@ Phase 6 closes four operational blockers that have persisted since system ingest
 | Hand-rolled retry loop | `tenacity` (already in requirements.txt) | Tenacity is more battle-tested but adds a dependency layer; hand-rolled is clearer for 3-retry simple case |
 | `session_id` as conversation key | Add new `conversation_id` UUID field | Schema migration required for existing 10 records; `session_id` is already unique per conversation and embedded with user_id |
 
-**Installation:** No new packages needed. `httpx` already present. Remove `emergentintegrations==0.1.0` from `requirements.txt`.
+**Installation:** No new packages needed. `httpx` already present. Remove `legacy-ai-sdk==0.1.0` from `requirements.txt`.
 
 **Version verification:** `httpx==0.28.1` confirmed in `/home/damnation/emits/pltu-tenayan-full-backup/backend/requirements.txt`. [VERIFIED: file read]
 
@@ -662,7 +662,7 @@ return GENERAL_RESPONSE
 
 The smart-blending session_id format `f"smart-blending-{uuid.uuid4()}"` (line 3774) contains "blend" — FakeAIClient routes correctly. New `/api/ai/conversations/<id>/messages` will use a different session_id format (just the UUID conversation_id) — FakeAIClient will return `GENERAL_RESPONSE` for chat, which is appropriate. [VERIFIED: code review]
 
-**`AI_FAKE=1` env-var branch in `get_ai_client()`:** The factory at `app/ai/client.py:22` is preserved verbatim — only the `else` branch changes from `EmergentLLMClientWrapper` to `OpenRouterClient`.
+**`AI_FAKE=1` env-var branch in `get_ai_client()`:** The factory at `app/ai/client.py:22` is preserved verbatim — only the `else` branch changes from `LegacyLLMClientWrapper` to `OpenRouterClient`.
 
 ---
 
@@ -807,21 +807,21 @@ Include this as a task under Plan 06-05 (OPS-02 cross-cut per UI-SPEC). The plan
 
 ---
 
-## Focus 10: `emergentintegrations` Removal Checklist
+## Focus 10: `legacy-ai-sdk` Removal Checklist
 
 [VERIFIED: grep of server.py]
 
 **Two import sites in `server.py`:**
-- Line 19: `from emergentintegrations.llm.chat import LlmChat, UserMessage` (top-level import, no longer needed after Phase 6)
-- Line 2263: `from emergentintegrations.llm.chat import LlmChat, UserMessage` (before AI module section — also to be removed)
+- Line 19: `from legacy-ai-sdk.llm.chat import LlmChat, UserMessage` (top-level import, no longer needed after Phase 6)
+- Line 2263: `from legacy-ai-sdk.llm.chat import LlmChat, UserMessage` (before AI module section — also to be removed)
 
-**`requirements.txt` line to remove:** `emergentintegrations==0.1.0` (line 21)
+**`requirements.txt` line to remove:** `legacy-ai-sdk==0.1.0` (line 21)
 
-**`app/ai/emergent_wrapper.py`:** Entire file deleted (or renamed to `openrouter_client.py` with rewrite — D-02 says rename+rewrite; git mv is preferred to preserve history).
+**`app/ai/legacy_llm_wrapper.py`:** Entire file deleted (or renamed to `openrouter_client.py` with rewrite — D-02 says rename+rewrite; git mv is preferred to preserve history).
 
 **Env-var rename — all affected doc files:**
 [VERIFIED: grep of pltu-tenayan-full-backup/ directory]
-1. `backend/.env` — line 5: `EMERGENT_LLM_KEY=sk-emergent-...`
+1. `backend/.env` — line 5: `LEGACY_LLM_KEY=sk-legacy-ai-...`
 2. `LOCAL_SETUP.md` — lines 269, 331
 3. `DEPLOYMENT_GUIDE.md` — lines 132, 139, 381, 534
 4. `documentation.md` — lines 99, 559
@@ -831,7 +831,7 @@ Include this as a task under Plan 06-05 (OPS-02 cross-cut per UI-SPEC). The plan
 8. `frontend/public/docs/readme.md` — line 141
 9. `backend/.env.example` — add `OPENROUTER_API_KEY=` and `OPENROUTER_DEFAULT_MODEL=openai/gpt-4o-mini`
 
-**Note:** `MIGRATION_RUNBOOK.md` (Phase 5 deliverable) does NOT contain `EMERGENT_LLM_KEY` references [VERIFIED: grep returned no output].
+**Note:** `MIGRATION_RUNBOOK.md` (Phase 5 deliverable) does NOT contain `LEGACY_LLM_KEY` references [VERIFIED: grep returned no output].
 
 **Env-var addition in `.env`:**
 ```ini
@@ -883,8 +883,8 @@ External
 pltu-tenayan-full-backup/backend/
 ├── app/ai/
 │   ├── client.py              (updated: factory → OpenRouterClient)
-│   ├── openrouter_client.py   (NEW: rename + rewrite of emergent_wrapper.py)
-│   └── emergent_wrapper.py    (DELETED after rename)
+│   ├── openrouter_client.py   (NEW: rename + rewrite of legacy_llm_wrapper.py)
+│   └── legacy_llm_wrapper.py    (DELETED after rename)
 ├── tests/
 │   ├── test_smart_blending_data.py   (NEW: aggregation field-name unit tests)
 │   ├── test_upload_excel.py          (EXTENDED: regression fixture params)
@@ -914,7 +914,7 @@ pltu-tenayan-full-backup/frontend/src/
 
 ### Anti-Patterns to Avoid
 
-- **Import `emergentintegrations` anywhere after Phase 6:** Both server.py import sites (lines 19 and 2263) must be removed. A CI grep gate should enforce this.
+- **Import `legacy-ai-sdk` anywhere after Phase 6:** Both server.py import sites (lines 19 and 2263) must be removed. A CI grep gate should enforce this.
 - **Using `ai_conversations` collection name anywhere:** ADR-012 locks canonical name to `ai_chat_history`. Phase 5's `test_no_legacy_collection_reads_in_server_py` gate enforces this automatically.
 - **Hardcoding `"gemini"` or `"gemini-2.5-flash"` in new code:** The `AISettingsUpdate` model at lines 2274-2277 still has gemini defaults — these should be updated to `openai/gpt-4o-mini` in Phase 6.
 - **JSON mode without "JSON" in the prompt:** New chat endpoints that use plain text responses should NOT set `response_format: {"type": "json_object"}`. Only smart-blending uses JSON mode.
@@ -937,26 +937,26 @@ pltu-tenayan-full-backup/frontend/src/
 
 ## Runtime State Inventory
 
-> Included because Phase 6 performs an env-var rename (EMERGENT_LLM_KEY → OPENROUTER_API_KEY).
+> Included because Phase 6 performs an env-var rename (LEGACY_LLM_KEY → OPENROUTER_API_KEY).
 
 | Category | Items Found | Action Required |
 |----------|-------------|------------------|
 | Stored data | `ai_chat_history`: 10 records — all use `session_id` as grouping key. No schema migration needed. | None — `session_id` field preserved as-is |
 | Live service config | Backend process on VPS reads `.env` at startup. After env-var rename, process must be restarted. | Operator action at cutover: set OPENROUTER_API_KEY in `.env`, restart uvicorn |
 | OS-registered state | None — no systemd/pm2 unit embeds LLM key names | None |
-| Secrets/env vars | `EMERGENT_LLM_KEY` in `backend/.env` (gitignored) — code rename only; old key value is invalid (budget exhausted). `OPENROUTER_API_KEY` is a new secret the operator must obtain from OpenRouter account. | Operator obtains new key; updates `.env` |
+| Secrets/env vars | `LEGACY_LLM_KEY` in `backend/.env` (gitignored) — code rename only; old key value is invalid (budget exhausted). `OPENROUTER_API_KEY` is a new secret the operator must obtain from OpenRouter account. | Operator obtains new key; updates `.env` |
 | Build artifacts | None — no compiled binary embeds key names | None |
 
 ---
 
 ## Common Pitfalls
 
-### Pitfall 1: Double `emergentintegrations` Import in `server.py`
+### Pitfall 1: Double `legacy-ai-sdk` Import in `server.py`
 
-**What goes wrong:** `server.py` imports `emergentintegrations` at TWO locations (line 19 and line 2263). Removing only one causes an `ImportError` at startup or a `NameError` at runtime.
+**What goes wrong:** `server.py` imports `legacy-ai-sdk` at TWO locations (line 19 and line 2263). Removing only one causes an `ImportError` at startup or a `NameError` at runtime.
 **Why it happens:** The module was imported once at the top for general use, then again as a lazy import near the AI module section.
-**How to avoid:** Grep `server.py` for all `from emergentintegrations` occurrences before starting — confirmed: lines 19 and 2263.
-**Warning signs:** `uvicorn` startup error mentioning `emergentintegrations`.
+**How to avoid:** Grep `server.py` for all `from legacy-ai-sdk` occurrences before starting — confirmed: lines 19 and 2263.
+**Warning signs:** `uvicorn` startup error mentioning `legacy-ai-sdk`.
 
 ### Pitfall 2: JSON Mode Without "JSON" in Prompt
 
@@ -1238,14 +1238,14 @@ async def send_conversation_message(
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| `emergentintegrations.LlmChat` (Gemini) | `httpx` → OpenRouter (OpenAI-compatible API) | Phase 6 | Drops vendor SDK; uses standard HTTP; unlocks model variety |
+| `legacy-ai-sdk.LlmChat` (Gemini) | `httpx` → OpenRouter (OpenAI-compatible API) | Phase 6 | Drops vendor SDK; uses standard HTTP; unlocks model variety |
 | Raw `Exception` catch → 500 response | `LLMUnavailableError` → 503 with Indonesian body | Phase 6 | User sees actionable message; no raw error |
 | No conversation UI | AI Chat History page with sidebar+panel | Phase 6 | OPS-04 complete |
 | No Excel regression fixtures | Sanitized fixtures committed | Phase 6 | OPS-03 gate persists in future CI |
 
 **Deprecated/outdated:**
-- `EmergentLLMClientWrapper`: deleted in Phase 6; replaced by `OpenRouterClient`
-- `EMERGENT_LLM_KEY` env var: renamed to `OPENROUTER_API_KEY`
+- `LegacyLLMClientWrapper`: deleted in Phase 6; replaced by `OpenRouterClient`
+- `LEGACY_LLM_KEY` env var: renamed to `OPENROUTER_API_KEY`
 - `AISettingsUpdate` gemini defaults: updated to openrouter/gpt-4o-mini
 - `get_ai_settings` default response (`"llm_provider": "gemini"`): updated
 
@@ -1343,10 +1343,10 @@ async def send_conversation_message(
 ### Primary (HIGH confidence)
 - `pltu-tenayan-full-backup/backend/server.py` — full read; aggregation sites verified at lines 2379-2406, 2863-2885
 - `pltu-tenayan-full-backup/backend/app/ai/client.py` — AIClient Protocol + factory verified
-- `pltu-tenayan-full-backup/backend/app/ai/emergent_wrapper.py` — current implementation verified
+- `pltu-tenayan-full-backup/backend/app/ai/legacy_llm_wrapper.py` — current implementation verified
 - `pltu-tenayan-full-backup/backend/tests/fakes/ai_client.py` — FakeAIClient signature verified
-- `pltu-tenayan-full-backup/backend/requirements.txt` — httpx==0.28.1, emergentintegrations==0.1.0 verified
-- `pltu-tenayan-full-backup/backend/.env` — EMERGENT_LLM_KEY confirmed
+- `pltu-tenayan-full-backup/backend/requirements.txt` — httpx==0.28.1, legacy-ai-sdk==0.1.0 verified
+- `pltu-tenayan-full-backup/backend/.env` — LEGACY_LLM_KEY confirmed
 - `pltu-tenayan-full-backup/frontend/package.json` — sonner, react-markdown, date-fns confirmed
 - `pltu-tenayan-full-backup/frontend/src/components/Layout.js` — nav integration target verified
 - `mongosh pltu_tenayan` read-only probes — `ai_chat_history` schema (10 docs, 4 sessions), `smartstock` schema (`total_penerimaan` field), `sumberpemakaian` schema (`total_pemakaian` field)

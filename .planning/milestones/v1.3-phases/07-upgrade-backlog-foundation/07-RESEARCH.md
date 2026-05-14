@@ -14,7 +14,7 @@ Phase 7 has two coupled goals:
 
 - `pltu-tenayan-full-backup/backend/server.py` is still 4,584 lines and remains the production source of truth.
 - `backend/models/__init__.py` already contains 301 lines of extracted Pydantic schemas, but `server.py` still defines inline models including `AIQueryRequest`, `AISettingsUpdate`, smart-stock/sumber-pemakaian entries, `SmartBlendingRequest`, `COASettingsUpdate`, `UmpireProposal`, `UmpireResultInput`, and `COAManualInput`.
-- `backend/routers/auth.py`, `backend/routers/data.py`, and `backend/routers/ai.py` exist, but are not safe to mount as-is. `routers/ai.py` still imports `emergentintegrations` and uses `ai_conversations`, both superseded by Phase 6 and ADR-012.
+- `backend/routers/auth.py`, `backend/routers/data.py`, and `backend/routers/ai.py` exist, but are not safe to mount as-is. `routers/ai.py` still imports `legacy-ai-sdk` and uses `ai_conversations`, both superseded by Phase 6 and ADR-012.
 - `backend/utils/database.py` and `backend/utils/auth.py` exist and may be useful, but must be reconciled against current `server.py` runtime globals before being treated as canonical.
 
 ## Extraction Risk
@@ -99,7 +99,7 @@ Refactor:
 
 - Re-run existing auth, pagination, COA, dashboard, smart-blending, and AI chat tests after each extraction slice.
 - Add grep gates:
-  - no `emergentintegrations` imports in active backend code
+  - no `legacy-ai-sdk` imports in active backend code
   - no `ai_conversations` collection reads
   - extracted routes are mounted exactly once
 
