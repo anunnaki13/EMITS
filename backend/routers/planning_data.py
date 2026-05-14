@@ -312,7 +312,12 @@ async def get_po_batubara(
     
     skip = (page - 1) * page_size
     total = await db.po_batubara.count_documents(query)
-    po_list = await db.po_batubara.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(page_size).to_list(page_size)
+    po_list = await db.po_batubara.find(query, {"_id": 0}).sort([
+        ("time_arrival", -1),
+        ("completed", -1),
+        ("periode", -1),
+        ("created_at", -1),
+    ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
         "items": po_list,
@@ -336,7 +341,7 @@ async def get_po_years(supplier: Optional[str] = None, user: dict = Depends(get_
             "total_tonase": {"$sum": "$tonase_po"},
             "total_value": {"$sum": "$total"}
         }},
-        {"$sort": {"_id.year": -1, "_id.month": 1}}
+        {"$sort": {"_id.year": -1, "_id.month": -1}}
     ]
     results = await db.po_batubara.aggregate(pipeline).to_list(1000)
     
@@ -493,7 +498,12 @@ async def get_merit_orders(
     
     skip = (page - 1) * page_size
     total = await db.merit_order.count_documents(query)
-    mo_list = await db.merit_order.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(page_size).to_list(page_size)
+    mo_list = await db.merit_order.find(query, {"_id": 0}).sort([
+        ("periode_year", -1),
+        ("periode_month", -1),
+        ("periode", -1),
+        ("created_at", -1),
+    ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
         "items": mo_list,

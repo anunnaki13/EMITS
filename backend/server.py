@@ -734,7 +734,11 @@ async def get_vessels(
     # Server-side pagination
     skip = (page - 1) * page_size
     total = await db.vessels.count_documents(query)
-    vessels = await db.vessels.find(query, {"_id": 0}).sort("time_arrival", -1).skip(skip).limit(page_size).to_list(page_size)
+    vessels = await db.vessels.find(query, {"_id": 0}).sort([
+        ("time_arrival", -1),
+        ("completed_unloading", -1),
+        ("created_at", -1),
+    ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
         "items": vessels,
@@ -807,7 +811,11 @@ async def get_barges(
     
     skip = (page - 1) * page_size
     total = await db.barges.count_documents(query)
-    barges = await db.barges.find(query, {"_id": 0}).sort("ta", -1).skip(skip).limit(page_size).to_list(page_size)
+    barges = await db.barges.find(query, {"_id": 0}).sort([
+        ("ta", -1),
+        ("completed_unloading", -1),
+        ("created_at", -1),
+    ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
         "items": barges,
@@ -880,7 +888,11 @@ async def get_trucking(
     
     skip = (page - 1) * page_size
     total = await db.trucking.count_documents(query)
-    trucking_list = await db.trucking.find(query, {"_id": 0}).sort("ta", -1).skip(skip).limit(page_size).to_list(page_size)
+    trucking_list = await db.trucking.find(query, {"_id": 0}).sort([
+        ("ta", -1),
+        ("completed_unloading", -1),
+        ("created_at", -1),
+    ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
         "items": trucking_list,
@@ -948,12 +960,17 @@ async def get_biomassa(
         supplier=supplier,
         date_from=date_from,
         date_to=date_to,
-        date_field="periode",
+        date_field="ta",
     )
     
     skip = (page - 1) * page_size
     total = await db.biomassa.count_documents(query)
-    biomassa_list = await db.biomassa.find(query, {"_id": 0}).sort("periode", -1).skip(skip).limit(page_size).to_list(page_size)
+    biomassa_list = await db.biomassa.find(query, {"_id": 0}).sort([
+        ("ta", -1),
+        ("completed_unloading", -1),
+        ("periode", -1),
+        ("created_at", -1),
+    ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
         "items": biomassa_list,
