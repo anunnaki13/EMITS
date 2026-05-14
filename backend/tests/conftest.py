@@ -277,28 +277,37 @@ def _seed_baseline_data(_backend_lifecycle):
     admin_email = os.environ.get("TEST_ADMIN_EMAIL", "")
     admin_password = os.environ.get("TEST_ADMIN_PASSWORD", "")
 
-    # --- 1. Seed admin user via /api/auth/register ---
+    # --- 1. Seed role users via /api/auth/register ---
+    role_users = [
+        ("admin", admin_email, admin_password, "Test Admin"),
+        ("operator", os.environ.get("TEST_OPERATOR_EMAIL", ""), os.environ.get("TEST_OPERATOR_PASSWORD", ""), "Test Operator"),
+        ("viewer", os.environ.get("TEST_VIEWER_EMAIL", ""), os.environ.get("TEST_VIEWER_PASSWORD", ""), "Test Viewer"),
+    ]
     if admin_email and admin_password:
-        try:
-            r = requests.post(
-                f"{backend_url}/api/auth/register",
-                json={
-                    "email": admin_email,
-                    "password": admin_password,
-                    "name": "Test Admin",
-                    "role": "admin",
-                },
-                timeout=10,
-            )
-            if r.status_code == 200:
-                print(f"[conftest] _seed_baseline_data: registered admin user {admin_email}")
-            elif r.status_code == 400:
-                # Already registered — idempotent
-                print(f"[conftest] _seed_baseline_data: admin user {admin_email} already exists")
-            else:
-                print(f"[conftest] _seed_baseline_data: admin register returned {r.status_code}: {r.text[:200]}")
-        except Exception as e:
-            print(f"[conftest] _seed_baseline_data: admin register failed (non-fatal): {e}")
+        for role, email, password, name in role_users:
+            if not email or not password:
+                print(f"[conftest] _seed_baseline_data: TEST_{role.upper()}_EMAIL/PASSWORD not set, skipping {role} seed")
+                continue
+            try:
+                r = requests.post(
+                    f"{backend_url}/api/auth/register",
+                    json={
+                        "email": email,
+                        "password": password,
+                        "name": name,
+                        "role": role,
+                    },
+                    timeout=10,
+                )
+                if r.status_code == 200:
+                    print(f"[conftest] _seed_baseline_data: registered {role} user {email}")
+                elif r.status_code == 400:
+                    # Already registered — idempotent
+                    print(f"[conftest] _seed_baseline_data: {role} user {email} already exists")
+                else:
+                    print(f"[conftest] _seed_baseline_data: {role} register returned {r.status_code}: {r.text[:200]}")
+            except Exception as e:
+                print(f"[conftest] _seed_baseline_data: {role} register failed (non-fatal): {e}")
     else:
         print("[conftest] _seed_baseline_data: TEST_ADMIN_EMAIL/PASSWORD not set, skipping admin seed")
 

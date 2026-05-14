@@ -99,6 +99,10 @@ cd /opt/pltu-tenayan/app
 git status --short
 git rev-parse --short HEAD
 
+python3 ops/scripts/release_gate.py \
+  --base-url http://127.0.0.1:8013 \
+  --frontend-url http://127.0.0.1
+
 EMITS_BASE_URL=http://127.0.0.1:8013 \
 EMITS_FRONTEND_URL=http://127.0.0.1 \
 ops/scripts/deploy.sh
@@ -111,6 +115,7 @@ ops/scripts/runtime_status.sh
 Release evidence is complete only when all of these are true:
 
 - `ops/scripts/deploy.sh` completes without error.
+- `ops/scripts/release_gate.py` exits 0 and writes JSON/Markdown artifacts under `ops/release-artifacts/`.
 - `ops/scripts/runtime_status.sh` exits 0.
 - The runtime report path and smoke JSON path printed by `runtime_status.sh` exist on the VPS.
 - Settings → `Status Operasional` shows the latest smoke result and backend/frontend build identifiers for the deployed SHA or release tag.

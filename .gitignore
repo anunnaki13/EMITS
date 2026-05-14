@@ -64,6 +64,7 @@ chainlit.md
 
 # Deployment
 .vercel
+ops/release-artifacts/
 
 # Data and databases
 agenthub/agents/youtube/db
