@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Production QA & Cleanup
-status: planning
-last_updated: "2026-05-14T13:07:42+07:00"
-last_activity: 2026-05-14 — Phase 33 release gate passed; v1.4 ready for milestone audit
+status: awaiting_next_milestone
+stopped_at: Milestone v1.4 complete; next milestone not yet defined
+last_updated: "2026-05-14T14:28:28+07:00"
+last_activity: 2026-05-14 — Milestone v1.4 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -20,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Operators and admins at PLTU Tenayan can trust EMITS as the single source of truth for fuel-receipt data, COA reconciliation, and AI-assisted decision support — every record survives reliably, every report exports cleanly, and login/auth never gets in the way.
-**Current focus:** auditing/completing v1.4 Production QA & Cleanup
+**Current focus:** planning the next milestone
 
 ## Current Position
 
-Phase: v1.4 milestone audit (ready)
+Phase: Milestone v1.4 complete
 Plan: —
-Status: Phase 33 complete; v1.4 ready for milestone audit
-Last activity: 2026-05-14 — Phase 33 release gate passed across backend, frontend, hygiene, and smoke checks
+Status: Awaiting next milestone
+Last activity: 2026-05-14 — Milestone v1.4 completed and archived
 
 ## Performance Metrics
 
@@ -120,17 +121,18 @@ Recent decisions affecting current work:
 - [Phase 31]: Runtime status now writes auditable report transcripts, deploy writes static frontend `version.json`, admin runtime status exposes backend/frontend build metadata, and the v1.4 production runbook defines the release/manual gate.
 - [Phase 32]: Repository hygiene gate now distinguishes documented unstaged local-only dirt from release-blocking source changes, runs credential scanning, and prevents frontend build-cache `.gitignore` pack churn.
 - [Phase 33]: One-command release gate now runs repo hygiene, focused backend regression groups, frontend hook-warning build gate, smoke evidence, and JSON/Markdown artifact summary.
+- [Milestone v1.4]: Audit found 22/22 requirements satisfied, 5/5 phases verified, no critical gaps, and non-blocking operational tech debt only.
 
 ### Pending Todos
 
-- Audit or complete v1.4 milestone.
+- Define the next milestone.
 
 ### Blockers/Concerns
 
-- No active v1.3 blocker identified.
+- No active milestone blocker identified.
 - UI quality note: React build passes; Phase 29 reduced `react-hooks/exhaustive-deps` warnings to 0 and added `frontend` visual smoke coverage.
 - Repository hygiene note: `.env`, `.emergent`, and generated integration/runtime folders are documented/ignored going forward. Pre-existing tracked deletions/edits remain local and intentionally uncommitted.
-- Milestone audit note: v1.2 closed with `tech_debt` status only; no product requirement or integration blocker.
+- Milestone audit note: v1.4, v1.3, and v1.2 closed with `tech_debt` status only; no product requirement or integration blocker.
 - Phase 22 operational note: full `runtime_status.sh` should be run on the production VPS after deployment because local verification cannot exercise real nginx/systemd state.
 
 ## Deferred Items
@@ -151,10 +153,10 @@ Items acknowledged at v1.2 milestone close.
 
 ## Session Continuity
 
-Last session: 2026-05-14T13:07:42+07:00
-Stopped at: Phase 33 complete; v1.4 ready for milestone audit
+Last session: 2026-05-14T14:28:28+07:00
+Stopped at: Milestone v1.4 complete; next milestone not yet defined
 Resume file: .planning/ROADMAP.md
 
 ## Operator Next Steps
 
-- Run `$gsd-audit-milestone`, then `$gsd-complete-milestone` if accepted.
+- Start the next milestone with `$gsd-new-milestone`.

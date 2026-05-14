@@ -10,7 +10,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 PLANNING = ROOT / ".planning"
 
-EXPECTED_V13_PHASES = [f"{phase:02d}" for phase in range(1, 29)]
+EXPECTED_PHASE_ARCHIVES = {
+    "v1.3": [f"{phase:02d}" for phase in range(1, 29)],
+    "v1.4": [str(phase) for phase in range(29, 34)],
+}
 ACTIVE_PHASE_RANGE = range(29, 34)
 REQUIRED_TEMPLATES = [
     PLANNING / "templates" / "PHASE-SUMMARY-TEMPLATE.md",
@@ -48,19 +51,22 @@ def check_validation_metadata(errors: list[str]) -> None:
 
 
 def check_archive_index(errors: list[str]) -> None:
-    index = PLANNING / "milestones" / "v1.3-phases" / "INDEX.md"
-    if not index.exists():
-        errors.append(f"{rel(index)} missing")
-        return
-
-    text = read(index)
-    for phase in EXPECTED_V13_PHASES:
-        if f"| {phase} |" not in text:
-            errors.append(f"{rel(index)} missing phase {phase}")
-
     milestones = PLANNING / "MILESTONES.md"
-    if milestones.exists() and "v1.3-phases/INDEX.md" not in read(milestones):
-        errors.append(f"{rel(milestones)} does not link v1.3 phase archive index")
+    milestones_text = read(milestones) if milestones.exists() else ""
+
+    for version, phases in EXPECTED_PHASE_ARCHIVES.items():
+        index = PLANNING / "milestones" / f"{version}-phases" / "INDEX.md"
+        if not index.exists():
+            errors.append(f"{rel(index)} missing")
+            continue
+
+        text = read(index)
+        for phase in phases:
+            if f"| {phase} |" not in text:
+                errors.append(f"{rel(index)} missing phase {phase}")
+
+        if milestones_text and f"{version}-phases/INDEX.md" not in milestones_text:
+            errors.append(f"{rel(milestones)} does not link {version} phase archive index")
 
 
 def check_active_phase_workspace(errors: list[str]) -> None:
@@ -94,7 +100,8 @@ def check_templates(errors: list[str]) -> None:
 def check_current_state(errors: list[str]) -> None:
     state = read(PLANNING / "STATE.md")
     roadmap = read(PLANNING / "ROADMAP.md")
-    requirements = read(PLANNING / "REQUIREMENTS.md")
+    requirements_path = PLANNING / "REQUIREMENTS.md"
+    requirements = read(requirements_path) if requirements_path.exists() else ""
 
     stale_patterns = [
         "$gsd-execute-phase 29",
@@ -107,8 +114,19 @@ def check_current_state(errors: list[str]) -> None:
         if pattern in state or pattern in roadmap:
             errors.append(f"current planning state still contains stale text: {pattern}")
 
-    if "| META4-01..04 | Phase 30 | Complete |" not in requirements:
+    awaiting_next = "awaiting_next_milestone" in state or "$gsd-new-milestone" in state + roadmap
+
+    if requirements and "| META4-01..04 | Phase 30 | Complete |" not in requirements:
         errors.append("REQUIREMENTS.md does not mark META4-01..04 complete")
+
+    if not requirements and "v1.4-REQUIREMENTS.md" not in roadmap:
+        errors.append("current roadmap does not link archived v1.4 requirements")
+
+    if awaiting_next:
+        if "$gsd-new-milestone" not in state + roadmap:
+            errors.append("awaiting-next-milestone state does not route to $gsd-new-milestone")
+        return
+
     valid_routes = tuple(
         f"$gsd-{action}-phase {phase}"
         for phase in range(31, 34)
@@ -135,7 +153,7 @@ def main() -> int:
         return 1
 
     print("Planning hygiene check passed.")
-    print("Validated: validation metadata, v1.3 archive index, active phase workspace, templates, and current next-step state.")
+    print("Validated: validation metadata, phase archive indexes, active phase workspace, templates, and current next-step state.")
     return 0
 
 

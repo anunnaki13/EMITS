@@ -2,6 +2,52 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v1.4 — Production QA & Cleanup
+
+**Shipped:** 2026-05-14
+**Phases:** 5 | **Implementation summaries:** 5 | **Sessions:** continued Codex/GSD execution
+
+### What Was Built
+
+- React hook warning budget normalized to 0 hook warnings and enforced by `npm run build:checked`.
+- Playwright visual smoke coverage for dashboard, management report, data quality, dispute monitor, and settings runtime status across desktop/tablet.
+- GSD metadata and archive hygiene: Nyquist metadata, v1.3 phase index, closure templates, and planning health checks.
+- Production runtime evidence path with report transcripts, smoke JSON, deploy-time frontend `version.json`, backend build metadata, and admin runtime visibility.
+- Repository hygiene gate that allows only documented local-only dirt while blocking credential leaks, generated cache churn, and unexpected source changes.
+- Consolidated release gate for repo hygiene, focused backend regressions, frontend build warning budget, smoke evidence, and JSON/Markdown artifacts.
+
+### What Worked
+
+- Turning accepted v1.3 debt into concrete gates made quality work measurable instead of leaving it as checklist prose.
+- Keeping repo hygiene separate from credential scanning but invoking both in the release gate made local-only production files manageable.
+- Sequential backend regression groups avoided test-server port collisions while still giving one release command.
+
+### What Was Inefficient
+
+- The milestone completion CLI generated a base archive but still needed manual cleanup for accomplishments, project wording, phase archive index, and roadmap shape.
+- Release artifacts are intentionally ignored, so operators need a non-git evidence retention habit for final release proof.
+- Real VPS runtime evidence remains a manual operator gate when this development session cannot safely run production host commands.
+
+### Patterns Established
+
+- Release gates should write machine-readable JSON plus a compact Markdown summary.
+- Local-only runtime dirt can be tolerated only if the gate distinguishes it from release-blocking source changes.
+- Visual smoke is most useful when it checks actual operator surfaces and fails on blank panels, horizontal overflow, and text collision.
+
+### Key Lessons
+
+1. A one-command release gate becomes practical only after focused test groups, frontend warning budgets, and smoke evidence already exist as independent pieces.
+2. Planning hygiene matters because stale active phase directories confuse progress tools after several fast milestone cycles.
+3. Operator-owned production evidence should be explicit manual gate debt, not silently treated as passed from a development workstation.
+
+### Cost Observations
+
+- Model mix: not tracked precisely.
+- Sessions: multiple continuation turns after Claude/GSD handoff.
+- Notable: GSD phase archives and release artifacts made it possible to close the milestone without re-discovering v1.4 context.
+
+---
+
 ## Milestone: v1.3 — Production Operations & Decision Intelligence
 
 **Shipped:** 2026-05-14
@@ -103,6 +149,7 @@
 | v1.1 | Multiple | 16 | Stabilized inherited production system and established ADR/test/doc baselines. |
 | v1.2 | Multiple | 5 | Shifted from stabilization to operational reliability, data governance, and decision support. |
 | v1.3 | Multiple | 7 | Shifted from reliability features to production operability, service boundaries, data quality, trends, and source-aware advisor workflows. |
+| v1.4 | Multiple | 5 | Converted accepted QA/release debt into visual, metadata, runtime, repository, and regression gates. |
 
 ### Cumulative Quality
 
@@ -111,6 +158,7 @@
 | v1.1 | Integration smoke 7/7 | Production stabilization scope | Audit passed. |
 | v1.2 | 13 focused tests + smoke 10/10 | 32/32 active requirements | Audit completed with non-blocking tech debt only. |
 | v1.3 | Focused backend tests per phase + frontend build | 37/37 active requirements | Audit completed with non-blocking tech debt only. |
+| v1.4 | Release gate: repo hygiene, focused backend groups, frontend build, smoke | 22/22 active requirements | Audit completed with non-blocking tech debt only. |
 
 ### Top Lessons
 
@@ -118,3 +166,4 @@
 2. Archive milestone requirements immediately after close so future planning starts from a clean requirement set.
 3. Every operationally risky data path should expose preview, traceability, and rollback evidence.
 4. Decision intelligence features need caveats, confidence, and source slices as first-class UI/API fields.
+5. Release readiness improves when warnings, visual smoke, repo hygiene, and backend regressions are enforced by one script with durable artifacts.

@@ -16,10 +16,18 @@ Every validation file must expose one of:
 
 ## Current Active Milestone
 
+No active milestone is currently defined. Start the next planning cycle with
+`$gsd-new-milestone`.
+
+## Archived v1.4 Workspace
+
 | Phase | Validation File | Metadata Status |
 |-------|-----------------|-----------------|
-| 29 | `.planning/phases/29-frontend-warning-visual-qa/29-VALIDATION.md` | `nyquist_status: passed` |
-| 30 | `.planning/phases/30-gsd-metadata-phase-archive-hygiene/30-VALIDATION.md` | `nyquist_status: planned` |
+| 29 | `.planning/milestones/v1.4-phases/29-frontend-warning-visual-qa/29-VALIDATION.md` | `nyquist_status: passed` |
+| 30 | `.planning/milestones/v1.4-phases/30-gsd-metadata-phase-archive-hygiene/30-VALIDATION.md` | `nyquist_status: passed` |
+| 31 | `.planning/milestones/v1.4-phases/31-production-runtime-evidence/31-VALIDATION.md` | `nyquist_status: passed` |
+| 32 | `.planning/milestones/v1.4-phases/32-repository-hygiene-secret-safety/32-VALIDATION.md` | `nyquist_status: passed` |
+| 33 | `.planning/milestones/v1.4-phases/33-regression-release-gate/33-VALIDATION.md` | `nyquist_status: passed` |
 
 ## Archived v1.3 Workspace
 

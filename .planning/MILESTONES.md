@@ -1,5 +1,45 @@
 # Milestones
 
+## v1.4 Production QA & Cleanup (Shipped: 2026-05-14)
+
+**Status:** shipped, audit completed with non-blocking tech debt
+**Phases:** 29-33
+**Requirements:** 22/22 active v1.4 requirements satisfied
+**Verification:** 5/5 phases have verification and validation artifacts
+**Integration:** 8/8 audit integration checks passing
+
+### Delivered
+
+- React hook warning budget normalized to 0 hook warnings and enforced by `npm run build:checked`.
+- Browser visual smoke coverage for dashboard, management report, data quality, dispute monitor, and settings runtime status on desktop/tablet.
+- Planning hygiene upgrades: Nyquist metadata, v1.3 phase archive index, templates, and `scripts/check_planning_hygiene.py`.
+- Production runtime evidence path with report transcripts, smoke JSON, build metadata, and admin runtime visibility.
+- Repository hygiene gate that allows only documented local-only dirt and blocks credential or build-cache churn regressions.
+- One-command release gate for repo hygiene, focused backend regressions, frontend build warning budget, smoke evidence, and JSON/Markdown release artifacts.
+
+### Stats
+
+- 5 phases, 5 implementation summaries
+- 22 requirements satisfied
+- v1.4 milestone audit status: `tech_debt` only; no critical requirement, integration, E2E, formal verification, or Nyquist blockers
+- Git range: `fe0c8ad` -> `v1.4`
+
+### Archives
+
+- [Roadmap archive](milestones/v1.4-ROADMAP.md)
+- [Requirements archive](milestones/v1.4-REQUIREMENTS.md)
+- [Milestone audit](milestones/v1.4-MILESTONE-AUDIT.md)
+- [Phase archive index](milestones/v1.4-phases/INDEX.md)
+
+### Deferred
+
+- Real `ops/scripts/runtime_status.sh` execution and evidence retention still happen as an operator release gate on the production VPS.
+- Release artifacts under `ops/release-artifacts/` are ignored by git and must be retained or attached to release notes by the operator.
+- Local-only tracked dirt remains documented: `.emergent/*`, `README.md`, `backend/.env`, and `frontend/.env`.
+- Future expansion candidates: GitHub Actions/CI, persisted data-quality snapshots, statistical forecasting, workflow assignment, and multi-provider LLM routing.
+
+---
+
 ## v1.3 Production Operations & Decision Intelligence (Shipped: 2026-05-14)
 
 **Status:** shipped, audit completed with non-blocking tech debt

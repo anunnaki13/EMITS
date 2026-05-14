@@ -2,12 +2,12 @@
 
 ## What This Is
 
-EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestones v1.1, v1.2, and v1.3 are shipped; v1.4 focuses on production QA, cleanup, and release confidence before larger feature expansion.
+EMITS is the in-production Fuel Management System for PLTU Tenayan: a full-stack application (FastAPI + MongoDB + React 19) used by the operations team and admins to manage coal/biomass receipts across vessel/barge/trucking/biomassa/PO Batubara/merit-order modes, monitor fuel quality, run COA reconciliation with umpire dispute workflow, generate operational reports, and run AI analyses (general, blending, boiler, contract, logistics, smart-stock, COA). The system currently runs on a single VPS with real production data. Milestones v1.1, v1.2, v1.3, and v1.4 are shipped; the next milestone is ready to define.
 
 ## Current State
 
-**Shipped version:** v1.3, completed 2026-05-14.
-**Current milestone:** v1.4 - Production QA & Cleanup.
+**Shipped version:** v1.4, completed 2026-05-14.
+**Current milestone:** None active. Next cycle starts with `$gsd-new-milestone`.
 
 v1.1 delivered production audit/onboarding, authentication stabilization, documentation/test stabilization, collection naming cleanup, OpenRouter/AI chat operational unblocks, backend refactor foundation, advanced filters, dashboard control room, alerts, formal dispute/umpire workflow, Excel import preview, audit trail v2, management reports, and contextual AI.
 
@@ -15,21 +15,23 @@ v1.2 delivered backup automation, COA import governance, production deployment h
 
 v1.3 delivered static nginx production operation, real dashboard drilldowns, backend service boundaries, data-quality monitoring, trend analytics and forecasting, AI advisor v3, and operator UI/UX polish.
 
-**Audit status:** v1.3 closed with `tech_debt` status only. See `.planning/milestones/v1.3-MILESTONE-AUDIT.md`. v1.2 also closed with `tech_debt` status only; see `.planning/milestones/v1.2-MILESTONE-AUDIT.md`.
+v1.4 delivered release-quality gates: 0 React hook warning budget, browser visual smoke coverage, GSD validation metadata and archive hygiene, runtime evidence path, repository hygiene gate, and a one-command release regression gate.
 
-## Current Milestone: v1.4 Production QA & Cleanup
+**Audit status:** v1.4, v1.3, and v1.2 closed with `tech_debt` status only; no product requirement, integration, E2E, formal verification, or Nyquist blockers. See `.planning/milestones/v1.4-MILESTONE-AUDIT.md`, `.planning/milestones/v1.3-MILESTONE-AUDIT.md`, and `.planning/milestones/v1.2-MILESTONE-AUDIT.md`.
 
-**Goal:** Turn the accepted v1.3 tech debt into concrete release-quality gates: clean frontend warning posture, repeatable visual QA, complete GSD validation metadata, real VPS runtime evidence, repository hygiene, and a consolidated regression pack.
+## Latest Milestone: v1.4 Production QA & Cleanup
 
-**Target features:**
-- React hook warning cleanup for remaining legacy page groups where safe.
-- Browser-level visual QA for dashboard, reports, data quality, and runtime/settings surfaces.
-- Nyquist/validation metadata backfill and planning health checks.
-- Production VPS runtime-status and smoke-evidence capture after static frontend deployment.
+**Goal delivered:** Turned accepted v1.3 tech debt into concrete release-quality gates: clean frontend warning posture, repeatable visual QA, complete GSD validation metadata, runtime evidence, repository hygiene, and a consolidated regression pack.
+
+**Delivered features:**
+- React hook warning cleanup with `npm run build:checked` enforcing a 0-warning register.
+- Browser-level visual QA for dashboard, management report, data quality, dispute monitor, and runtime/settings surfaces.
+- Nyquist/validation metadata backfill, v1.3 phase archive index, templates, and planning health checks.
+- Production runtime-status and smoke-evidence capture paths with backend/frontend build metadata in admin runtime UI.
 - Repository hygiene for local artifacts, build cache churn, and secret-safety guardrails.
-- One-command release regression pack for backend tests, frontend build, and smoke verification.
+- One-command release regression pack for backend tests, frontend build, smoke verification, and JSON/Markdown artifacts.
 
-## Latest Milestone: v1.3 Production Operations & Decision Intelligence
+## Previous Milestone: v1.3 Production Operations & Decision Intelligence
 
 **Goal delivered:** Move EMITS from "feature-complete enough" toward a more operable, maintainable, decision-oriented production system: static nginx deployment, real drilldowns, cleaner backend service boundaries, data quality monitoring, trend analytics, safer AI advice, and stronger operator UI polish.
 
@@ -98,14 +100,15 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 - ✓ TREND3-01..05: Multi-period trend analytics and forecasting for stock, arrivals, suppliers, COA deltas, disputes, and exports — v1.3
 - ✓ AI3-01..05: AI advisor v3 with trend/data-quality explanations, optional LLM narrative, deterministic fallback, limitations, and guardrail tests — v1.3
 - ✓ UX3-01..05: Operator UI/UX polish for dashboard/report layouts, workflow click reduction, responsive stability, states, and hook-warning cleanup — v1.3
+- ✓ QA4-01..05: Frontend hook cleanup and visual QA for key operator/admin pages — v1.4
+- ✓ META4-01..04: GSD validation metadata, phase archive hygiene, and planning health checks — v1.4
+- ✓ OPS4-01..05: Production runtime verification path with auditable evidence and manual release gate — v1.4
+- ✓ REPO4-01..04: Repository hygiene, artifact handling, build-cache churn control, and credential guardrails — v1.4
+- ✓ REG4-01..04: Consolidated regression/release gate for backend, frontend, smoke, and documentation checks — v1.4
 
 ### Active
 
-- [x] QA4-01..05: Frontend hook cleanup and visual QA for key operator/admin pages.
-- [x] META4-01..04: GSD validation metadata, phase archive hygiene, and planning health checks.
-- [x] OPS4-01..05: Production runtime verification on the real VPS with auditable evidence.
-- [x] REPO4-01..04: Repository hygiene, artifact handling, build-cache churn control, and credential guardrails.
-- [x] REG4-01..04: Consolidated regression/release gate for backend, frontend, smoke, and documentation checks.
+(None currently. Define the next active scope with `$gsd-new-milestone`.)
 
 ### Out of Scope
 
@@ -136,7 +139,7 @@ Live data inventory (snapshot at planning time):
 | ai_chat_history      | 10      | (legacy of: ai_conversations)          |
 | users                | 7       | admin/operator/viewer mix              |
 
-Operational situation: v1.3 is shipped and archived. The combined COA workbook update has been imported locally and pushed as code/docs support. The system now has safer backup, import governance, deployment, dashboard, reporting, data-quality, trend, forecast, and source-aware AI-advisor surfaces. v1.4 is scoped to closing accepted audit debt and making the next production release easier to verify.
+Operational situation: v1.4 is shipped and archived. The combined COA workbook update has been imported locally and pushed as code/docs support. The system now has safer backup, import governance, deployment, dashboard, reporting, data-quality, trend, forecast, source-aware AI-advisor surfaces, visual QA, planning hygiene, repository hygiene, runtime evidence, and a consolidated release gate. The next milestone should be defined from current operator priorities.
 
 Test credentials: present in upstream PRD but explicitly NOT committed. See local `memory/test_credentials.md` (gitignored).
 
@@ -171,10 +174,11 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 | Close v1.2 with accepted non-blocking tech debt | Audit found no product or integration blockers; metadata backfill, hook warning register, nginx frontend cutover, and optional LLM polish can be handled later | ✓ Applied (v1.2 archive, 2026-05-13) |
 | v1.3 prioritizes operations plus decision intelligence | The app already has core modules; the next leverage is making production status, drilldowns, data quality, trends, and AI advice more actionable and maintainable | ✓ Applied (v1.3 archive, 2026-05-14) |
 | Close v1.3 with accepted non-blocking tech debt | Audit found no requirement, integration, or E2E blockers; remaining hook warnings, Nyquist metadata, visual automation, VPS runtime check, deterministic forecasts, and optional LLM polish are backlog items | ✓ Applied (v1.3 archive, 2026-05-14) |
-| v1.4 prioritizes QA before feature expansion | v1.3 added substantial operations/intelligence surfaces; hardening warning posture, visual QA, runtime evidence, and regression gates reduces production risk before larger scope | — Pending (v1.4 roadmap) |
+| v1.4 prioritizes QA before feature expansion | v1.3 added substantial operations/intelligence surfaces; hardening warning posture, visual QA, runtime evidence, and regression gates reduces production risk before larger scope | ✓ Applied (v1.4 archive, 2026-05-14) |
+| Close v1.4 with accepted non-blocking tech debt | Audit found no requirement, integration, E2E, formal verification, or Nyquist blockers; VPS runtime execution, release artifact retention, and local-only tracked dirt are operational follow-ups | ✓ Applied (v1.4 archive, 2026-05-14) |
 
 ---
-*Last updated: 2026-05-14 after v1.4 milestone start.*
+*Last updated: 2026-05-14 after v1.4 milestone completion.*
 
 
 ## ADR Cross-Links (Phase-3 lock-in)
