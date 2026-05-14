@@ -12,6 +12,7 @@ from services.query_filters import (
     merge_match,
     mode_match,
     normalize_mode,
+    period_any_match,
     period_match,
     risk_status,
     source_enabled,
@@ -70,20 +71,20 @@ async def build_dashboard_operational(
     ).sort("time_arrival", 1).limit(8).to_list(8)
 
     realized_sources = [
-        ("vessel", db.vessels, "time_arrival", "ds_mt"),
-        ("barge", db.barges, "ta", "ds_mt"),
-        ("trucking", db.trucking, "ta", "ds_mt"),
-        ("biomassa", db.biomassa, "time_arrival", "jembatan_timbang_mt"),
+        ("vessel", db.vessels, ["time_arrival", "completed_unloading"], "ds_mt"),
+        ("barge", db.barges, ["ta", "completed_unloading", "time_arrival"], "ds_mt"),
+        ("trucking", db.trucking, ["ta", "completed_unloading", "time_arrival"], "ds_mt"),
+        ("biomassa", db.biomassa, ["ta", "completed_unloading", "time_arrival"], "jembatan_timbang_mt"),
     ]
     realized_by_mode = []
     realized_count = 0
     realized_tonnage = 0.0
     realized_records_by_supplier = {}
-    for source_mode, collection, date_field, tonnage_field in realized_sources:
+    for source_mode, collection, date_fields, tonnage_field in realized_sources:
         if not source_enabled(selected_mode, source_mode):
             continue
         match = merge_match(
-            period_match(date_field, selected_period),
+            period_any_match(date_fields, selected_period),
             supplier_match("suppliers", selected_supplier),
         )
         count = await collection.count_documents(match)
@@ -237,8 +238,8 @@ async def build_dashboard_operational(
     supplier_values = set()
     supplier_values.update(await distinct_strings(db.po_batubara, "supplier_name", po_period_match))
     supplier_values.update(await distinct_strings(db.coa_reconciliation, "suppliers", period_match("completed_unloading", selected_period)))
-    for _source_mode, collection, date_field, _tonnage_field in realized_sources:
-        supplier_values.update(await distinct_strings(collection, "suppliers", period_match(date_field, selected_period)))
+    for _source_mode, collection, date_fields, _tonnage_field in realized_sources:
+        supplier_values.update(await distinct_strings(collection, "suppliers", period_any_match(date_fields, selected_period)))
     if selected_supplier != "all":
         supplier_values.add(selected_supplier)
     available_suppliers = [{"value": "all", "label": "Semua Supplier"}] + [
@@ -342,13 +343,31 @@ async def build_dashboard_stats(user: Optional[dict] = None):
     avg_gcv = vessel_gcv[0]["avg"] if vessel_gcv else 0
     
     # Recent shipments
-    recent_vessels = await db.vessels.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
-    recent_barges = await db.barges.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    recent_vessels = await db.vessels.find({}, {"_id": 0}).sort([
+        ("time_arrival", -1),
+        ("completed_unloading", -1),
+        ("created_at", -1),
+    ]).limit(5).to_list(5)
+    recent_barges = await db.barges.find({}, {"_id": 0}).sort([
+        ("ta", -1),
+        ("completed_unloading", -1),
+        ("created_at", -1),
+    ]).limit(5).to_list(5)
     recent_shipments = []
     for v in recent_vessels:
-        recent_shipments.append({"type": "vessel", "name": v.get("name_of_vessel", ""), "code": v.get("shipment_code", ""), "date": v.get("created_at", "")})
+        recent_shipments.append({
+            "type": "vessel",
+            "name": v.get("name_of_vessel", ""),
+            "code": v.get("shipment_code", ""),
+            "date": v.get("time_arrival") or v.get("completed_unloading") or v.get("created_at", ""),
+        })
     for b in recent_barges:
-        recent_shipments.append({"type": "barge", "name": b.get("name_of_barge", ""), "code": b.get("shipment_code", ""), "date": b.get("created_at", "")})
+        recent_shipments.append({
+            "type": "barge",
+            "name": b.get("name_of_barge", ""),
+            "code": b.get("shipment_code", ""),
+            "date": b.get("ta") or b.get("completed_unloading") or b.get("created_at", ""),
+        })
     recent_shipments = sorted(recent_shipments, key=lambda x: x.get("date", ""), reverse=True)[:5]
     
     # Monthly trend (simplified)

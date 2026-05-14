@@ -97,6 +97,15 @@ def test_dashboard_operational_period_filters_seeded_data(base_url, admin_header
             "created_at": now,
             "_marker": marker,
         })
+        db.biomassa.insert_one({
+            "id": f"{marker}-biomassa",
+            "shipment_code": "DASH-BIOMASSA-01",
+            "suppliers": "PT DASHBOARD TEST",
+            "ta": "2026-05-14 08:00",
+            "jembatan_timbang_mt": 50.0,
+            "created_at": now,
+            "_marker": marker,
+        })
         db.coa_reconciliation.insert_one({
             "id": f"{marker}-coa",
             "shipment": "DASH-COA-01",
@@ -128,6 +137,7 @@ def test_dashboard_operational_period_filters_seeded_data(base_url, admin_header
         assert body["arrivals"]["tonnage_fulfillment_rate"] is not None
         assert body["arrivals"]["at_risk_count"] >= 0
         assert any(item["mode"] == "vessel" for item in body["arrivals"]["realized_by_mode"])
+        assert any(item["mode"] == "biomassa" and item["count"] >= 1 for item in body["arrivals"]["realized_by_mode"])
         assert body["disputes"]["critical_count"] >= 1
         assert body["disputes"]["umpire"]["in_progress"] >= 1
         assert any(item["shipment"] == "DASH-COA-01" for item in body["disputes"]["recent"])
@@ -161,6 +171,6 @@ def test_dashboard_operational_period_filters_seeded_data(base_url, admin_header
         assert supplier_risk["active_disputes"] >= 1
         assert supplier_risk["risk_level"] in {"low", "medium", "high"}
     finally:
-        for collection in [db.smartstock, db.sumberpemakaian, db.po_batubara, db.vessels, db.coa_reconciliation]:
+        for collection in [db.smartstock, db.sumberpemakaian, db.po_batubara, db.vessels, db.biomassa, db.coa_reconciliation]:
             collection.delete_many({"_marker": marker})
         client.close()

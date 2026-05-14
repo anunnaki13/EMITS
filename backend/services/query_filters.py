@@ -26,6 +26,16 @@ def period_match(field: str, period: Optional[str]) -> dict:
     return {field: {"$gte": start, "$lt": end}}
 
 
+def period_any_match(fields: list[str], period: Optional[str]) -> dict:
+    matches = [period_match(field, period) for field in fields]
+    matches = [match for match in matches if match]
+    if not matches:
+        return {}
+    if len(matches) == 1:
+        return matches[0]
+    return {"$or": matches}
+
+
 def date_match(field: str, period: Optional[str], date_from: Optional[str], date_to: Optional[str]) -> dict:
     if date_from or date_to:
         condition = {}

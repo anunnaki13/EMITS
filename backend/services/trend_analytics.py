@@ -19,7 +19,7 @@ REALIZED_SOURCES = [
     ("vessel", db.vessels, ["completed_unloading", "time_arrival"], "suppliers", "ds_mt"),
     ("barge", db.barges, ["completed_unloading", "ta", "time_arrival"], "suppliers", "ds_mt"),
     ("trucking", db.trucking, ["completed_unloading", "ta", "time_arrival"], "suppliers", "ds_mt"),
-    ("biomassa", db.biomassa, ["completed_unloading", "time_arrival"], "suppliers", "jembatan_timbang_mt"),
+    ("biomassa", db.biomassa, ["completed_unloading", "ta", "time_arrival"], "suppliers", "jembatan_timbang_mt"),
 ]
 
 FORECAST_HORIZONS = [7, 14, 30]
@@ -84,6 +84,7 @@ async def _latest_date_from_sources() -> Optional[date]:
         (db.trucking, "completed_unloading"),
         (db.trucking, "ta"),
         (db.biomassa, "completed_unloading"),
+        (db.biomassa, "ta"),
         (db.biomassa, "time_arrival"),
         (db.coa_reconciliation, "completed_unloading"),
     ]
@@ -801,4 +802,3 @@ async def build_management_trends(
         date_from=date_from,
         date_to=date_to,
     )
-
