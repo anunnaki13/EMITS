@@ -780,8 +780,8 @@ const SettingsPage = () => {
           <div>
             <h3 className="text-white font-medium">Pengaturan AI Intelligence</h3>
             <p className="text-slate-500 text-sm">
-              {aiSettings.using_default 
-                ? "Menggunakan Emergent LLM Key (default)" 
+              {aiSettings.using_default
+                ? "Menggunakan OpenRouter API Key default"
                 : "Menggunakan API Key custom"
               }
             </p>
@@ -799,12 +799,12 @@ const SettingsPage = () => {
                 type="password"
                 value={aiSettings.custom_api_key}
                 onChange={(e) => setAiSettings({...aiSettings, custom_api_key: e.target.value})}
-                placeholder="Kosongkan untuk menggunakan Emergent Key"
+                placeholder="Kosongkan untuk menggunakan key default"
                 className="bg-slate-900/50 border-slate-700 text-white"
                 data-testid="ai-api-key-input"
               />
               <p className="text-xs text-slate-500">
-                Jika kosong, sistem akan menggunakan Emergent LLM Key secara otomatis
+                Jika kosong, sistem akan menggunakan OpenRouter API Key default secara otomatis
               </p>
             </div>
             

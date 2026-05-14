@@ -12,4 +12,4 @@
 - Tidak disertakan:
   - `frontend/.env` asli
   - folder download publik lama agar paket tidak recursive
-  - folder `.emergent`
+  - legacy generated development metadata folders

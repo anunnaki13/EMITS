@@ -17,7 +17,7 @@ router = APIRouter(tags=["AI Intelligence"])
 logger = logging.getLogger(__name__)
 
 # ==================== AI INTELLIGENCE AGENT ====================
-# (emergentintegrations removed Phase 6 D-02; now uses OpenRouterClient via get_ai_client())
+# Uses OpenRouterClient via get_ai_client().
 
 # AI Chat History Collection
 ai_chat_collection = db.ai_chat_history

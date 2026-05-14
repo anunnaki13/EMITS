@@ -1,4 +1,4 @@
-"""OpenRouter LLM client. Replaces emergent_wrapper (Phase 6, D-02).
+"""OpenRouter LLM client.
 
 Implements the AIClient Protocol defined in app/ai/client.py.
 Retry-with-backoff (3 attempts, 1s/2s/4s) for 5xx + 429.

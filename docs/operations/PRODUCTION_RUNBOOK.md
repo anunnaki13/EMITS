@@ -214,9 +214,7 @@ Tracked source boundaries:
 - Application source: `backend/`, `frontend/src/`, `frontend/public/`, `ops/`, `scripts/`, `docs/`, `.planning/`
 - Runtime/generated data: not deployable source
   - `backend/.env`, `frontend/.env`
-  - `.emergent/`
   - `backend/backups/`
-  - `backend/emergentintegrations/`
   - Python/Node caches and build output
 
 Current local dirty artifacts may exist on the working host because older snapshots tracked or generated them. Do not commit secrets or runtime state. Use `.env.example` / `ops/env/*.example` for documentation, and handle tracked-file cleanup in a dedicated hygiene change only after confirming the active deployment no longer depends on those files.

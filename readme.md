@@ -81,7 +81,7 @@ Backend API (/api) - FastAPI
         v
 MongoDB
         |
-        +--> LLM Integration (Gemini via Emergent Integrations)
+        +--> LLM Integration (OpenRouter)
         +--> Export Engine (ReportLab / XLSX)
 ```
 
@@ -125,7 +125,7 @@ MongoDB
 - OpenPyXL / xlrd
 - ReportLab
 - JWT (`python-jose` / `PyJWT` + bcrypt)
-- emergentintegrations
+- httpx/OpenRouter client
 
 ### Database
 - MongoDB
@@ -183,7 +183,7 @@ Untuk dokumentasi teknis yang lebih lengkap, lihat file berikut:
 ## Catatan Teknis Saat Ini
 - `backend/server.py` masih sangat besar dan perlu dipecah ke router modular
 - Struktur pagination backend/frontend sudah lebih stabil, tetapi masih perlu standardisasi penuh
-- Smart Blending AI dapat gagal bila saldo Universal Key habis (`BudgetExceededError`)
+- Smart Blending AI dapat gagal bila kuota/provider LLM tidak tersedia
 - Verifikasi parser Excel `total penerimaan.xlsx` masih menunggu file contoh aktual
 
 ## Arah Pengembangan Berikutnya

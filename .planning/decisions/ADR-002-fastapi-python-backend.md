@@ -22,7 +22,7 @@ Locked supporting libraries (pinned in `backend/requirements.txt`):
 - **Auth:** `bcrypt==4.1.3` for password hashing, `PyJWT==2.10.1` for JWT encode/decode (also `python-jose==3.5.0` for legacy compatibility); see ADR-004.
 - **Excel ingestion:** `pandas==2.3.3`, `openpyxl==3.1.5`, `xlrd==2.0.2` for `.xls` legacy support, `python-multipart==0.0.21` for upload form handling.
 - **PDF rendering:** `reportlab==4.4.9` for COA / laporan / dashboard PDF exports.
-- **LLM integration:** `emergentintegrations==0.1.0` (with transitive `google-genai==1.59.0` and `google-generativeai==0.8.6`); see ADR-005.
+- **LLM integration:** OpenRouter via `backend/app/ai/openrouter_client.py`; see ADR-005.
 - **Validation:** `pydantic==2.12.5` for request/response models, `email-validator==2.3.0` for `EmailStr`.
 - **Cross-cutting:** `python-dotenv==1.2.1` for env loading, `httpx==0.28.1` for outbound HTTP, `aiohttp==3.13.3` for streaming.
 
@@ -42,18 +42,18 @@ The full pin list is `backend/requirements.txt` and is the single source of trut
 
 - `server.py` is monolithic today (DEBT-02 in PROJECT.md tracks the modular split). This ADR does NOT mandate the refactor; it just locks the framework underneath.
 - Python's GIL caps single-process CPU parallelism; if AI / report rendering ever becomes CPU-bound at scale, scaling is process-fan-out (uvicorn workers), not in-process threads. Not a current bottleneck.
-- Dependency set is wide (Pandas + ReportLab + emergentintegrations + Mongo + Google AI libs all in one venv); install time is non-trivial. Mitigated by pinning every version in `requirements.txt` and committing the pin file.
+- Dependency set is wide (Pandas + ReportLab + Mongo + LLM client dependencies all in one venv); install time is non-trivial. Mitigated by pinning every version in `requirements.txt` and committing the pin file.
 
 ## Alternatives Considered
 
 - **Flask** — rejected. No built-in OpenAPI generation; we rely on `/openapi.json` as the API_REFERENCE source-of-truth. Async story weaker than FastAPI's. Switching would force a hand-curated OpenAPI spec, which is exactly the doc-drift risk the ingest already flagged.
 - **Django + DRF** — rejected. ORM/admin overhead unneeded with Mongo (ADR-001); the REST routes are intentionally simple `/api/*` (ADR-006); migration tooling adds work without solving a current problem.
 - **Node.js / Express** — rejected. Would require rewriting the eight Excel-ingest pipelines and ReportLab-equivalent PDF generation in the JS ecosystem; Pandas + openpyxl + xlrd parity in JS is poor. Cost-of-rewrite far exceeds any latency benefit at current load.
-- **Go (Gin / Echo)** — rejected. Same Excel/PDF parity problem; team skill set is Python; AI integration via `emergentintegrations` is Python-only.
+- **Go (Gin / Echo)** — rejected. Same Excel/PDF parity problem; team skill set and existing service code are Python.
 
 ## References
 
-- **Source IMPLICIT line:** `.planning/PROJECT.md` "Constraints" section, IMPLICIT-002 row (line 87: "Tech stack — backend (LOCKED, implicit/inherited): FastAPI on Python 3.11+ with Motor async MongoDB driver, JWT (python-jose / PyJWT + bcrypt), Pandas/OpenPyXL/xlrd for Excel ingestion, ReportLab for PDF, emergentintegrations for LLM").
+- **Source IMPLICIT line:** `.planning/PROJECT.md` "Constraints" section, IMPLICIT-002 row for FastAPI on Python with Motor, JWT, Excel ingestion, PDF export, and OpenRouter-backed LLM integration.
 - **Code anchors (proof in effect):**
   - `pltu-tenayan-full-backup/backend/server.py:1` — `from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Query, Response, Request`
   - `pltu-tenayan-full-backup/backend/server.py:37` — `app = FastAPI(title="PLTU Tenayan Fuel Management System")`

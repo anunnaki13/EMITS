@@ -10,8 +10,6 @@ committed with real runtime values:
 
 | Path | Reason |
 |------|--------|
-| `.emergent/emergent.yml` | Legacy generated Emergent metadata. |
-| `.emergent/summary.txt` | Legacy generated Emergent metadata. |
 | `README.md` | Pre-existing tracked deletion; canonical docs live in `readme.md` and project docs. |
 | `backend/.env` | Local backend runtime secrets/config. |
 | `frontend/.env` | Local frontend runtime config. |

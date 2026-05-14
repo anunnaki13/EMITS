@@ -88,8 +88,7 @@ TODO naming the phase that will remove it. The current list:
 - ~~`backend/tests/test_coa_reconciliation.py`~~ — **CLEARED 2026-05-11** by Phase 4
   plan 04-01. Inline `"adminpassword"` literals at lines 19, 29, 47 (and additional
   class auth_token fixtures) replaced with `_require_env("TEST_ADMIN_PASSWORD")`.
-  Production-URL fallback on line 10 changed from
-  `'https://supply-chain-ai-40.preview.emergentagent.com'` to
+  Production-URL fallback on line 10 changed to local test backend
   `'http://127.0.0.1:18013'`. Exemption removed from the scanner EXCLUDE list.
   The file now passes `bash scripts/check_credentials.sh` on its own merits.
 - ~~`backend/tests/test_merit_order.py`~~ — **CLEARED 2026-05-11** by Phase 4 plan

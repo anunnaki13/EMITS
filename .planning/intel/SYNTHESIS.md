@@ -39,7 +39,7 @@ Implicit decisions surfaced from PRD/SPEC/DOC for the roadmapper to consider lif
 - IMPLICIT-002: FastAPI backend (uvicorn, monolithic `server.py`)
 - IMPLICIT-003: React 19 frontend (Tailwind + Shadcn/UI + Recharts)
 - IMPLICIT-004: JWT authentication with `admin` / `operator` / `viewer` roles
-- IMPLICIT-005: LLM provider — Google Gemini (`gemini-2.5-flash`) via emergentintegrations
+- IMPLICIT-005: LLM provider — OpenRouter (`openai/gpt-4o-mini` default)
 - IMPLICIT-006: All HTTP routes under `/api/*`
 - IMPLICIT-007: MongoDB projection `{"_id": 0}` and UUID `id` contract
 - IMPLICIT-008: Paginated list response shape `{ items, total, page, page_size, total_pages }`

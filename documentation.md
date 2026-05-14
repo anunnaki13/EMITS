@@ -94,8 +94,8 @@ Modul AI yang didukung:
 - coa reconciliation
 
 Catatan:
-- integrasi AI menggunakan `emergentintegrations`
-- model yang dipakai saat ini: Gemini `gemini-2.5-flash`
+- integrasi AI menggunakan OpenRouter melalui `backend/app/ai/openrouter_client.py`
+- model default dikontrol oleh `OPENROUTER_DEFAULT_MODEL`
 - jika key user tidak di-set, backend akan mencoba memakai `OPENROUTER_API_KEY`
 
 ### 3.6 COA Reconciliation & Dispute Monitor
@@ -149,7 +149,7 @@ Fitur admin:
 [ MongoDB ]
 
 Tambahan integrasi:
-- Emergent Integrations -> Gemini LLM
+- OpenRouter LLM
 - ReportLab / xlsx export engine
 ```
 
@@ -254,7 +254,7 @@ Konvensi penting:
 - Pandas / OpenPyXL / xlrd untuk parsing Excel
 - ReportLab untuk export PDF
 - bcrypt + JWT untuk auth
-- emergentintegrations untuk LLM
+- OpenRouter client untuk LLM
 
 ### 6.2 Struktur Folder Utama
 
@@ -512,12 +512,12 @@ Catatan operasional:
 1. User memilih/menyediakan parameter blending.
 2. Frontend memanggil endpoint recommendation.
 3. Backend menyiapkan prompt dan context data.
-4. Backend memanggil LLM melalui Emergent Integrations.
+4. Backend memanggil LLM melalui OpenRouter.
 5. Hasil rekomendasi dikembalikan ke frontend.
 
 Risiko operasional:
-- jika budget LLM habis, fitur gagal walau kode benar
-- perlu monitoring saldo Universal Key pada environment pengguna
+- jika kuota atau provider LLM tidak tersedia, fitur gagal walau kode benar
+- perlu monitoring kuota OpenRouter pada environment pengguna
 
 ### 9.5 Flow AI Intelligence dengan Memory
 1. Frontend mengirim query dan `session_id` opsional.

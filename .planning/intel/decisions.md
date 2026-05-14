@@ -42,14 +42,14 @@ These are NOT locked ADR decisions. They are derived from PRD/DOC content and sh
 - statement: JWT bearer tokens; three roles `admin`, `operator`, `viewer`; bcrypt password hashing.
 - scope: authn/authz
 
-### IMPLICIT-005: LLM provider — Google Gemini via Emergent Integrations
+### IMPLICIT-005: LLM provider — OpenRouter
 - source: pltu-tenayan-full-backup/memory/PRD.md (PRD)
 - source: pltu-tenayan-full-backup/frontend/public/docs/Smart_Blending_AI_Formula.md (SPEC)
 - source: pltu-tenayan-full-backup/documentation.md (DOC)
 - status: implicit (not locked)
-- statement: AI calls flow through `emergentintegrations`; default model `gemini-2.5-flash`. Falls back to `EMERGENT_LLM_KEY` if no per-user custom key.
+- statement: AI calls flow through `OpenRouterClient`; default model is controlled by `OPENROUTER_DEFAULT_MODEL` and defaults to `openai/gpt-4o-mini`. Falls back to `OPENROUTER_API_KEY` if no per-user custom key is configured.
 - scope: AI integration
-- known issue: requests fail with `BudgetExceededError` when key budget exhausted — not a code defect.
+- known issue: requests can fail when provider quota or selected model is unavailable — not a code defect.
 
 ### IMPLICIT-006: API path prefix `/api/*`
 - source: pltu-tenayan-full-backup/API_REFERENCE.md (SPEC)

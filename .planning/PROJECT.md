@@ -115,7 +115,7 @@ Operators and admins at PLTU Tenayan can trust the system as the single source o
 - Multi-tenant or multi-plant deployment — single-plant scope (PLTU Tenayan only).
 - Replacing MongoDB with another datastore — IMPLICIT-001 holds; migration is not on the table this round.
 - Replacing FastAPI/React stacks — incremental refactor only (IMPLICIT-002, IMPLICIT-003).
-- Switching LLM provider away from Gemini via emergentintegrations — IMPLICIT-005 holds; multi-provider abstraction deferred.
+- Switching LLM provider away from OpenRouter — current provider is locked for production; multi-provider routing is deferred.
 - Mobile app — web-first remains the policy.
 - Real-time websockets / live collaboration — not part of operational workflow.
 - Inline test credentials in committed artifacts — see local memory/test_credentials.md (NOT committed) instead.
@@ -145,14 +145,14 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 
 ## Constraints
 
-- **Tech stack — backend (LOCKED, implicit/inherited)**: FastAPI on Python 3.11+ with Motor async MongoDB driver, JWT (python-jose / PyJWT + bcrypt), Pandas/OpenPyXL/xlrd for Excel ingestion, ReportLab for PDF, emergentintegrations for LLM. Per IMPLICIT-001, IMPLICIT-002. Promote to formal ADR in Phase 3.
+- **Tech stack — backend (LOCKED, implicit/inherited)**: FastAPI on Python 3.11+ with Motor async MongoDB driver, JWT (python-jose / PyJWT + bcrypt), Pandas/OpenPyXL/xlrd for Excel ingestion, ReportLab for PDF, and OpenRouter-backed LLM integration. Per IMPLICIT-001, IMPLICIT-002.
 - **Tech stack — frontend (LOCKED, implicit/inherited)**: React 19 + React Router 7 + Tailwind + Shadcn/UI + Axios + Recharts + jsPDF + xlsx, built via Yarn. Per IMPLICIT-003. Promote to formal ADR in Phase 3.
 - **Datastore (LOCKED, implicit/inherited)**: MongoDB as primary datastore via Motor. Per IMPLICIT-001. Promote to formal ADR.
 - **Auth contract (LOCKED, implicit/inherited)**: JWT bearer; three roles `admin` / `operator` / `viewer`; bcrypt password hashing; auth header `Authorization: Bearer <JWT>`; HTTP errors 400/401/403/404/500 per SPEC. Per IMPLICIT-004 + CONS-auth-header.
 - **Routing (LOCKED, implicit/inherited)**: All HTTP routes under `/api/*`; frontend resolves base via `REACT_APP_BACKEND_URL`. Per IMPLICIT-006 + CONS-api-base.
 - **Persistence contract (LOCKED, SPEC)**: MongoDB reads MUST use projection `{"_id": 0}`; public identifier is application-level UUID `id`; datetimes serialized as ISO 8601. Per CONS-projection-id-contract + IMPLICIT-007.
 - **Pagination contract (LOCKED, SPEC)**: Paginated list endpoints MUST return `{ items, total, page, page_size, total_pages }`; default page=1, page_size=50; cap 500 (operational) / 50000 (smart-stock). Frontend MUST read `response.data.items`. Per CONS-pagination-shape + IMPLICIT-008.
-- **AI provider (LOCKED operationally, implicit/inherited)**: Google Gemini (`gemini-2.5-flash`) via `emergentintegrations`; falls back to `EMERGENT_LLM_KEY` when no per-user key. Per IMPLICIT-005. Operational dependency — not a code defect when budget exhausted.
+- **AI provider (LOCKED operationally)**: OpenRouter via `backend/app/ai/openrouter_client.py`; default model comes from `OPENROUTER_DEFAULT_MODEL` and defaults to `openai/gpt-4o-mini`; default key comes from `OPENROUTER_API_KEY`. Per ADR-005.
 - **Smart Blending math (LOCKED, SPEC)**: Linear weighted-average blend across GCV/Ash/Sulphur/TM/IM/VM/FC; constraint inequalities GCV_blend ≥ target, Ash/Sulphur/TM/IM ≤ max, VM/FC ≥ min; ±5% prediction tolerance; output JSON shape locked. Per CONS-blending-formula / -input-ranges / -constraint-validation / -ai-output / -tolerance.
 - **Hosting**: Self-hosted VPS (Linux, single host) — FastAPI + MongoDB + nginx on internal network at `103.150.197.225`. No managed cloud services in scope.
 - **Security**: Test credentials live in local `memory/test_credentials.md` only — must NEVER be committed. CORS controlled via `CORS_ORIGINS` env. JWT secret in `JWT_SECRET` env (not committed).
@@ -167,7 +167,7 @@ Test credentials: present in upstream PRD but explicitly NOT committed. See loca
 | Promote IMPLICIT-001..008 to locked ADRs | Currently zero locked ADRs; future ingest passes have no authoritative decision anchors | ✓ Applied (Phase 3 plan 03-01, 2026-05-10) |
 | Sanitize test credentials out of all committed artifacts | PRD ships test credentials inline (literal values live only in `pltu-tenayan-full-backup/memory/test_credentials.md`); committing replicates a credential leak | ✓ Applied (this PROJECT.md does not include them) |
 | Drop DOC→PRD back-reference when regenerating cross_refs | Prevents re-introducing the documented PRD↔DOC citation cycle | ✓ Applied (synthesizer guidance honored) |
-| Defer LLM provider abstraction to backlog | Single-provider Gemini-via-emergentintegrations is documented and working; multi-provider is enterprise-tier scope creep | — Pending (out of scope this round) |
+| Defer LLM provider abstraction to backlog | Single-provider OpenRouter is documented and working; multi-provider routing is enterprise-tier scope creep | — Pending (out of scope this round) |
 | Treat collection naming debt as a tracked phase, not a silent migration | SPEC explicitly flags it; silent migration risks data loss against 721-row COA + 461-row trucking | — Pending (Phase 5) |
 | Single-host VPS topology stays | Production is already there with real data; horizontal split is not justified at current load | — Pending (revisit if RAM/IO bottleneck shows up) |
 | v1.2 starts with operational reliability over new domain sprawl | EMITS is now live enough that backup, import safety, deployment repeatability, and auditability reduce more risk than adding unrelated modules | ✓ Applied (v1.2 roadmap) |
@@ -195,7 +195,7 @@ by the locked ADRs.
 | IMPLICIT-002 | [`.planning/decisions/ADR-002-fastapi-python-backend.md`](decisions/ADR-002-fastapi-python-backend.md) | FastAPI / Python 3.11+ backend stack |
 | IMPLICIT-003 | [`.planning/decisions/ADR-003-react-frontend-stack.md`](decisions/ADR-003-react-frontend-stack.md) | React 19 + Tailwind + Shadcn frontend |
 | IMPLICIT-004 | [`.planning/decisions/ADR-004-jwt-bcrypt-three-role-auth.md`](decisions/ADR-004-jwt-bcrypt-three-role-auth.md) | JWT + bcrypt + 3-role auth model |
-| IMPLICIT-005 | [`.planning/decisions/ADR-005-gemini-via-emergentintegrations.md`](decisions/ADR-005-gemini-via-emergentintegrations.md) | Gemini via emergentintegrations (v1 LLM) |
+| IMPLICIT-005 | [`.planning/decisions/ADR-005-openrouter-ai-provider.md`](decisions/ADR-005-openrouter-ai-provider.md) | OpenRouter as production AI provider |
 | IMPLICIT-006 | [`.planning/decisions/ADR-006-api-prefix-and-frontend-base-url.md`](decisions/ADR-006-api-prefix-and-frontend-base-url.md) | /api/* prefix + REACT_APP_BACKEND_URL |
 | IMPLICIT-007 | [`.planning/decisions/ADR-007-persistence-projection-uuid-iso.md`](decisions/ADR-007-persistence-projection-uuid-iso.md) | Mongo projection + UUID id + ISO 8601 |
 | IMPLICIT-008 | [`.planning/decisions/ADR-008-pagination-shape.md`](decisions/ADR-008-pagination-shape.md) | Pagination envelope `{items,total,page,page_size,total_pages}` |

@@ -22,11 +22,11 @@ source: pltu-tenayan-full-backup/memory/PRD.md
 
 Frontend: React 19, React Router 7, Tailwind CSS, Shadcn/UI, Axios, Recharts, jsPDF, xlsx.
 
-Backend: FastAPI, Motor (MongoDB async), Pandas, OpenPyXL/xlrd, ReportLab, JWT (python-jose / PyJWT + bcrypt), emergentintegrations.
+Backend: FastAPI, Motor (MongoDB async), Pandas, OpenPyXL/xlrd, ReportLab, JWT (python-jose / PyJWT + bcrypt), OpenRouter-backed LLM integration.
 
 Database: MongoDB.
 
-AI: Google Gemini via Emergent LLM Key (default model `gemini-2.5-flash`).
+AI: OpenRouter via `OPENROUTER_API_KEY` and `OPENROUTER_DEFAULT_MODEL`.
 
 ---
 
@@ -71,7 +71,8 @@ Backend:
 - `DB_NAME` — database name.
 - `JWT_SECRET` — JWT signing secret.
 - `CORS_ORIGINS` — comma-separated allowed origins.
-- `EMERGENT_LLM_KEY` — default LLM key when user has no custom key configured.
+- `OPENROUTER_API_KEY` — default LLM key when user has no custom key configured.
+- `OPENROUTER_DEFAULT_MODEL` — default LLM model.
 
 ---
 
@@ -166,7 +167,7 @@ Included:
 Excluded:
 - `frontend/.env` (original)
 - legacy public download folders (avoids recursive packaging)
-- `.emergent` folder
+- legacy generated development metadata folders
 
 ---
 
@@ -209,7 +210,7 @@ CRUD: frontend fetches paginated list (must read `response.data.items`), then cr
 
 Excel upload: frontend sends multipart/form-data → backend parses bytes → service maps complex headers to row values → persisted to MongoDB.
 
-Smart Blending AI: frontend submits parameters → backend gathers context (6-month quality, smartstock, merit_order) → builds prompt → calls Gemini via Emergent Integrations → returns JSON. Risk: budget-exhausted Universal Key causes failure even when code is correct.
+Smart Blending AI: frontend submits parameters → backend gathers context (6-month quality, smartstock, merit_order) → builds prompt → calls OpenRouter → returns JSON. Risk: provider quota or model availability can fail even when code is correct.
 
 AI Intelligence with memory: frontend sends query + optional `session_id` → backend creates session if absent → backend pulls last messages from MongoDB → builds final prompt → model responds → user/assistant messages persisted to `ai_conversations`.
 
@@ -227,7 +228,7 @@ source: pltu-tenayan-full-backup/memory/PRD.md
 - Several frontend pages still mix fetch/form/render in one file.
 - Pagination shape is not fully uniform across older domains.
 - Test coverage uneven across modules.
-- Smart Blending AI fails when Universal Key budget is exhausted (`BudgetExceededError`) — environmental, not a code bug.
+- Smart Blending AI can fail when the configured LLM provider quota or model is unavailable — environmental, not a code bug.
 - Excel parser verification with `total penerimaan.xlsx` is pending a real sample file.
 - Refactor regression risk areas: auth/role dependencies, pagination `items` shape, export endpoints, multipart upload, MongoDB serialization.
 

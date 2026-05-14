@@ -20,7 +20,7 @@
     "frontend/.env",
     "database_backup.zip",
     "LOCAL_SETUP.md",
-    ".emergent"
+    "legacy generated development metadata"
   ],
   "locked": false,
   "precedence": null,

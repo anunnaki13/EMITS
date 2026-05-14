@@ -15,7 +15,7 @@ verified_at: "2026-05-14T12:31:09+07:00"
 
 | Requirement | Result | Evidence |
 |-------------|--------|----------|
-| REPO4-01 | Complete | `docs/operations/REPO_HYGIENE.md` documents the intentional local-only allowlist for `.emergent/*`, `README.md`, `backend/.env`, and `frontend/.env`; the hygiene gate allows only unstaged worktree changes for those paths. |
+| REPO4-01 | Complete | `docs/operations/REPO_HYGIENE.md` documents the intentional local-only allowlist for `README.md`, `backend/.env`, and `frontend/.env`; the hygiene gate allows only unstaged worktree changes for those paths. |
 | REPO4-02 | Complete | `.gitignore` now ignores frontend cache directories instead of individual `default-development/*.pack` files; the hygiene gate rejects future individual pack entries. |
 | REPO4-03 | Complete | `scripts/check_repo_hygiene.py` runs `scripts/check_credentials.sh`; the credential scan passes. |
 | REPO4-04 | Complete | The hygiene gate reports `allowed_local_only` separately from `release_blocking` changes and exits non-zero when source dirt is present. |

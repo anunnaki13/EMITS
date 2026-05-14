@@ -131,7 +131,7 @@ Recent decisions affecting current work:
 
 - No active milestone blocker identified.
 - UI quality note: React build passes; Phase 29 reduced `react-hooks/exhaustive-deps` warnings to 0 and added `frontend` visual smoke coverage.
-- Repository hygiene note: `.env`, `.emergent`, and generated integration/runtime folders are documented/ignored going forward. Pre-existing tracked deletions/edits remain local and intentionally uncommitted.
+- Repository hygiene note: `.env` files and generated runtime folders are documented/ignored going forward. Pre-existing tracked env edits remain local and intentionally uncommitted.
 - Milestone audit note: v1.4, v1.3, and v1.2 closed with `tech_debt` status only; no product requirement or integration blocker.
 - Phase 22 operational note: full `runtime_status.sh` should be run on the production VPS after deployment because local verification cannot exercise real nginx/systemd state.
 

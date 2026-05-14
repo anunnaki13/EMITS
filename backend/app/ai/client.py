@@ -2,7 +2,7 @@
 
 Production code branches on AI_FAKE env var. When AI_FAKE=1, returns
 FakeAIClient (test stub, no LLM budget consumed). Otherwise returns
-OpenRouterClient (Phase 6 migration from emergentintegrations/Gemini).
+OpenRouterClient.
 
 Phase 4 AI_FAKE=1 branch preserved VERBATIM (contract must not change).
 """

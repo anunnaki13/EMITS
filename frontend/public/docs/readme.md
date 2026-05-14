@@ -79,7 +79,7 @@ Backend API (/api) - FastAPI
         v
 MongoDB
         |
-        +--> LLM Integration (Gemini via Emergent Integrations)
+        +--> LLM Integration (OpenRouter)
         +--> Export Engine (ReportLab / XLSX)
 ```
 
@@ -123,7 +123,7 @@ MongoDB
 - OpenPyXL / xlrd
 - ReportLab
 - JWT (`python-jose` / `PyJWT` + bcrypt)
-- emergentintegrations
+- httpx/OpenRouter client
 
 ### Database
 - MongoDB

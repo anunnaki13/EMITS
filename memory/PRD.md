@@ -162,10 +162,10 @@ Sistem digital untuk mengelola rekapitulasi penerimaan batubara dan biomassa di 
 
 ## Tech Stack
 - **Frontend**: React 19, Tailwind CSS, Shadcn/UI, Recharts, Lucide-React, react-markdown
-- **Backend**: FastAPI, Motor (MongoDB async), Pandas, Openpyxl, emergentintegrations
+- **Backend**: FastAPI, Motor (MongoDB async), Pandas, Openpyxl, OpenRouter client
 - **Database**: MongoDB
 - **Auth**: JWT (python-jose, bcrypt)
-- **AI**: Gemini via Emergent LLM Key
+- **AI**: OpenRouter via `OPENROUTER_API_KEY`
 
 ## Test Credentials
 - **Email**: admin@example.com

@@ -144,7 +144,8 @@ def test_no_outbound_llm_calls_observed():
     markers = [
         "generativelanguage.googleapis.com",  # Gemini host
         "openrouter.ai/api",                  # OpenRouter (future-proof)
-        # "emergentintegrations.llm.chat" — this IS imported at module load
+        # Provider SDK imports are module-load plumbing; only HTTP host markers
+        # are reliable indicators of outbound LLM calls.
         # in the wrapper even when AI_FAKE=1, since the import is lazy but
         # the wrapper file exists. Do NOT include this marker; use HTTP-call
         # markers only.
