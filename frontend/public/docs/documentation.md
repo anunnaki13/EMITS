@@ -441,8 +441,8 @@ Selain itu terdapat endpoint domain lain untuk:
 - `POST /api/smart-blending/recommend`
 
 Catatan operasional:
-- fitur ini tergantung budget/key LLM
-- kegagalan `BudgetExceededError` bukan bug logika aplikasi, tetapi issue saldo integrasi
+- fitur ini tergantung `OPENROUTER_API_KEY`, model default, dan kuota provider
+- kegagalan provider atau kuota harus ditangani sebagai dependency operasional, bukan bug logika aplikasi
 
 ### 8.6 AI Intelligence
 - `POST /api/ai/query`
@@ -516,8 +516,8 @@ Catatan operasional:
 5. Hasil rekomendasi dikembalikan ke frontend.
 
 Risiko operasional:
-- jika budget LLM habis, fitur gagal walau kode benar
-- perlu monitoring saldo Universal Key pada environment pengguna
+- jika provider atau kuota OpenRouter tidak tersedia, fitur gagal walau kode benar
+- perlu monitoring key, model, dan kuota OpenRouter pada environment pengguna
 
 ### 9.5 Flow AI Intelligence dengan Memory
 1. Frontend mengirim query dan `session_id` opsional.
@@ -627,8 +627,8 @@ Jika menambah modul baru, langkah aman:
 4. Cakupan test belum merata untuk seluruh modul.
 
 ### 12.2 Known Issues
-- Smart Blending AI bisa gagal jika saldo Universal Key habis.
-- Verifikasi parser Excel `total penerimaan.xlsx` masih menunggu file nyata dari user.
+- Tidak ada blocker produk aktif yang tercatat setelah v1.4.
+- Caveat operasional utama: fitur AI membutuhkan key/kuota OpenRouter valid, runtime evidence VPS perlu disimpan oleh operator, dan workbook baru harus tetap lewat import preview sebelum apply.
 
 ### 12.3 Risiko Refactor
 Saat memodularisasi backend, area yang paling rawan regresi:
@@ -696,7 +696,7 @@ Prioritas test:
 
 ### P0
 - Jaga stabilitas modul operasional dan COA
-- Pastikan issue budget AI dipahami user sebagai dependency eksternal
+- Pastikan dependency OpenRouter, runtime evidence VPS, dan import governance terpantau
 
 ### P1
 - Modularisasi `server.py`
@@ -709,9 +709,9 @@ Prioritas test:
 - Perbaikan observability dan log error domain
 
 ### P3
-- Backup & restore
-- Dark/light mode
-- Activity log / audit trail yang lebih lengkap
+- CI/CD atau GitHub Actions release gate
+- Persisted data-quality snapshots dan forecasting historis
+- Multi-provider LLM routing dan budget tracking per user
 
 ---
 
@@ -724,7 +724,7 @@ Aplikasi ini sudah mencakup domain operasional yang cukup luas dan bernilai ting
 ## 17. Dokumen Tambahan
 
 Dokumen pendukung developer yang tersedia di root project:
-- `README.md`
+- `readme.md`
 - `documentation.md`
 - `API_REFERENCE.md`
 - `DATABASE_SCHEMA.md`

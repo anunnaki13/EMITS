@@ -441,8 +441,8 @@ Selain itu terdapat endpoint domain lain untuk:
 - `POST /api/smart-blending/recommend`
 
 Catatan operasional:
-- fitur ini tergantung budget/key LLM
-- kegagalan `BudgetExceededError` bukan bug logika aplikasi, tetapi issue saldo integrasi
+- fitur ini tergantung `OPENROUTER_API_KEY`, model default, dan kuota provider
+- kegagalan provider atau kuota harus ditangani sebagai dependency operasional, bukan bug logika aplikasi
 
 ### 8.6 AI Intelligence
 - `POST /api/ai/query`
@@ -627,8 +627,8 @@ Jika menambah modul baru, langkah aman:
 4. Cakupan test belum merata untuk seluruh modul.
 
 ### 12.2 Known Issues
-- Smart Blending AI bisa gagal jika saldo Universal Key habis.
-- Verifikasi parser Excel `total penerimaan.xlsx` masih menunggu file nyata dari user.
+- Tidak ada blocker produk aktif yang tercatat setelah v1.4.
+- Caveat operasional utama: fitur AI membutuhkan key/kuota OpenRouter valid, runtime evidence VPS perlu disimpan oleh operator, dan workbook baru harus tetap lewat import preview sebelum apply.
 
 ### 12.3 Risiko Refactor
 Saat memodularisasi backend, area yang paling rawan regresi:
@@ -696,7 +696,7 @@ Prioritas test:
 
 ### P0
 - Jaga stabilitas modul operasional dan COA
-- Pastikan issue budget AI dipahami user sebagai dependency eksternal
+- Pastikan dependency OpenRouter, runtime evidence VPS, dan import governance terpantau
 
 ### P1
 - Modularisasi `server.py`
@@ -709,9 +709,9 @@ Prioritas test:
 - Perbaikan observability dan log error domain
 
 ### P3
-- Backup & restore
-- Dark/light mode
-- Activity log / audit trail yang lebih lengkap
+- CI/CD atau GitHub Actions release gate
+- Persisted data-quality snapshots dan forecasting historis
+- Multi-provider LLM routing dan budget tracking per user
 
 ---
 
@@ -724,7 +724,7 @@ Aplikasi ini sudah mencakup domain operasional yang cukup luas dan bernilai ting
 ## 17. Dokumen Tambahan
 
 Dokumen pendukung developer yang tersedia di root project:
-- `README.md`
+- `readme.md`
 - `documentation.md`
 - `API_REFERENCE.md`
 - `DATABASE_SCHEMA.md`
@@ -734,11 +734,11 @@ Dokumen pendukung developer yang tersedia di root project:
 
 ## Known Issues
 
-Operational state of the system as of 2026-05-10. New issues land here with
-a status badge: `**[mitigated]**` (impact contained but root cause upstream),
-`**[pending-Phase-N]**` (scheduled for closure), or `**[accepted]**` (verified
-non-impactful today). The README points here as the canonical operator-facing
-surface.
+Operational state of the system as of 2026-05-14 after v1.4. New issues land
+here with a status badge: `**[mitigated]**` (impact contained but root cause
+upstream), `**[accepted]**` (verified non-impactful today), or `**[closed]**`
+(resolved by a shipped phase). The readme points here as the canonical
+operator-facing surface.
 
 - **[mitigated]** Login: `ResizeObserver loop completed with undelivered notifications`
   console emission on the register tab. Root cause is upstream in `@radix-ui/react-select`
@@ -749,29 +749,27 @@ surface.
   evaluation): see `docs/audit/LOGIN_BUG_RESOLUTION.md`. (Cite: `docs/audit/LOGIN_BUG_RESOLUTION.md`,
   `docs/audit/AUTH_CONTRACT.md`, `.planning/decisions/ADR-004-jwt-bcrypt-three-role-auth.md`)
 
-- **[pending-Phase-6]** Smart Blending AI: Universal LLM Key budget exhausted;
-  live calls fail with `BudgetExceededError`. Code path is correct. Phase 6
-  (OPS-01, OPS-02) restores the budget and adds graceful UI error surfacing.
-  Until then, the Smart Blending UI surfaces the raw error — operators should
-  use historical recommendations from `ai_conversations` instead. (Cite:
-  `.planning/ROADMAP.md` §"Phase 6: Operational Unblocks", `.planning/REQUIREMENTS.md` OPS-01/OPS-02)
+- **[accepted]** AI provider dependency: Smart Blending and AI Intelligence now
+  use OpenRouter through `OPENROUTER_API_KEY`, with fake-client regression
+  coverage for tests. Live recommendations still depend on a valid provider
+  key, selected model, and available quota. If provider calls fail, operators
+  should check runtime settings and provider balance before treating it as an
+  application defect. (Cite: `.planning/decisions/ADR-005-openrouter-ai-provider.md`,
+  `backend/app/ai/openrouter_client.py`, `backend/tests/test_openrouter_client.py`)
 
-- **[pending-Phase-6]** Excel parser verification: the parser for
-  `total penerimaan.xlsx` has not been validated against a real production
-  sample (only synthetic fixtures). Phase 6 OPS-03 closes this with a
-  regression fixture checked into the repo. Until then, operators should
-  double-check upload results against the Excel source manually. (Cite:
-  `.planning/REQUIREMENTS.md` OPS-03)
+- **[closed]** Excel/COA data refresh: recurring combined COA workbook imports
+  are previewable and rollback-safe, and the March 2026 COA update is documented
+  in `docs/data/coa-maret-2026-import.md`. New workbook formats still require
+  preview review before apply. (Cite: `backend/scripts/import_coa_workbook.py`,
+  `backend/scripts/sync_coa_realisasi.py`, `docs/data/coa-maret-2026-import.md`)
 
-- **[pending-Phase-5]** Collection naming debt: four collection pairs
-  maintain duplicate names (`smartstock`/`smart_stock`,
-  `sumber_pemakaian`/`sumberpemakaian`, `app_settings`/`settings`,
-  `ai_chat_history`/`ai_conversations`). Active read targets are documented
-  in `DATABASE_SCHEMA.md`; legacy reads still occur in some code paths.
-  Phase 5 (DEBT-01..05) picks canonical winners, migrates live data,
-  and removes legacy reads. (Cite: `DATABASE_SCHEMA.md`,
-  `.planning/intel/constraints.md` → CONS-collection-naming-debt,
-  `.planning/ROADMAP.md` §"Phase 5: Collection Naming Debt Resolution")
+- **[closed]** Collection naming debt: canonical collection decisions are locked
+  in ADR-009..ADR-012, code reads were migrated, and regression coverage blocks
+  reintroducing legacy reads. (Cite: `.planning/decisions/ADR-009-canonical-smartstock.md`,
+  `.planning/decisions/ADR-010-canonical-sumberpemakaian.md`,
+  `.planning/decisions/ADR-011-canonical-app-settings.md`,
+  `.planning/decisions/ADR-012-canonical-ai-chat-history.md`,
+  `backend/tests/test_clean_checkout_gate.py`)
 
 - **[accepted]** Audit-probe synthetic users: 3 `audit-probe-*@audit-probes-2026.com`
   users were inserted into the live `users` collection during Phase-1 plan
@@ -783,7 +781,7 @@ surface.
 
 ### Adding a new entry
 
-1. Pick the status badge (`mitigated`, `pending-Phase-N`, or `accepted`).
+1. Pick the status badge (`mitigated`, `accepted`, or `closed`).
 2. One paragraph: what the user observes, what the root cause is, what the
    mitigation or schedule is.
 3. Cite at least one source file (relative path from repo root).

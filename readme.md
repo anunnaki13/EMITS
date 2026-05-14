@@ -6,7 +6,7 @@ Aplikasi full-stack untuk manajemen penerimaan bahan bakar, pemantauan kualitas 
 
 Sistem ini dibangun untuk membantu tim operasional, admin, dan developer mengelola data penerimaan batubara/biomassa dari berbagai jalur logistik, memonitor kualitas bahan bakar, menghasilkan laporan, serta menjalankan analisis berbasis AI untuk stok, blending, kontrak, boiler, dan dispute quality control.
 
-> **Status terkini:** lihat [Known Issues](documentation.md#known-issues) untuk login-bug status, Smart Blending AI budget, dan parser Excel verification status.
+> **Status terkini:** v1.4 sudah shipped. Lihat [Known Issues](documentation.md#known-issues) untuk caveat operasional yang masih perlu dipantau.
 
 ## Fitur Utama
 
@@ -102,7 +102,7 @@ MongoDB
 │       ├── contexts/            # AuthContext
 │       └── pages/               # Seluruh halaman aplikasi
 ├── memory/                      # PRD, kredensial testing, catatan internal
-├── README.md
+├── readme.md
 └── documentation.md
 ```
 
@@ -183,11 +183,11 @@ Untuk dokumentasi teknis yang lebih lengkap, lihat file berikut:
 ## Catatan Teknis Saat Ini
 - `backend/server.py` masih sangat besar dan perlu dipecah ke router modular
 - Struktur pagination backend/frontend sudah lebih stabil, tetapi masih perlu standardisasi penuh
-- Smart Blending AI dapat gagal bila kuota/provider LLM tidak tersedia
-- Verifikasi parser Excel `total penerimaan.xlsx` masih menunggu file contoh aktual
+- Fitur AI bergantung pada `OPENROUTER_API_KEY`, model, dan kuota provider yang aktif
+- Import COA 2026 sudah terdokumentasi di `docs/data/coa-maret-2026-import.md`; workbook baru tetap perlu lewat preview/import governance
 
 ## Arah Pengembangan Berikutnya
 - Modularisasi route FastAPI secara bertahap
 - Reusable component untuk halaman data frontend
-- Backup & restore data
-- Toggle dark/light mode
+- CI/CD atau release gate otomatis
+- Persisted data-quality snapshots dan forecasting historis

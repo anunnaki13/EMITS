@@ -100,7 +100,7 @@ MongoDB
 │       ├── contexts/            # AuthContext
 │       └── pages/               # Seluruh halaman aplikasi
 ├── memory/                      # PRD, kredensial testing, catatan internal
-├── README.md
+├── readme.md
 └── documentation.md
 ```
 
@@ -177,8 +177,8 @@ Untuk dokumentasi teknis yang lebih lengkap, lihat file berikut:
 ## Catatan Teknis Saat Ini
 - `backend/server.py` masih sangat besar dan perlu dipecah ke router modular
 - Struktur pagination backend/frontend sudah lebih stabil, tetapi masih perlu standardisasi penuh
-- Smart Blending AI dapat gagal bila saldo Universal Key habis (`BudgetExceededError`)
-- Verifikasi parser Excel `total penerimaan.xlsx` masih menunggu file contoh aktual
+- Fitur AI bergantung pada `OPENROUTER_API_KEY`, model, dan kuota provider yang aktif
+- Import COA 2026 sudah terdokumentasi di `docs/data/coa-maret-2026-import.md`; workbook baru tetap perlu lewat preview/import governance
 
 ## Arah Pengembangan Berikutnya
 - Modularisasi route FastAPI secara bertahap
