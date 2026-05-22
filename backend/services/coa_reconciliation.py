@@ -207,6 +207,8 @@ COA_UMPIRE_FIELDS = [
     "umpire_parameters",
 ]
 
+DEFAULT_COA_FINANCIAL_DATE_FROM = "2025-01-01"
+
 
 def normalize_coa_shipment(val: Any) -> str:
     return _shipment_key(safe_shipment(val))
@@ -974,11 +976,45 @@ def _coa_reference_gcv(record: Dict) -> Optional[float]:
     return None
 
 
+def _record_unloading_date(record: Dict) -> Optional[date]:
+    return _parse_date_value(record.get("completed_unloading") or record.get("periode"))
+
+
+def _filter_records_by_financial_period(
+    records: List[Dict],
+    date_from: Optional[Any] = None,
+    date_to: Optional[Any] = None,
+) -> Tuple[List[Dict], Optional[date], Optional[date], Optional[date]]:
+    start_date = _parse_date_value(date_from) if date_from else None
+    end_date = _parse_date_value(date_to) if date_to else None
+    if not start_date and not end_date:
+        dated_records = [(record, _record_unloading_date(record)) for record in records]
+        latest_date = max((record_date for _, record_date in dated_records if record_date), default=None)
+        return records, None, None, latest_date
+
+    filtered: List[Dict] = []
+    latest_date = None
+    for record in records:
+        record_date = _record_unloading_date(record)
+        if not record_date:
+            continue
+        if start_date and record_date < start_date:
+            continue
+        if end_date and record_date > end_date:
+            continue
+        filtered.append(record)
+        latest_date = max(latest_date, record_date) if latest_date else record_date
+
+    return filtered, start_date, end_date, latest_date
+
+
 def calculate_coa_financials(
     merged_data: List[Dict],
     po_records: Optional[List[Dict]] = None,
     price_index: Optional[Dict] = None,
     legacy_price_per_kcal_per_ton: Optional[float] = None,
+    date_from: Optional[Any] = None,
+    date_to: Optional[Any] = None,
 ) -> Dict:
     """
     Calculate COA financial impact.
@@ -986,6 +1022,11 @@ def calculate_coa_financials(
     Primary basis is PO Batubara: PO total value / PO tonnage gives Rp/MT,
     then Rp/MT is divided by the COA loading GCV to estimate Rp per kCal-MT.
     """
+    financial_data, start_date, end_date, latest_date = _filter_records_by_financial_period(
+        merged_data,
+        date_from=date_from,
+        date_to=date_to,
+    )
     price_index = price_index or build_po_price_index(po_records)
     problem_count = 0
     priced_count = 0
@@ -1001,7 +1042,7 @@ def calculate_coa_financials(
     source_counts: Dict[str, int] = defaultdict(int)
     unit_prices: List[float] = []
 
-    for record in merged_data:
+    for record in financial_data:
         delta = safe_float(record.get("delta_loading_internal"))
         ds_mt = safe_float(record.get("ds_mt")) or 0
         reference_gcv = _coa_reference_gcv(record)
@@ -1063,6 +1104,9 @@ def calculate_coa_financials(
         "umpire_savings_rows": umpire_savings_rows,
         "umpire_savings_priced_count": umpire_savings_priced_count,
         "umpire_savings_unpriced_count": umpire_savings_unpriced_count,
+        "potential_loss_period_start": start_date.isoformat() if start_date else None,
+        "potential_loss_period_end": (end_date or latest_date).isoformat() if (end_date or latest_date) else None,
+        "potential_loss_period_record_count": len(financial_data),
     }
 
 
@@ -1070,6 +1114,8 @@ def calculate_kpis(
     merged_data: List[Dict],
     price_per_kcal_per_ton: float = None,
     po_records: Optional[List[Dict]] = None,
+    financial_date_from: Optional[Any] = None,
+    financial_date_to: Optional[Any] = None,
 ) -> Dict:
     """
     Calculate KPI metrics for the anomaly dashboard
@@ -1078,6 +1124,8 @@ def calculate_kpis(
         merged_data: List of reconciliation records
         price_per_kcal_per_ton: Legacy fallback price per kCal per ton.
         po_records: PO Batubara records used as the primary pricing basis.
+        financial_date_from: Optional start date for rupiah impact metrics.
+        financial_date_to: Optional end date for rupiah impact metrics.
     """
     total_records = len(merged_data)
     
@@ -1093,6 +1141,8 @@ def calculate_kpis(
         merged_data,
         po_records=po_records,
         legacy_price_per_kcal_per_ton=price_per_kcal_per_ton if use_legacy_price else None,
+        date_from=financial_date_from,
+        date_to=financial_date_to,
     )
     
     # Umpire status counts

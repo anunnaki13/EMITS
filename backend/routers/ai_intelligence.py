@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app.ai.client import AIClient, get_ai_client
-from services.coa_reconciliation import calculate_kpis
+from services.coa_reconciliation import DEFAULT_COA_FINANCIAL_DATE_FROM, calculate_kpis
 from services.operational_advisor import build_operational_advisor
 from services.query_filters import period_match, sum_collection
 from utils.auth import get_current_user
@@ -129,7 +129,8 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
             {"_id": 0, "shipment": 1, "status": 1, "umpire_status": 1, "delta_loading_internal": 1, "ds_mt": 1, "suppliers": 1, "completed_unloading": 1, "loading_gcv_arb": 1, "unloading_gcv_arb": 1, "internal_gcv_arb": 1, "umpire_gcv_arb": 1},
         ).to_list(5000)
         po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
-        coa_kpis = calculate_kpis(all_coa, po_records=po_records)
+        financial_date_from = DEFAULT_COA_FINANCIAL_DATE_FROM if period == "all" else None
+        coa_kpis = calculate_kpis(all_coa, po_records=po_records, financial_date_from=financial_date_from)
         supplier_delta = {}
         for item in all_coa:
             supplier = item.get("suppliers") or "Unknown"
@@ -329,7 +330,11 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
             kritis_count = sum(1 for c in all_coa if str(c.get("status", "")).lower() in {"critical", "kritis"})
             umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
             po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
-            coa_kpis = calculate_kpis(all_coa, po_records=po_records)
+            coa_kpis = calculate_kpis(
+                all_coa,
+                po_records=po_records,
+                financial_date_from=DEFAULT_COA_FINANCIAL_DATE_FROM,
+            )
 
             context_parts.append(
                 f"COA KPIs: Total Records={len(all_coa)}, Status Kritis={kritis_count}, "
@@ -833,7 +838,11 @@ async def get_coa_alerts(user: dict = Depends(get_current_user)):
     umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
 
     po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
-    coa_kpis = calculate_kpis(all_coa, po_records=po_records)
+    coa_kpis = calculate_kpis(
+        all_coa,
+        po_records=po_records,
+        financial_date_from=DEFAULT_COA_FINANCIAL_DATE_FROM,
+    )
 
     supplier_deviasi = {}
     

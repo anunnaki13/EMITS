@@ -626,6 +626,22 @@ const COAReconciliationPage = () => {
     return parts.length ? `Basis PO: ${parts.join(" | ")}` : "Basis PO Batubara";
   };
 
+  const formatDateOnly = (value) => {
+    if (!value) return null;
+    return new Date(value).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatLossPeriod = (kpiData) => {
+    const start = formatDateOnly(kpiData?.potential_loss_period_start);
+    const end = formatDateOnly(kpiData?.potential_loss_period_end);
+    if (!start && !end) return null;
+    return `${start || "awal data"} - ${end || "terbaru"}`;
+  };
+
   const formatDateTime = (value) => {
     if (!value) return "-";
     return new Date(value).toLocaleString("id-ID", {
@@ -776,6 +792,9 @@ const COAReconciliationPage = () => {
                   <>
                     <p className="text-3xl font-bold text-amber-400 mt-1">{formatCurrency(kpis.potential_loss_rp)}</p>
                     <p className="text-[11px] text-slate-400 mt-1">Nilai penuh: {formatCurrencyFull(kpis.potential_loss_rp)}</p>
+                    {formatLossPeriod(kpis) && (
+                      <p className="text-[11px] text-slate-400 mt-1">Periode: {formatLossPeriod(kpis)}</p>
+                    )}
                     <p className="text-[11px] text-slate-500 mt-1">{formatPricingSummary(kpis)}</p>
                     <p className="text-xs text-slate-500 mt-1">{formatNumber(kpis.total_tonnage_problem)} MT bermasalah</p>
                   </>

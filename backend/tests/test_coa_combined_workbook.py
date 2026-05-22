@@ -105,6 +105,58 @@ def test_calculate_kpis_uses_po_purchase_price_instead_of_manual_coa_price():
     assert kpis["potential_loss_unpriced_count"] == 0
 
 
+def test_calculate_kpis_can_limit_financial_period_from_2025():
+    records = [
+        {
+            "shipment": "LOT 2024",
+            "suppliers": "PT TDE",
+            "completed_unloading": "2024-12-20T00:00:00",
+            "loading_gcv_arb": 4000,
+            "internal_gcv_arb": 3900,
+            "delta_loading_internal": 150,
+            "ds_mt": 10,
+            "umpire_status": "none",
+            "status": "critical",
+        },
+        {
+            "shipment": "LOT 2025",
+            "suppliers": "PT TDE",
+            "completed_unloading": "2025-01-10T00:00:00",
+            "loading_gcv_arb": 4000,
+            "internal_gcv_arb": 3900,
+            "delta_loading_internal": 150,
+            "ds_mt": 10,
+            "umpire_status": "none",
+            "status": "critical",
+        },
+    ]
+    po_records = [
+        {
+            "no_shipment": "LOT 2024",
+            "supplier_name": "PT. TIGA DAYA ENERGI",
+            "time_arrival": "2024-12-18",
+            "tonase_po": 10,
+            "total": 4_000_000,
+        },
+        {
+            "no_shipment": "LOT 2025",
+            "supplier_name": "PT. TIGA DAYA ENERGI",
+            "time_arrival": "2025-01-08",
+            "tonase_po": 10,
+            "total": 4_000_000,
+        },
+    ]
+
+    kpis = calculate_kpis(records, po_records=po_records, financial_date_from="2025-01-01")
+
+    assert kpis["total_records"] == 2
+    assert kpis["high_deviation_count"] == 2
+    assert kpis["potential_loss_rp"] == 150000
+    assert kpis["potential_loss_period_start"] == "2025-01-01"
+    assert kpis["potential_loss_period_end"] == "2025-01-10"
+    assert kpis["potential_loss_period_record_count"] == 1
+
+
 def test_combined_coa_preview_reports_diff_duplicates_and_preservation():
     records = [
         {

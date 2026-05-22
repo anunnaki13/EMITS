@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 
 from services.data_quality import build_data_quality_caveat
-from services.coa_reconciliation import calculate_coa_financials
+from services.coa_reconciliation import DEFAULT_COA_FINANCIAL_DATE_FROM, calculate_coa_financials
 from services.trend_analytics import build_management_trends
 from services.query_filters import (
     abs_delta,
@@ -295,7 +295,13 @@ async def build_management_report(
     impacted_tonnage = sum(float(item.get("ds_mt") or 0) for item in coa_items if abs_delta(item) is not None)
 
     po_price_rows = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
-    coa_financials = calculate_coa_financials(coa_items, po_records=po_price_rows)
+    period_is_all = not period or period == "all"
+    default_financial_date_from = DEFAULT_COA_FINANCIAL_DATE_FROM if period_is_all and not date_from and not date_to else None
+    coa_financials = calculate_coa_financials(
+        coa_items,
+        po_records=po_price_rows,
+        date_from=default_financial_date_from,
+    )
     estimated_loss_value = coa_financials["potential_loss_rp"]
 
     supplier_performance = await _supplier_performance(period, supplier, date_from, date_to)

@@ -18,6 +18,7 @@ from models import (
     UmpireResultInput,
 )
 from services.coa_reconciliation import (
+    DEFAULT_COA_FINANCIAL_DATE_FROM,
     apply_preserved_coa_fields,
     build_combined_coa_import_preview,
     calculate_kpis,
@@ -342,9 +343,18 @@ async def get_coa_kpis(
             "potential_loss_unpriced_count": 0,
             "umpire_savings_rp": 0,
             "umpire_savings_rows": 0,
+            "potential_loss_period_start": DEFAULT_COA_FINANCIAL_DATE_FROM if not date_from and not date_to else date_from,
+            "potential_loss_period_end": date_to,
+            "potential_loss_period_record_count": 0,
         }
 
-    kpis = calculate_kpis(all_data, price_per_kcal, po_records=po_records)
+    default_financial_date_from = DEFAULT_COA_FINANCIAL_DATE_FROM if not date_from and not date_to else None
+    kpis = calculate_kpis(
+        all_data,
+        price_per_kcal,
+        po_records=po_records,
+        financial_date_from=default_financial_date_from,
+    )
     kpis["price_per_kcal_per_ton"] = price_per_kcal
     kpis["price_not_set"] = kpis.get("potential_loss_problem_count", 0) > 0 and kpis.get("potential_loss_priced_count", 0) == 0
     return kpis
@@ -999,7 +1009,11 @@ async def export_coa_to_pdf(
     umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
 
     po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
-    kpis = calculate_kpis(all_coa, po_records=po_records)
+    kpis = calculate_kpis(
+        all_coa,
+        po_records=po_records,
+        financial_date_from=DEFAULT_COA_FINANCIAL_DATE_FROM,
+    )
     potential_loss = kpis.get("potential_loss_rp", 0)
 
     output = io.BytesIO()
