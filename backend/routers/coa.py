@@ -315,6 +315,7 @@ async def get_coa_kpis(
     """Get KPIs for COA Reconciliation dashboard"""
     query = _coa_filter_query(status=status, supplier=supplier, date_from=date_from, date_to=date_to)
     all_data = await db.coa_reconciliation.find(query, {"_id": 0}).to_list(10000)
+    po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
 
     coa_settings = await db.app_settings.find_one({"type": "coa"}, {"_id": 0})
     price_per_kcal = coa_settings.get("price_per_kcal_per_ton") if coa_settings else None
@@ -333,12 +334,19 @@ async def get_coa_kpis(
             "warning_count": 0,
             "normal_count": 0,
             "price_per_kcal_per_ton": price_per_kcal,
-            "price_not_set": price_per_kcal is None
+            "price_not_set": False,
+            "potential_loss_price_basis": "po_total_per_mt_divided_by_loading_gcv",
+            "potential_loss_price_source_counts": {},
+            "potential_loss_problem_count": 0,
+            "potential_loss_priced_count": 0,
+            "potential_loss_unpriced_count": 0,
+            "umpire_savings_rp": 0,
+            "umpire_savings_rows": 0,
         }
 
-    kpis = calculate_kpis(all_data, price_per_kcal)
+    kpis = calculate_kpis(all_data, price_per_kcal, po_records=po_records)
     kpis["price_per_kcal_per_ton"] = price_per_kcal
-    kpis["price_not_set"] = price_per_kcal is None
+    kpis["price_not_set"] = kpis.get("potential_loss_problem_count", 0) > 0 and kpis.get("potential_loss_priced_count", 0) == 0
     return kpis
 
 
@@ -990,14 +998,9 @@ async def export_coa_to_pdf(
     kritis_count = sum(1 for c in all_coa if c.get("status") == "Kritis")
     umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
 
-    settings = await db.app_settings.find_one({"type": "coa"})
-    price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
-    potential_loss = 0
-    for c in all_coa:
-        delta = c.get("delta_loading_internal", 0) or 0
-        tonase = c.get("ds_mt", 0) or 0
-        if delta > 0:
-            potential_loss += delta * tonase * price_per_kcal
+    po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
+    kpis = calculate_kpis(all_coa, po_records=po_records)
+    potential_loss = kpis.get("potential_loss_rp", 0)
 
     output = io.BytesIO()
     doc = SimpleDocTemplate(output, pagesize=landscape(A4), leftMargin=0.5*inch, rightMargin=0.5*inch)

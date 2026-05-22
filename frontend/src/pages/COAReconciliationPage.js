@@ -586,9 +586,44 @@ const COAReconciliationPage = () => {
 
   const formatCurrency = (num) => {
     if (num === null || num === undefined) return "-";
-    if (num >= 1000000000) return `Rp ${(num / 1000000000).toFixed(1)}M`;
-    if (num >= 1000000) return `Rp ${(num / 1000000).toFixed(1)}jt`;
-    return `Rp ${num.toLocaleString("id-ID")}`;
+    const value = Number(num);
+    if (!Number.isFinite(value)) return "-";
+    const absValue = Math.abs(value);
+    const formatDecimal = (scaled, digits = 1) =>
+      scaled.toLocaleString("id-ID", {
+        minimumFractionDigits: scaled % 1 === 0 ? 0 : digits,
+        maximumFractionDigits: digits,
+      });
+
+    if (absValue >= 1000000000000) return `Rp ${formatDecimal(value / 1000000000000)} triliun`;
+    if (absValue >= 1000000000) return `Rp ${formatDecimal(value / 1000000000)} miliar`;
+    if (absValue >= 1000000) return `Rp ${formatDecimal(value / 1000000)} juta`;
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatCurrencyFull = (num) => {
+    if (num === null || num === undefined) return "-";
+    const value = Number(num);
+    if (!Number.isFinite(value)) return "-";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatPricingSummary = (kpiData) => {
+    const counts = kpiData?.potential_loss_price_source_counts || {};
+    const parts = [];
+    if (counts.po_shipment) parts.push(`${formatNumber(counts.po_shipment)} match shipment`);
+    if (counts.po_supplier_latest) parts.push(`${formatNumber(counts.po_supplier_latest)} harga supplier terakhir`);
+    if (counts.legacy_price_per_kcal) parts.push(`${formatNumber(counts.legacy_price_per_kcal)} fallback manual`);
+    if (kpiData?.potential_loss_unpriced_count) parts.push(`${formatNumber(kpiData.potential_loss_unpriced_count)} belum ada PO`);
+    return parts.length ? `Basis PO: ${parts.join(" | ")}` : "Basis PO Batubara";
   };
 
   const formatDateTime = (value) => {
@@ -735,11 +770,13 @@ const COAReconciliationPage = () => {
                 {kpis.price_not_set ? (
                   <>
                     <p className="text-xl font-bold text-amber-400/50 mt-1">Belum dihitung</p>
-                    <p className="text-xs text-amber-400 mt-1">Atur harga di Pengaturan</p>
+                    <p className="text-xs text-amber-400 mt-1">Lengkapi data PO Batubara</p>
                   </>
                 ) : (
                   <>
                     <p className="text-3xl font-bold text-amber-400 mt-1">{formatCurrency(kpis.potential_loss_rp)}</p>
+                    <p className="text-[11px] text-slate-400 mt-1">Nilai penuh: {formatCurrencyFull(kpis.potential_loss_rp)}</p>
+                    <p className="text-[11px] text-slate-500 mt-1">{formatPricingSummary(kpis)}</p>
                     <p className="text-xs text-slate-500 mt-1">{formatNumber(kpis.total_tonnage_problem)} MT bermasalah</p>
                   </>
                 )}
@@ -757,6 +794,9 @@ const COAReconciliationPage = () => {
                 <p className="text-3xl font-bold text-blue-400 mt-1">{kpis.umpire_status?.total || 0}</p>
                 <p className="text-xs text-slate-500 mt-1">
                   {kpis.umpire_status?.proposed || 0} diajukan, {kpis.umpire_status?.in_progress || 0} proses
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Diselamatkan: {formatCurrency(kpis.umpire_savings_rp)}
                 </p>
               </div>
               <div className="p-2 bg-blue-500/10 rounded-lg">

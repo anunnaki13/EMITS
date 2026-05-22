@@ -147,7 +147,7 @@ const SettingsPage = () => {
 
   const handleSaveCOASettings = async () => {
     if (!coaSettings.price_per_kcal_per_ton) {
-      toast.error("Harga per kCal per Ton wajib diisi");
+      toast.error("Fallback harga per kCal per Ton wajib diisi");
       return;
     }
     setSavingCOA(true);
@@ -709,7 +709,7 @@ const SettingsPage = () => {
           <div>
             <h3 className="text-white font-medium">Pengaturan COA Reconciliation</h3>
             <p className="text-slate-500 text-sm">
-              Konfigurasi perhitungan Potential Loss
+              Potential Loss utama memakai harga PO Batubara
             </p>
           </div>
         </div>
@@ -719,7 +719,7 @@ const SettingsPage = () => {
             <div className="space-y-2">
               <Label className="text-slate-300 text-sm flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Harga per kCal per Ton (Rp)
+                Fallback Harga per kCal per Ton (Rp)
               </Label>
               <Input
                 type="number"
@@ -731,17 +731,17 @@ const SettingsPage = () => {
                 data-testid="coa-price-input"
               />
               <p className="text-xs text-slate-500">
-                Digunakan untuk menghitung estimasi Potential Loss pada COA Reconciliation
+                Nilai ini hanya referensi lama. Dashboard COA sekarang menghitung dari total PO / tonase PO.
               </p>
             </div>
             
             <div className="bg-slate-900/30 rounded-lg p-3 border border-white/5">
               <p className="text-xs text-slate-400">
                 <span className="text-amber-400 font-medium">Formula:</span><br/>
-                Potential Loss = Σ (Delta_GCV × Tonase × Harga_per_kCal_per_Ton)
+                Potential Loss = Σ (Delta_GCV × Tonase × (Harga_PO_per_MT / Loading_GCV))
               </p>
               <p className="text-xs text-slate-500 mt-2">
-                Dimana Delta_GCV = Loading_GCV - Internal_GCV (hanya jika positif)
+                Jika shipment belum ada di PO, sistem memakai harga PO supplier terakhir yang tersedia.
               </p>
             </div>
           </div>
@@ -755,7 +755,7 @@ const SettingsPage = () => {
                   : "Belum diatur"
                 }
               </p>
-              <p className="text-xs text-slate-400 mt-1">per kCal per Ton</p>
+              <p className="text-xs text-slate-400 mt-1">fallback lama, bukan basis utama dashboard</p>
             </div>
             
             <Button 

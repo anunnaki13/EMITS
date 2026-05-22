@@ -2,6 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 
 from services.data_quality import build_data_quality_caveat
+from services.coa_reconciliation import calculate_coa_financials
 from services.trend_analytics import build_management_trends
 from services.query_filters import (
     abs_delta,
@@ -293,14 +294,9 @@ async def build_management_report(
     potential_loss_mt = sum(deltas)
     impacted_tonnage = sum(float(item.get("ds_mt") or 0) for item in coa_items if abs_delta(item) is not None)
 
-    settings = await db.app_settings.find_one({"type": "coa"}, {"_id": 0, "price_per_kcal_per_ton": 1})
-    price_per_kcal_per_ton = safe_float(settings.get("price_per_kcal_per_ton")) if settings else 0
-    estimated_loss_value = None
-    if price_per_kcal_per_ton:
-        estimated_loss_value = sum(
-            (abs_delta(item) or 0) * safe_float(item.get("ds_mt")) * price_per_kcal_per_ton
-            for item in coa_items
-        )
+    po_price_rows = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
+    coa_financials = calculate_coa_financials(coa_items, po_records=po_price_rows)
+    estimated_loss_value = coa_financials["potential_loss_rp"]
 
     supplier_performance = await _supplier_performance(period, supplier, date_from, date_to)
     supplier_scorecard = await _supplier_scorecard(period, supplier, date_from, date_to)
@@ -391,7 +387,14 @@ async def build_management_report(
             "potential_loss_mt": potential_loss_mt,
             "potential_loss_kcal_mt": potential_loss_mt,
             "impacted_tonnage": impacted_tonnage,
-            "price_per_kcal_per_ton": price_per_kcal_per_ton or None,
+            "price_per_kcal_per_ton": None,
+            "price_basis": coa_financials["potential_loss_price_basis"],
+            "price_source_counts": coa_financials["potential_loss_price_source_counts"],
+            "priced_count": coa_financials["potential_loss_priced_count"],
+            "unpriced_count": coa_financials["potential_loss_unpriced_count"],
+            "po_pricing_index": coa_financials["po_pricing_index"],
+            "umpire_savings_value": coa_financials["umpire_savings_rp"],
+            "umpire_savings_rows": coa_financials["umpire_savings_rows"],
             "estimated_loss_value": estimated_loss_value,
             "critical_count": critical_count,
             "warning_count": warning_count,

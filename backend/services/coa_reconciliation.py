@@ -7,7 +7,7 @@ import io
 import re
 import uuid
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -788,13 +788,296 @@ def _parse_inline_umpire(row) -> Optional[Dict]:
     }
 
 
-def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None) -> Dict:
+def _compact_token(value: Any) -> str:
+    return re.sub(r"[^A-Z0-9]+", "", safe_str(value).upper())
+
+
+def _po_shipment_key(value: Any) -> str:
+    return re.sub(r"[^A-Z0-9]+", "", safe_shipment(value).upper())
+
+
+def _parse_date_value(value: Any) -> Optional[date]:
+    iso_value = safe_datetime(value)
+    if not iso_value:
+        return None
+    try:
+        return pd.to_datetime(iso_value).date()
+    except Exception:
+        return None
+
+
+def _supplier_group_from_coa(value: Any) -> str:
+    token = _compact_token(value)
+    if token in {"BAG", "PTBA"} or "BUKITASAM" in token:
+        return "BUKITASAM"
+    if "KBB" in token or "KARYABUMIBARATAMA" in token or "MANDIANGINBARAENERGI" in token:
+        return "KARYABUMIBARATAMA"
+    if "RMBE" in token or "RIAUMITRABINAENERGI" in token:
+        return "RIAUMITRABINAENERGI"
+    if "TDE" in token or "TIGADAYAENERGI" in token:
+        return "TIGADAYAENERGI"
+    if "GEL" in token or "GLOBALENERGILESTARI" in token:
+        return "GLOBALENERGILESTARI"
+    if "BBS" in token or "BUMIBERDIKARISENTOSA" in token:
+        return "BUMIBERDIKARISENTOSA"
+    if "SPE" in token or "SUMBERPANCAENERGI" in token:
+        return "SUMBERPANCAENERGI"
+    if "TCR" in token or "TRIDAYACOALRESOURCES" in token:
+        return "TRIDAYACOALRESOURCES"
+    if "KUTAIENERGI" in token:
+        return "KUTAIENERGI"
+    if "MANDIRIINTIPERKASA" in token:
+        return "MANDIRIINTIPERKASA"
+    if "BARASENTOSALESTARI" in token or "ENERGISINARBARA" in token:
+        return "BARASENTOSALESTARI"
+    return token
+
+
+def _supplier_group_from_po(value: Any) -> str:
+    token = _compact_token(value)
+    if "BUKITASAM" in token:
+        return "BUKITASAM"
+    if "KARYABUMIBARATAMA" in token or "MANDIANGINBARAENERGI" in token:
+        return "KARYABUMIBARATAMA"
+    if "RIAUMITRABINAENERGI" in token:
+        return "RIAUMITRABINAENERGI"
+    if "TIGADAYAENERGI" in token:
+        return "TIGADAYAENERGI"
+    if "GLOBALENERGILESTARI" in token:
+        return "GLOBALENERGILESTARI"
+    if "BUMIBERDIKARISENTOSA" in token:
+        return "BUMIBERDIKARISENTOSA"
+    if "SUMBERPANCAENERGI" in token:
+        return "SUMBERPANCAENERGI"
+    if "TRIDAYACOALRESOURCES" in token:
+        return "TRIDAYACOALRESOURCES"
+    if "KUTAIENERGI" in token:
+        return "KUTAIENERGI"
+    if "MANDIRIINTIPERKASA" in token:
+        return "MANDIRIINTIPERKASA"
+    if "BARASENTOSALESTARI" in token or "ENERGISINARBARA" in token:
+        return "BARASENTOSALESTARI"
+    return token
+
+
+def _po_unit_price_rp_per_mt(record: Dict) -> Optional[float]:
+    total = safe_float(record.get("total"))
+    tonase = safe_float(record.get("tonase_po"))
+    if total and total > 0 and tonase and tonase > 0:
+        return total / tonase
+
+    inventory_price = safe_float(record.get("inventory_price"))
+    if inventory_price and inventory_price > 0:
+        return inventory_price * 1000
+    return None
+
+
+def _build_po_price_entry(record: Dict, basis: str) -> Optional[Dict]:
+    unit_price = _po_unit_price_rp_per_mt(record)
+    if not unit_price:
+        return None
+    return {
+        "basis": basis,
+        "unit_price_rp_per_mt": unit_price,
+        "supplier_group": _supplier_group_from_po(record.get("supplier_name")),
+        "supplier_name": record.get("supplier_name"),
+        "shipment": safe_shipment(record.get("no_shipment")),
+        "date": _parse_date_value(record.get("time_arrival") or record.get("periode")),
+        "tonase_po": safe_float(record.get("tonase_po")) or 0,
+    }
+
+
+def _combine_price_entries(entries: List[Dict], basis: str) -> Dict:
+    weighted_total = 0.0
+    weight = 0.0
+    for entry in entries:
+        tonase = entry.get("tonase_po") or 0
+        if tonase > 0:
+            weighted_total += entry["unit_price_rp_per_mt"] * tonase
+            weight += tonase
+
+    latest = max(entries, key=lambda entry: entry.get("date") or date.min)
+    combined = dict(latest)
+    combined["basis"] = basis
+    combined["unit_price_rp_per_mt"] = weighted_total / weight if weight else entries[0]["unit_price_rp_per_mt"]
+    combined["source_count"] = len(entries)
+    return combined
+
+
+def build_po_price_index(po_records: Optional[List[Dict]]) -> Dict:
+    shipment_entries: Dict[str, List[Dict]] = defaultdict(list)
+    supplier_entries: Dict[str, List[Dict]] = defaultdict(list)
+
+    for record in po_records or []:
+        entry = _build_po_price_entry(record, "po_shipment")
+        if not entry:
+            continue
+
+        shipment_key = _po_shipment_key(record.get("no_shipment"))
+        if shipment_key and shipment_key != "-":
+            shipment_entries[shipment_key].append(entry)
+
+        supplier_group = entry.get("supplier_group")
+        if supplier_group:
+            supplier_entries[supplier_group].append(dict(entry, basis="po_supplier_latest"))
+
+    by_shipment = {
+        key: _combine_price_entries(entries, "po_shipment")
+        for key, entries in shipment_entries.items()
+    }
+    by_supplier = {
+        key: sorted(entries, key=lambda entry: entry.get("date") or date.min)
+        for key, entries in supplier_entries.items()
+    }
+
+    return {
+        "by_shipment": by_shipment,
+        "by_supplier": by_supplier,
+        "po_record_count": len(po_records or []),
+        "priced_shipment_count": len(by_shipment),
+        "priced_supplier_count": len(by_supplier),
+    }
+
+
+def resolve_po_price_for_coa(record: Dict, price_index: Optional[Dict]) -> Optional[Dict]:
+    if not price_index:
+        return None
+
+    shipment_key = _po_shipment_key(record.get("shipment"))
+    if shipment_key:
+        entry = price_index.get("by_shipment", {}).get(shipment_key)
+        if entry:
+            return dict(entry)
+
+    supplier_group = _supplier_group_from_coa(record.get("suppliers") or record.get("supplier"))
+    candidates = price_index.get("by_supplier", {}).get(supplier_group) or []
+    if not candidates:
+        return None
+
+    record_date = _parse_date_value(record.get("completed_unloading") or record.get("periode"))
+    selected = None
+    for entry in candidates:
+        entry_date = entry.get("date")
+        if record_date and entry_date and entry_date <= record_date:
+            selected = entry
+
+    if selected is None:
+        selected = candidates[-1]
+    return dict(selected, basis="po_supplier_latest")
+
+
+def _coa_reference_gcv(record: Dict) -> Optional[float]:
+    for field in ("loading_gcv_arb", "unloading_gcv_arb", "internal_gcv_arb"):
+        value = safe_float(record.get(field))
+        if value and value > 0:
+            return value
+    return None
+
+
+def calculate_coa_financials(
+    merged_data: List[Dict],
+    po_records: Optional[List[Dict]] = None,
+    price_index: Optional[Dict] = None,
+    legacy_price_per_kcal_per_ton: Optional[float] = None,
+) -> Dict:
+    """
+    Calculate COA financial impact.
+
+    Primary basis is PO Batubara: PO total value / PO tonnage gives Rp/MT,
+    then Rp/MT is divided by the COA loading GCV to estimate Rp per kCal-MT.
+    """
+    price_index = price_index or build_po_price_index(po_records)
+    problem_count = 0
+    priced_count = 0
+    unpriced_count = 0
+    total_tonnage_problem = 0.0
+    potential_loss_kcal_mt = 0.0
+    potential_loss = 0.0
+    umpire_savings = 0.0
+    umpire_savings_kcal_mt = 0.0
+    umpire_savings_rows = 0
+    umpire_savings_priced_count = 0
+    umpire_savings_unpriced_count = 0
+    source_counts: Dict[str, int] = defaultdict(int)
+    unit_prices: List[float] = []
+
+    for record in merged_data:
+        delta = safe_float(record.get("delta_loading_internal"))
+        ds_mt = safe_float(record.get("ds_mt")) or 0
+        reference_gcv = _coa_reference_gcv(record)
+        price_entry = resolve_po_price_for_coa(record, price_index)
+
+        if delta and delta > 0:
+            problem_count += 1
+            total_tonnage_problem += ds_mt
+            potential_loss_kcal_mt += delta * ds_mt
+
+            if price_entry and reference_gcv:
+                unit_price = price_entry["unit_price_rp_per_mt"]
+                potential_loss += delta * ds_mt * (unit_price / reference_gcv)
+                priced_count += 1
+                source_counts[price_entry["basis"]] += 1
+                unit_prices.append(unit_price)
+            elif legacy_price_per_kcal_per_ton and legacy_price_per_kcal_per_ton > 0:
+                potential_loss += delta * ds_mt * legacy_price_per_kcal_per_ton
+                priced_count += 1
+                source_counts["legacy_price_per_kcal"] += 1
+            else:
+                unpriced_count += 1
+
+        umpire_gcv = safe_float(record.get("umpire_gcv_arb"))
+        if record.get("umpire_status") == "completed" and reference_gcv and umpire_gcv and reference_gcv > umpire_gcv:
+            umpire_savings_rows += 1
+            saved_kcal_mt = (reference_gcv - umpire_gcv) * ds_mt
+            umpire_savings_kcal_mt += saved_kcal_mt
+
+            if price_entry and ds_mt:
+                unit_price = price_entry["unit_price_rp_per_mt"]
+                umpire_savings += saved_kcal_mt * (unit_price / reference_gcv)
+                umpire_savings_priced_count += 1
+            elif legacy_price_per_kcal_per_ton and legacy_price_per_kcal_per_ton > 0:
+                umpire_savings += saved_kcal_mt * legacy_price_per_kcal_per_ton
+                umpire_savings_priced_count += 1
+            else:
+                umpire_savings_unpriced_count += 1
+
+    return {
+        "potential_loss_rp": round(potential_loss, 0),
+        "total_tonnage_problem": round(total_tonnage_problem, 2),
+        "potential_loss_kcal_mt": round(potential_loss_kcal_mt, 2),
+        "potential_loss_problem_count": problem_count,
+        "potential_loss_priced_count": priced_count,
+        "potential_loss_unpriced_count": unpriced_count,
+        "potential_loss_price_basis": "po_total_per_mt_divided_by_loading_gcv",
+        "potential_loss_price_source_counts": dict(source_counts),
+        "po_price_unit_avg_rp_per_mt": round(sum(unit_prices) / len(unit_prices), 2) if unit_prices else None,
+        "po_price_unit_min_rp_per_mt": round(min(unit_prices), 2) if unit_prices else None,
+        "po_price_unit_max_rp_per_mt": round(max(unit_prices), 2) if unit_prices else None,
+        "po_pricing_index": {
+            "po_record_count": price_index.get("po_record_count", 0),
+            "priced_shipment_count": price_index.get("priced_shipment_count", 0),
+            "priced_supplier_count": price_index.get("priced_supplier_count", 0),
+        },
+        "umpire_savings_rp": round(umpire_savings, 0),
+        "umpire_savings_kcal_mt": round(umpire_savings_kcal_mt, 2),
+        "umpire_savings_rows": umpire_savings_rows,
+        "umpire_savings_priced_count": umpire_savings_priced_count,
+        "umpire_savings_unpriced_count": umpire_savings_unpriced_count,
+    }
+
+
+def calculate_kpis(
+    merged_data: List[Dict],
+    price_per_kcal_per_ton: float = None,
+    po_records: Optional[List[Dict]] = None,
+) -> Dict:
     """
     Calculate KPI metrics for the anomaly dashboard
     
     Args:
         merged_data: List of reconciliation records
-        price_per_kcal_per_ton: Price per kCal per ton from settings (optional)
+        price_per_kcal_per_ton: Legacy fallback price per kCal per ton.
+        po_records: PO Batubara records used as the primary pricing basis.
     """
     total_records = len(merged_data)
     
@@ -805,27 +1088,12 @@ def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None
         if r.get("delta_loading_internal") and r["delta_loading_internal"] > 100
     )
     
-    # Potential Loss calculation
-    # Loss = sum of (delta_gcv * ds_mt * price_per_kcal_per_ton)
-    # Hanya untuk delta positif (Loading > Internal = RUGI)
-    potential_loss = 0
-    total_tonnage_problem = 0
-    
-    # Use provided price or None (will show as "Harga belum diatur")
-    if price_per_kcal_per_ton is not None and price_per_kcal_per_ton > 0:
-        for r in merged_data:
-            delta = r.get("delta_loading_internal")
-            ds_mt = r.get("ds_mt") or 0
-            if delta and delta > 0:  # Only positive delta (Loading > Internal = RUGI)
-                potential_loss += delta * ds_mt * price_per_kcal_per_ton
-                total_tonnage_problem += ds_mt
-    else:
-        # Just calculate tonnage problem without loss
-        for r in merged_data:
-            delta = r.get("delta_loading_internal")
-            ds_mt = r.get("ds_mt") or 0
-            if delta and delta > 0:
-                total_tonnage_problem += ds_mt
+    use_legacy_price = po_records is None and price_per_kcal_per_ton is not None
+    financials = calculate_coa_financials(
+        merged_data,
+        po_records=po_records,
+        legacy_price_per_kcal_per_ton=price_per_kcal_per_ton if use_legacy_price else None,
+    )
     
     # Umpire status counts
     umpire_proposed = sum(1 for r in merged_data if r.get("umpire_status") == "proposed")
@@ -872,8 +1140,7 @@ def calculate_kpis(merged_data: List[Dict], price_per_kcal_per_ton: float = None
     return {
         "total_records": total_records,
         "high_deviation_count": high_deviation_count,
-        "potential_loss_rp": round(potential_loss, 0),
-        "total_tonnage_problem": round(total_tonnage_problem, 2),
+        **financials,
         "umpire_status": {
             "proposed": umpire_proposed,
             "in_progress": umpire_in_progress,

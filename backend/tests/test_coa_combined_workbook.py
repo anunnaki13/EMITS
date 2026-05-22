@@ -50,6 +50,61 @@ def test_parse_latest_combined_coa_workbook_indonesian_period_and_kpi_total():
     assert kpis["umpire_status"]["total"] == 201
 
 
+def test_calculate_kpis_uses_po_purchase_price_instead_of_manual_coa_price():
+    records = [
+        {
+            "shipment": "LOT 1",
+            "suppliers": "PT TDE",
+            "completed_unloading": "2025-01-10T00:00:00",
+            "loading_gcv_arb": 4000,
+            "internal_gcv_arb": 3900,
+            "delta_loading_internal": 100,
+            "ds_mt": 10,
+            "umpire_status": "completed",
+            "umpire_gcv_arb": 3900,
+            "status": "critical",
+        },
+        {
+            "shipment": "LOT 481",
+            "suppliers": "TDE",
+            "completed_unloading": "2026-03-01T00:00:00",
+            "loading_gcv_arb": 4000,
+            "internal_gcv_arb": 3800,
+            "delta_loading_internal": 200,
+            "ds_mt": 5,
+            "umpire_status": "none",
+            "status": "critical",
+        },
+    ]
+    po_records = [
+        {
+            "no_shipment": "LOT 1",
+            "supplier_name": "PT. TIGA DAYA ENERGI",
+            "time_arrival": "2025-01-08",
+            "tonase_po": 10,
+            "total": 4_000_000,
+        },
+        {
+            "no_shipment": "LOT 460",
+            "supplier_name": "PT. KONS TIGA DAYA ENERGI",
+            "time_arrival": "2025-12-20",
+            "tonase_po": 10,
+            "total": 9_552_270,
+        },
+    ]
+
+    kpis = calculate_kpis(records, price_per_kcal_per_ton=950000, po_records=po_records)
+
+    assert kpis["potential_loss_rp"] == 338807
+    assert kpis["umpire_savings_rp"] == 100000
+    assert kpis["potential_loss_price_source_counts"] == {
+        "po_shipment": 1,
+        "po_supplier_latest": 1,
+    }
+    assert kpis["potential_loss_priced_count"] == 2
+    assert kpis["potential_loss_unpriced_count"] == 0
+
+
 def test_combined_coa_preview_reports_diff_duplicates_and_preservation():
     records = [
         {

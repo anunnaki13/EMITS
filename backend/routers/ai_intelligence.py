@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app.ai.client import AIClient, get_ai_client
+from services.coa_reconciliation import calculate_kpis
 from services.operational_advisor import build_operational_advisor
 from services.query_filters import period_match, sum_collection
 from utils.auth import get_current_user
@@ -121,9 +122,14 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
         coa_match = period_match("completed_unloading", period)
         coa_items = await db.coa_reconciliation.find(
             coa_match,
-            {"_id": 0, "shipment": 1, "suppliers": 1, "status": 1, "umpire_status": 1, "delta_loading_internal": 1, "ds_mt": 1, "completed_unloading": 1, "dispute_history": 1},
+            {"_id": 0, "shipment": 1, "suppliers": 1, "status": 1, "umpire_status": 1, "delta_loading_internal": 1, "ds_mt": 1, "completed_unloading": 1, "dispute_history": 1, "loading_gcv_arb": 1, "unloading_gcv_arb": 1, "internal_gcv_arb": 1, "umpire_gcv_arb": 1},
         ).sort("completed_unloading", -1).limit(AI_CONTEXT_RECORD_LIMIT).to_list(AI_CONTEXT_RECORD_LIMIT)
-        all_coa = await db.coa_reconciliation.find(coa_match, {"_id": 0, "status": 1, "umpire_status": 1, "delta_loading_internal": 1, "ds_mt": 1, "suppliers": 1}).to_list(5000)
+        all_coa = await db.coa_reconciliation.find(
+            coa_match,
+            {"_id": 0, "shipment": 1, "status": 1, "umpire_status": 1, "delta_loading_internal": 1, "ds_mt": 1, "suppliers": 1, "completed_unloading": 1, "loading_gcv_arb": 1, "unloading_gcv_arb": 1, "internal_gcv_arb": 1, "umpire_gcv_arb": 1},
+        ).to_list(5000)
+        po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
+        coa_kpis = calculate_kpis(all_coa, po_records=po_records)
         supplier_delta = {}
         for item in all_coa:
             supplier = item.get("suppliers") or "Unknown"
@@ -142,6 +148,10 @@ async def build_contextual_ai_context(module: str, parameters: Optional[dict] = 
             "warning_count": sum(1 for item in all_coa if str(item.get("status", "")).lower() == "warning"),
             "active_umpire_count": sum(1 for item in all_coa if item.get("umpire_status") in {"proposed", "in_progress"}),
             "potential_loss_mt": sum(abs(float(item.get("delta_loading_internal") or 0)) for item in all_coa),
+            "potential_loss_rp": coa_kpis["potential_loss_rp"],
+            "potential_loss_price_basis": coa_kpis["potential_loss_price_basis"],
+            "potential_loss_price_source_counts": coa_kpis["potential_loss_price_source_counts"],
+            "umpire_savings_rp": coa_kpis["umpire_savings_rp"],
             "top_supplier_patterns": top_supplier_patterns,
             "recent_records": _clean_records(coa_items),
         }
@@ -316,25 +326,21 @@ async def get_database_context(module: str, parameters: dict = None) -> str:
         # Get KPIs summary
         all_coa = await db.coa_reconciliation.find({}, {"_id": 0}).to_list(10000)
         if all_coa:
-            kritis_count = sum(1 for c in all_coa if c.get("status") == "Kritis")
+            kritis_count = sum(1 for c in all_coa if str(c.get("status", "")).lower() in {"critical", "kritis"})
             umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
-            
-            # Calculate potential loss
-            settings = await db.app_settings.find_one({"type": "coa"})
-            price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
-            potential_loss = 0
-            for c in all_coa:
-                delta = c.get("delta_loading_internal", 0) or 0
-                tonase = c.get("tonase", 0) or c.get("internal_tonase", 0) or 0
-                if delta > 0:
-                    potential_loss += delta * tonase * price_per_kcal
-            
-            context_parts.append(f"COA KPIs: Total Records={len(all_coa)}, Status Kritis={kritis_count}, Dalam Proses Umpire={umpire_count}, Potential Loss=Rp {potential_loss:,.0f}")
+            po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
+            coa_kpis = calculate_kpis(all_coa, po_records=po_records)
+
+            context_parts.append(
+                f"COA KPIs: Total Records={len(all_coa)}, Status Kritis={kritis_count}, "
+                f"Dalam Proses Umpire={umpire_count}, Potential Loss Berbasis PO=Rp {coa_kpis['potential_loss_rp']:,.0f}, "
+                f"Estimasi Diselamatkan Umpire=Rp {coa_kpis['umpire_savings_rp']:,.0f}"
+            )
             
             # Supplier dengan deviasi tertinggi
             supplier_deviasi = {}
             for c in all_coa:
-                supplier = c.get("supplier", "Unknown")
+                supplier = c.get("suppliers") or c.get("supplier") or "Unknown"
                 delta = abs(c.get("delta_loading_internal", 0) or 0)
                 if supplier not in supplier_deviasi:
                     supplier_deviasi[supplier] = []
@@ -387,7 +393,7 @@ FITUR APLIKASI YANG TERSEDIA:
    - Mendukung "Quad Check" - membandingkan 4 sumber data termasuk hasil lab umpire.
    - Input hasil umpire: GCV, TM, Ash, Sulphur, Nama Lab, dan Tanggal Hasil.
 
-8. **Settings**: Konfigurasi parameter aplikasi termasuk Harga per kCal per Ton untuk perhitungan Potential Loss.
+8. **Settings**: Konfigurasi parameter aplikasi. Potential Loss COA utama dihitung dari harga PO Batubara, bukan angka COA manual.
 
 9. **AI Intelligence**: Fitur AI Assistant (Anda) untuk analisis data dan rekomendasi.
 """
@@ -488,7 +494,7 @@ Tugas spesifik:
 1. Analisis Triple Check: Bandingkan Loading COA (supplier), Unloading COA (surveyor), dan Lab Internal (PLTU)
 2. Identifikasi lot dengan deviasi GCV tinggi (Delta > 150 kCal/kg)
 3. Deteksi potensi overclaim dari supplier (Loading GCV > Internal GCV)
-4. Hitung Potential Loss (Rp) dari defisit kalori
+4. Hitung Potential Loss (Rp) dari defisit kalori memakai harga PO Batubara
 5. Monitoring status umpire/arbitrase yang sedang berjalan
 6. Analisis konsistensi supplier berdasarkan historis deviasi
 
@@ -502,11 +508,11 @@ Status Kritis: Ditandai jika Delta_GCV > 150 kCal/kg DAN Loading GCV > Internal 
 
 Rumus Perhitungan:
 - Delta GCV = Loading_GCV - Internal_GCV
-- Potential Loss = Tonase × Delta_GCV × Harga_per_kCal_per_Ton
+- Potential Loss = Tonase × Delta_GCV × (Harga_PO_per_MT / Loading_GCV)
 
 Output yang diharapkan:
 - High Deviation Alert: Jumlah lot dengan status Kritis
-- Potential Loss (Rp): Estimasi kerugian finansial
+- Potential Loss (Rp): Estimasi kerugian finansial berbasis PO Batubara
 - Supplier dengan deviasi tertinggi
 - Rekomendasi pengajuan umpire
 """
@@ -821,25 +827,19 @@ async def get_coa_alerts(user: dict = Depends(get_current_user)):
         }
     
     # Count kritis status
-    kritis_count = sum(1 for c in all_coa if c.get("status") == "Kritis")
+    kritis_count = sum(1 for c in all_coa if str(c.get("status", "")).lower() in {"critical", "kritis"})
     
     # Count umpire in progress
     umpire_count = sum(1 for c in all_coa if c.get("umpire_status") not in [None, "none", ""])
 
-    # Calculate potential loss
-    settings = await db.app_settings.find_one({"type": "coa"})
-    price_per_kcal = settings.get("price_per_kcal_per_ton", 50) if settings else 50
+    po_records = await db.po_batubara.find({}, {"_id": 0}).to_list(50000)
+    coa_kpis = calculate_kpis(all_coa, po_records=po_records)
 
-    potential_loss = 0
     supplier_deviasi = {}
     
     for c in all_coa:
         delta = c.get("delta_loading_internal", 0) or 0
-        tonase = c.get("tonase", 0) or c.get("internal_tonase", 0) or 0
-        supplier = c.get("supplier", "Unknown")
-        
-        if delta > 0:
-            potential_loss += delta * tonase * price_per_kcal
+        supplier = c.get("suppliers") or c.get("supplier") or "Unknown"
         
         if supplier not in supplier_deviasi:
             supplier_deviasi[supplier] = []
@@ -859,7 +859,10 @@ async def get_coa_alerts(user: dict = Depends(get_current_user)):
         "total_records": len(all_coa),
         "kritis_count": kritis_count,
         "umpire_count": umpire_count,
-        "potential_loss": potential_loss,
+        "potential_loss": coa_kpis["potential_loss_rp"],
+        "potential_loss_price_basis": coa_kpis["potential_loss_price_basis"],
+        "potential_loss_price_source_counts": coa_kpis["potential_loss_price_source_counts"],
+        "umpire_savings": coa_kpis["umpire_savings_rp"],
         "top_supplier_deviasi": top_supplier
     }
 
