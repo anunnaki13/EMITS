@@ -134,22 +134,24 @@ def _frontend_version_status(root: Path) -> Dict[str, Optional[str]]:
 
 def _frontend_status() -> Dict[str, Any]:
     static_root = os.environ.get("FRONTEND_STATIC_ROOT")
-    if not static_root:
-        return {
-            "status": "unknown",
-            "build_present": False,
-            "static_root": None,
-            "reason": "FRONTEND_STATIC_ROOT belum dikonfigurasi",
-            "version": _unknown_frontend_version(),
-        }
+    root_source = "env"
+    if static_root:
+        root = Path(static_root)
+    else:
+        root_source = "auto"
+        candidates = [
+            _repo_root() / "frontend" / "build",
+            Path("/var/www/emits"),
+        ]
+        root = next((candidate for candidate in candidates if (candidate / "index.html").exists()), candidates[0])
 
-    root = Path(static_root)
     index_file = root / "index.html"
     build_present = root.exists() and index_file.exists()
     return {
         "status": "healthy" if build_present else "warning",
         "build_present": build_present,
         "static_root": str(root),
+        "static_root_source": root_source,
         "reason": "Build frontend tersedia" if build_present else "Build frontend statis belum ditemukan",
         "version": _frontend_version_status(root) if build_present else _unknown_frontend_version(),
     }
