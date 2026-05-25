@@ -7,6 +7,7 @@ This runbook is the Phase 22 operational source of truth for deploying, checking
 - Source checkout: `/opt/pltu-tenayan/app`
 - Backend: FastAPI via systemd service `emits-backend`, bound to `127.0.0.1:8013`
 - Frontend: React static build served from `/var/www/emits` through static nginx; production operation must not depend on `yarn start`
+- Frontend fallback: if nginx cannot be used, `emits-frontend-static` can serve `/var/www/emits` on `0.0.0.0:3013`
 - Public ingress: nginx, reverse proxying `/api/*` to backend
 - Database: MongoDB on the same host unless `MONGO_URL` points elsewhere
 - Smoke evidence: `/var/log/emits/smoke/*.json`
@@ -19,6 +20,7 @@ This runbook is the Phase 22 operational source of truth for deploying, checking
 
 1. Copy `ops/systemd/emits-backend.service.example` to `/etc/systemd/system/emits-backend.service`.
 2. Copy `ops/nginx/emits.conf.example` to `/etc/nginx/sites-available/emits` and symlink it into `sites-enabled`.
+   - If this host must expose the React build directly on port `3013`, copy `ops/systemd/emits-frontend-static.service.example` to `/etc/systemd/system/emits-frontend-static.service` instead of relying on a tmux/manual Python process.
 3. Copy `ops/env/backend.env.example` to `backend/.env` on the host and fill real values there.
 4. Copy `ops/env/frontend.env.example` to `frontend/.env` before building the frontend.
 5. Create writable directories:
@@ -33,6 +35,7 @@ sudo chown -R www-data:www-data /var/log/emits /opt/pltu-tenayan/app/backend/bac
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable emits-backend
+sudo systemctl enable emits-frontend-static # only for direct-port frontend mode
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -58,7 +61,7 @@ The deploy script performs:
 - static frontend `version.json` generation with git/build metadata
 - frontend publish via `rsync --delete`
 - backend restart and nginx reload
-- smoke check with JSON smoke evidence under `SMOKE_EVIDENCE_DIR`
+- smoke check with JSON smoke evidence under `SMOKE_EVIDENCE_DIR`, including `/api/health/version` so stale backend/frontend builds are caught
 
 If `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD` are present in the shell environment, the deploy smoke check also records the result to `/api/admin/runtime/smoke-report`. Do not put those credentials in committed files.
 
@@ -76,6 +79,7 @@ ops/scripts/runtime_status.sh
 The command checks:
 
 - backend `/api/health`
+- backend `/api/health/version` deployment identity
 - static nginx frontend
 - `systemctl is-active emits-backend`
 - `nginx -t`

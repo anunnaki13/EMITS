@@ -27,6 +27,7 @@ from routers.planning_data import router as planning_data_router
 from routers.reports import router as reports_router
 from routers.smart_stock import router as smart_stock_router
 from services.backup_service import backup_scheduler_loop
+from services.runtime_status import build_public_version_status
 from utils.auth import get_current_user, require_role
 from utils.filters import build_rekap_query
 
@@ -1483,6 +1484,11 @@ async def root():
 @api_router.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@api_router.get("/health/version")
+async def health_version_check():
+    return await build_public_version_status()
 
 # Include the router in the main app
 app.include_router(api_router)

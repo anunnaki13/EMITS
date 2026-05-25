@@ -1,0 +1,25 @@
+[Unit]
+Description=EMITS static frontend fallback server
+Documentation=/opt/pltu-tenayan/app/docs/operations/PRODUCTION_RUNBOOK.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/pltu-tenayan/app
+Environment=PYTHONUNBUFFERED=1
+Environment=EMITS_WEB_ROOT=/var/www/emits
+Environment=EMITS_FRONTEND_HOST=0.0.0.0
+Environment=EMITS_FRONTEND_PORT=3013
+ExecStart=/usr/bin/python3 /opt/pltu-tenayan/app/ops/scripts/serve_frontend_static.py
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/pltu-tenayan/app /var/www/emits
+
+[Install]
+WantedBy=multi-user.target

@@ -141,6 +141,17 @@ def main() -> int:
 
     health, _ = _check_http("backend health", "GET", f"{base_url}/api/health")
     results.append(health)
+    version_check, version_body = _check_http("backend version", "GET", f"{base_url}/api/health/version")
+    if isinstance(version_body, dict):
+        backend_git = ((version_body.get("backend") or {}).get("version") or {}).get("git_sha")
+        frontend_git = ((version_body.get("frontend") or {}).get("version") or {}).get("git_sha")
+        detail = f"backend={backend_git or 'unknown'}, frontend={frontend_git or 'unknown'}"
+        if not version_body.get("versions_match") and frontend_git:
+            detail = f"{detail}, mismatch"
+            version_check = CheckResult("backend version", False, detail)
+        elif version_check.ok:
+            version_check = CheckResult("backend version", True, detail)
+    results.append(version_check)
     results.append(_check_frontend(args.frontend_url))
     results.append(_check_mongo(args.mongo_url, args.db_name))
 

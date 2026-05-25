@@ -277,6 +277,38 @@ async def build_runtime_status() -> Dict[str, Any]:
     }
 
 
+async def build_public_version_status() -> Dict[str, Any]:
+    """Return non-sensitive deployment identity for smoke checks and operator triage."""
+    database = await _database_status()
+    frontend = _frontend_status()
+    backend_version = _backend_version_status()
+    frontend_version = frontend.get("version") or _unknown_frontend_version()
+    versions_match = bool(
+        backend_version.get("git_sha")
+        and frontend_version.get("git_sha")
+        and backend_version.get("git_sha") == frontend_version.get("git_sha")
+    )
+
+    return {
+        "status": _aggregate_status([database["status"], frontend["status"]]),
+        "generated_at": _now_iso(),
+        "backend": {
+            "status": "healthy",
+            "version": backend_version,
+        },
+        "frontend": {
+            "status": frontend["status"],
+            "version": frontend_version,
+        },
+        "database": {
+            "status": database["status"],
+            "name": database["name"],
+            "collections": database["collections"],
+        },
+        "versions_match": versions_match,
+    }
+
+
 async def record_smoke_report(report: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
     results = [
         {
